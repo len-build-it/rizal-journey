@@ -1,0 +1,402 @@
+/*
+ * Soft cardstock UI kit.
+ * Every 2D element is a piece of thick printed card: soft corners, a solid
+ * "card thickness" edge under it, and a short, warm cast shadow.
+ * Colors come from 1880s railway tickets and travel posters.
+ *
+ * Fonts (imported from main.ts):
+ *   @fontsource-variable/fraunces/full.css      -> 'Fraunces Variable' (display, SOFT axis)
+ *   @fontsource-variable/literata/standard.css  -> 'Literata Variable' (text)
+ *   @fontsource-variable/literata/standard-italic.css
+ */
+
+:root {
+  /* Ink and card */
+  --k-ink: #20324a; /* Prussian-blue printing ink: all text, caption band */
+  --k-ink-soft: #4b5a6e; /* secondary text */
+  --k-ink-deep: #0f1b2b; /* thickness edge under ink surfaces */
+  --k-card: #f2ead8; /* buff card: chips, cards, secondary buttons */
+  --k-card-edge: #c9b48c; /* thickness edge under card */
+  --k-card-sunk: #e2d3b3; /* empty slots, pressed wells, rules */
+  --k-vermilion: #c2452d; /* primary buttons, stamps, dates */
+  --k-vermilion-edge: #8a2c1b;
+  --k-sage: #c9d6b8; /* tertiary buttons, quiet highlights */
+  --k-sage-edge: #93a584;
+  --k-on-vermilion: #fbf2e4;
+
+  /* Type */
+  --k-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  --k-text: 'Literata Variable', 'Literata', Georgia, serif;
+  --k-display-axes: 'SOFT' 100, 'WONK' 0;
+
+  /* Shape */
+  --k-r-chip: 14px;
+  --k-r-band: 18px;
+  --k-r-card: 20px;
+  --k-edge: 4px; /* card thickness */
+  --k-cast: 0 9px 16px rgb(70 50 25 / 0.22);
+  --k-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Base type helpers */
+
+.k-display {
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-optical-sizing: auto;
+  font-weight: 560;
+  letter-spacing: -0.005em;
+  color: var(--k-ink);
+}
+
+.k-text {
+  font-family: var(--k-text);
+  color: var(--k-ink);
+}
+
+/* A label such as "Chapter three": italic text face, never all caps. */
+.k-label {
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--k-vermilion);
+}
+
+/* Surfaces */
+
+.k-card {
+  background: var(--k-card);
+  color: var(--k-ink);
+  border-radius: var(--k-r-card);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 var(--k-edge) 0 var(--k-card-edge),
+    var(--k-cast);
+}
+
+.k-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 16px 9px;
+  background: var(--k-card);
+  color: var(--k-ink);
+  border-radius: var(--k-r-chip);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 var(--k-edge) 0 var(--k-card-edge),
+    0 8px 14px rgb(70 50 25 / 0.2);
+  font-family: var(--k-text);
+}
+
+.k-chip__year {
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-weight: 600;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.k-chip__place {
+  font-size: 1rem;
+}
+
+.k-chip__goal {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.88rem;
+  font-style: italic;
+  color: var(--k-ink-soft);
+  max-width: 30ch;
+}
+
+/* The caption band: a strip of ink-printed card. */
+.k-band {
+  background: var(--k-ink);
+  color: var(--k-card);
+  border-radius: var(--k-r-band);
+  padding: 16px 26px 17px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    0 5px 0 var(--k-ink-deep),
+    0 12px 20px rgb(20 30 45 / 0.3);
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 1.3rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.k-band__hint {
+  display: block;
+  margin-top: 6px;
+  font-style: normal;
+  font-size: 0.8rem;
+  color: rgb(242 234 216 / 0.65);
+}
+
+/* Buttons: card you can press. Pressing sinks it onto its edge. */
+
+.k-btn {
+  --btn-bg: var(--k-card);
+  --btn-fg: var(--k-ink);
+  --btn-edge: var(--k-card-edge);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: var(--k-r-chip);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-family: var(--k-text);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    0 var(--k-edge) 0 var(--btn-edge),
+    0 8px 12px rgb(70 50 25 / 0.2);
+  transition:
+    transform 0.12s var(--k-ease),
+    box-shadow 0.12s var(--k-ease),
+    filter 0.12s ease;
+}
+
+.k-btn:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    0 calc(var(--k-edge) + 1px) 0 var(--btn-edge),
+    0 10px 14px rgb(70 50 25 / 0.22);
+}
+
+.k-btn:active {
+  transform: translateY(var(--k-edge));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 0 0 var(--btn-edge),
+    0 2px 4px rgb(70 50 25 / 0.2);
+}
+
+.k-btn:focus-visible {
+  outline: 3px solid var(--k-ink);
+  outline-offset: 4px;
+}
+
+.k-btn--primary {
+  --btn-bg: var(--k-vermilion);
+  --btn-fg: var(--k-on-vermilion);
+  --btn-edge: var(--k-vermilion-edge);
+}
+
+.k-btn--quiet {
+  --btn-bg: var(--k-sage);
+  --btn-fg: var(--k-ink);
+  --btn-edge: var(--k-sage-edge);
+}
+
+.k-btn--small {
+  min-height: 36px;
+  padding: 7px 14px;
+  font-size: 0.9rem;
+}
+
+/* A key cap inside a button or prompt, like "E". */
+.k-key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 8px;
+  background: var(--k-card-sunk);
+  color: var(--k-ink);
+  font-family: var(--k-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+  box-shadow: 0 2px 0 var(--k-card-edge);
+}
+
+.k-btn--primary .k-key {
+  background: rgb(251 242 228 / 0.92);
+  box-shadow: 0 2px 0 var(--k-vermilion-edge);
+}
+
+/* Brochure progress: six passport stamps. */
+
+.k-stamps {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--k-card);
+  border-radius: var(--k-r-chip);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 var(--k-edge) 0 var(--k-card-edge),
+    0 8px 14px rgb(70 50 25 / 0.2);
+}
+
+.k-stamp {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px dashed rgb(32 50 74 / 0.35);
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-size: 0.78rem;
+  color: transparent;
+}
+
+.k-stamp.is-stamped {
+  border: 2px solid var(--k-vermilion);
+  outline: 1px solid rgb(194 69 45 / 0.55);
+  outline-offset: 1.5px;
+  color: var(--k-vermilion);
+  transform: rotate(var(--tilt, -8deg));
+  animation: k-stamp-in 0.32s var(--k-ease);
+}
+
+.k-stamp:nth-child(2n).is-stamped {
+  --tilt: 7deg;
+}
+
+.k-stamp:nth-child(3n).is-stamped {
+  --tilt: -3deg;
+}
+
+.k-stamps__count {
+  margin-left: 4px;
+  font-family: var(--k-text);
+  font-size: 0.88rem;
+  color: var(--k-ink-soft);
+}
+
+@keyframes k-stamp-in {
+  from {
+    transform: scale(1.6) rotate(-20deg);
+    opacity: 0;
+  }
+}
+
+/* Chapter title card */
+
+.k-chapter {
+  width: min(480px, calc(100vw - 48px));
+  padding: 30px 34px 26px;
+  text-align: center;
+}
+
+.k-chapter__title {
+  margin: 6px 0 4px;
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-optical-sizing: auto;
+  font-weight: 560;
+  font-size: clamp(2.4rem, 5vw, 3.2rem);
+  line-height: 1.02;
+}
+
+.k-chapter__place {
+  margin: 0;
+  font-family: var(--k-text);
+  font-size: 1.05rem;
+  color: var(--k-ink-soft);
+}
+
+.k-chapter__rule {
+  width: 56px;
+  height: 3px;
+  margin: 18px auto;
+  border-radius: 3px;
+  background: var(--k-vermilion);
+}
+
+.k-chapter__goal {
+  margin: 0 auto;
+  max-width: 34ch;
+  font-family: var(--k-text);
+  font-size: 1.08rem;
+  line-height: 1.5;
+}
+
+.k-chapter__hint {
+  margin: 20px 0 0;
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--k-ink-soft);
+}
+
+/* Story card ("Read more") */
+
+.k-story {
+  width: min(430px, calc(100vw - 32px));
+  padding: 24px 28px 26px;
+}
+
+.k-story__date {
+  margin: 0;
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 1.02rem;
+  color: var(--k-vermilion);
+}
+
+.k-story__title {
+  margin: 2px 0 14px;
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-optical-sizing: auto;
+  font-weight: 560;
+  font-size: 2rem;
+  line-height: 1.06;
+}
+
+.k-story__text {
+  margin: 0 0 12px;
+  font-family: var(--k-text);
+  font-size: 1rem;
+  line-height: 1.62;
+}
+
+.k-story__note {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--k-card-sunk);
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--k-ink-soft);
+}
+
+/* Toast */
+
+.k-toast {
+  padding: 12px 18px;
+  font-family: var(--k-text);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* World-facing colors that the 3D code should also use (trail dots, stop rings). */
+.k-swatch-trail {
+  color: var(--k-vermilion);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-btn,
+  .k-stamp.is-stamped {
+    transition: none;
+    animation: none;
+  }
+}

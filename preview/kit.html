@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Soft cardstock UI kit</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #d6c19a;
+        font-family: 'Literata Variable', serif;
+      }
+      .stage {
+        position: relative;
+        max-width: 1280px;
+        height: 800px;
+        margin: 0 auto;
+      }
+      .tl {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+      }
+      .tr {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+      }
+      .mid {
+        position: absolute;
+        left: 50%;
+        top: 150px;
+        transform: translateX(-50%);
+      }
+      .story {
+        position: absolute;
+        right: 20px;
+        top: 110px;
+      }
+      .bot {
+        position: absolute;
+        left: 50%;
+        bottom: 28px;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        width: min(760px, 90vw);
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .toast {
+        position: absolute;
+        left: 40px;
+        top: 470px;
+      }
+    </style>
+  </head>
+  <body data-page="kit">
+    <div class="stage">
+      <div class="tl k-chip" style="flex-direction: column; align-items: flex-start; gap: 0">
+        <span style="display: flex; align-items: baseline; gap: 10px"
+          ><span class="k-chip__year">1885</span><span class="k-chip__place">Paris</span></span
+        >
+        <span class="k-chip__goal"
+          >Learn eye surgery from one of the best, so you can treat your mother's eyes.</span
+        >
+      </div>
+      <div class="tr k-stamps" role="img" aria-label="Brochure: 3 of 6 panels">
+        <span class="k-stamp is-stamped">1</span><span class="k-stamp is-stamped">2</span
+        ><span class="k-stamp is-stamped">3</span><span class="k-stamp">4</span
+        ><span class="k-stamp">5</span><span class="k-stamp">6</span>
+        <span class="k-stamps__count">3 of 6</span>
+      </div>
+      <div class="mid k-card k-chapter">
+        <p class="k-label" style="margin: 0">Chapter three</p>
+        <h2 class="k-chapter__title k-display">The eye doctor</h2>
+        <p class="k-chapter__place">Paris, 1885 to 1886</p>
+        <div class="k-chapter__rule"></div>
+        <p class="k-chapter__goal k-text">
+          Learn eye surgery from one of the best, so you can treat your mother's eyes.
+        </p>
+        <p class="k-chapter__hint">Press any key to ride</p>
+      </div>
+      <div class="toast k-card k-toast">
+        The station opens once you have visited the other stops.
+      </div>
+      <div class="bot">
+        <div class="k-band" style="width: 100%">
+          Rizal poses as Datu Sikatuna. Trinidad Pardo de Tavera poses as Legazpi.<span
+            class="k-band__hint"
+            >Click, Space or Enter to continue. Esc to skip.</span
+          >
+        </div>
+        <div class="row">
+          <button class="k-btn">Read more</button>
+          <button class="k-btn k-btn--primary">Continue riding</button>
+          <button class="k-btn k-btn--quiet">Read as a brochure</button>
+          <button class="k-btn k-btn--small">
+            Read: The eye doctor <span class="k-key">E</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="stage" style="height: 760px">
+      <div class="story k-card k-story" style="left: 20px; right: auto; top: 20px">
+        <p class="k-story__date">November 1885 to February 1886</p>
+        <h2 class="k-story__title">The eye doctor</h2>
+        <p class="k-story__text">
+          With his medical degree from Madrid, Rizal came back to Paris to specialize in
+          ophthalmology. He wanted to be able to treat his mother's failing eyesight.
+        </p>
+        <p class="k-story__text">
+          From November 1885 to February 1886 he worked as an assistant to Dr. Louis de Wecker, one
+          of the leading eye surgeons in France, at his clinic on Rue du Cherche-Midi.
+        </p>
+        <p class="k-story__note">
+          Many Filipino textbooks spell the doctor's name "de Weckert." His actual name, also used
+          by the Philippine Embassy in Paris, is Louis de Wecker.
+        </p>
+        <div class="row" style="justify-content: flex-start; margin-top: 18px">
+          <button class="k-btn k-btn--small">Close</button
+          ><button class="k-btn k-btn--small k-btn--quiet">Sources</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./preview.ts"></script>
+  </body>
+</html>

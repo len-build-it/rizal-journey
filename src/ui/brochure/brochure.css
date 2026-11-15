@@ -1,0 +1,297 @@
+/*
+ * Finished brochure. Uses the soft cardstock kit tokens (kit.css).
+ * Sheets are sized in real millimetres so print matches the screen exactly.
+ */
+
+.b-brochure {
+  display: flex;
+  flex-direction: column;
+  gap: 14mm;
+  align-items: center;
+  zoom: var(--b-scale, 1);
+}
+
+.b-sheet {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 99mm);
+  width: 297mm;
+  height: 210mm;
+  overflow: hidden;
+  background: #efe6d1;
+  color: var(--k-ink);
+  border-radius: 3mm;
+  box-shadow:
+    0 1.2mm 0 var(--k-card-edge),
+    0 4mm 9mm rgb(20 25 35 / 0.35);
+}
+
+/* Fold lines between panels: a faint crease, darker where it catches the light. */
+.b-sheet::before,
+.b-sheet::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0.6mm;
+  background: linear-gradient(90deg, rgb(70 50 25 / 0.12), rgb(255 255 255 / 0.5));
+  pointer-events: none;
+}
+
+.b-sheet::before {
+  left: 99mm;
+}
+
+.b-sheet::after {
+  left: 198mm;
+}
+
+.b-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 8mm 7mm 7mm;
+  overflow: hidden;
+}
+
+/* Panel heading */
+
+.b-panel__head {
+  margin-bottom: 4.5mm;
+  padding-bottom: 3.5mm;
+  border-bottom: 0.5mm solid var(--k-vermilion);
+}
+
+.b-panel__label {
+  margin: 0;
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 8.5pt;
+  color: var(--k-vermilion);
+}
+
+.b-panel__title {
+  margin: 0.5mm 0 0.6mm;
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-optical-sizing: auto;
+  font-weight: 580;
+  font-size: 19pt;
+  line-height: 1.02;
+}
+
+.b-panel__place {
+  margin: 0;
+  font-family: var(--k-text);
+  font-size: 8.5pt;
+  color: var(--k-ink-soft);
+}
+
+/* Story entries */
+
+.b-entries {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 3.4mm;
+}
+
+.b-entry {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.4mm;
+  align-items: start;
+}
+
+.b-entry.has-picture {
+  grid-template-columns: 27mm 1fr;
+}
+
+.b-picture {
+  margin: 0;
+  padding: 1mm;
+  background: var(--k-card);
+  border-radius: 1.6mm;
+  box-shadow: 0 0.6mm 0 var(--k-card-edge);
+}
+
+.b-picture img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 0.8mm;
+  outline: 0.25mm solid rgb(32 50 74 / 0.6);
+  outline-offset: -0.25mm;
+}
+
+.b-date {
+  margin: 0;
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 7.4pt;
+  line-height: 1.2;
+  color: var(--k-vermilion);
+}
+
+.b-title {
+  margin: 0.2mm 0 0.6mm;
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-optical-sizing: auto;
+  font-weight: 560;
+  font-size: 10.5pt;
+  line-height: 1.12;
+}
+
+.b-summary {
+  margin: 0;
+  font-family: var(--k-text);
+  font-size: 7.4pt;
+  line-height: 1.38;
+}
+
+.b-entry.is-unseen .b-title,
+.b-entry.is-unseen .b-summary {
+  color: var(--k-ink-soft);
+}
+
+.b-unseen-note {
+  margin: 0.6mm 0 0;
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 6.8pt;
+  color: var(--k-ink-soft);
+}
+
+/* References at the foot of panel 6 */
+
+.b-refs {
+  margin-top: auto;
+  padding-top: 2.6mm;
+  border-top: 0.3mm solid rgb(32 50 74 / 0.35);
+}
+
+.b-refs__title {
+  margin: 0 0 1mm;
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-weight: 560;
+  font-size: 8.5pt;
+}
+
+.b-refs__list a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.b-refs__list a:hover {
+  text-decoration: underline;
+}
+
+.b-refs__note {
+  margin: 1mm 0 0;
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 5.8pt;
+  color: var(--k-ink-soft);
+}
+
+.b-refs__list li {
+  break-inside: avoid;
+  margin-bottom: 0.5mm;
+}
+
+.b-refs__list {
+  margin: 0;
+  padding-left: 3.2mm;
+  columns: 2;
+  column-gap: 4mm;
+  font-family: var(--k-text);
+  font-size: 5.8pt;
+  line-height: 1.3;
+  color: var(--k-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+/* Cover */
+
+.b-cover {
+  align-items: stretch;
+  background: radial-gradient(circle at 50% 38%, rgb(255 255 255 / 0.35), transparent 60%), #efe6d1;
+}
+
+.b-cover__title {
+  margin: 2mm 0 1mm;
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 30pt;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+}
+
+.b-cover__sub {
+  margin: 0;
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 11pt;
+  color: var(--k-vermilion);
+}
+
+.b-map {
+  margin: 5mm -1mm 3mm;
+}
+
+.b-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.b-cover__intro {
+  margin: 0;
+  font-family: var(--k-text);
+  font-size: 8.6pt;
+  line-height: 1.45;
+}
+
+.b-cover__credit {
+  margin: auto 0 0;
+  padding-top: 3mm;
+  border-top: 0.3mm solid rgb(32 50 74 / 0.35);
+  font-family: var(--k-text);
+  font-size: 6.8pt;
+  line-height: 1.4;
+  color: var(--k-ink-soft);
+}
+
+/* Print: two A4 landscape pages, side A then side B, at true size. */
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+
+  .b-brochure {
+    zoom: 1;
+    gap: 0;
+  }
+
+  .b-sheet {
+    border-radius: 0;
+    box-shadow: none;
+    break-after: page;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .b-sheet::before,
+  .b-sheet::after {
+    background: rgb(70 50 25 / 0.15);
+    width: 0.2mm;
+  }
+}

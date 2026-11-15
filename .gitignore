@@ -1,10 +1,12 @@
 node_modules/
 dist/
+dist-preview/
 scripts/out/
 review/*
 !review/polish/
 !review/polish3/
 !review/handoff4/
 !review/handoff5/
+!review/handoff6/
 *.log
 .DS_Store
