@@ -33,11 +33,11 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
   batch.add(palette.sandWet, new THREE.BoxGeometry(160, 1.5, 16), { x: 0, y: -1.5, z: 24 });
   staticBox(ctx, 0, -1.4, 14, 160, 2, 34);
 
-  // Promenade base (y = PROM_Y = 0.4) and curving seawall segments.
-  batch.add(palette.grass, new THREE.BoxGeometry(150, 2.4, 24), { x: 0, y: -0.8, z: 0 });
-  staticBox(ctx, 0, -0.8, 0, 150, 2.4, 24);
+  // Promenade base kept strictly behind the curving stone promenade (top y = 0.35 < PROM_Y = 0.4).
+  batch.add(palette.grass, new THREE.BoxGeometry(150, 2.4, 15), { x: 0, y: -0.85, z: -4.5 });
+  staticBox(ctx, 0, -0.85, -4.5, 150, 2.4, 15);
 
-  // Curving seawall promenade + parapet curb along shoreZ(x).
+  // Curving seawall promenade + parapet curb along shoreZ(x), spanning back to z = 0 without Z-fighting.
   const segs = 12;
   const span = 88;
   for (let i = 0; i < segs; i++) {
@@ -50,10 +50,10 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     const segLen = Math.hypot(x1 - x0, z1 - z0) + 0.4;
     const ry = -Math.atan2(z1 - z0, x1 - x0);
 
-    batch.add(palette.quayStone, new THREE.BoxGeometry(segLen, 0.8, 6.5), {
+    batch.add(palette.quayStone, new THREE.BoxGeometry(segLen, 0.8, 13.5), {
       x: xm,
       y: 0.0,
-      z: zm - 3.2,
+      z: zm - 6.75,
       ry,
     });
     batch.add(palette.quayStoneDark, new THREE.BoxGeometry(segLen, 1.6, 0.7), {
@@ -62,7 +62,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
       z: zm,
       ry,
     });
-    staticBox(ctx, xm, 0.0, zm - 3.2, segLen, 0.8, 6.5, ry);
+    staticBox(ctx, xm, 0.0, zm - 6.75, segLen, 0.8, 13.5, ry);
 
     // Leave a beach access gap at i === 6 (x ~ 0..7) with a gentle sand ramp; curb the rest.
     if (i === 6) {
@@ -181,8 +181,8 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
   planeTree(batch, ctx, -26, 2, 71);
   planeTree(batch, ctx, 20, 4, 72);
 
-  // Beach and promenade props: rowing boat pulled up on the sand, beach chairs, barrels.
-  fishingBoat(batch, -13, 14.5, 0.42, palette.basqueRed);
+  // Beach and promenade props: rowing boat resting atop the sand, beach chairs, barrels.
+  fishingBoat(batch, -13, 14.5, 0.42, palette.basqueRed, 1.1, 0.08);
   props.beachChair(7, 11.2, -0.15, palette.awningRed, -0.4);
   props.beachChair(9.2, 11.5, -0.22, palette.shutterBlue, -0.4);
   props.beachChair(-3.5, 6.2, 0.1, palette.awningRed, PROM_Y);
@@ -223,13 +223,23 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
 
   const [villa, manuscript, station] = storiesFor('biarritz-1891');
   const stops = [
-    new StopMarker(villa!, new THREE.Vector3(-14, PLATEAU_Y, -12.5)),
+    new StopMarker(
+      villa!,
+      new THREE.Vector3(-14, PLATEAU_Y, -12.5),
+      new THREE.Vector3(-14, PLATEAU_Y + 2.4, -21),
+      1.4,
+    ),
     new StopMarker(
       manuscript!,
       new THREE.Vector3(-3.5, PLATEAU_Y, -17.5),
       new THREE.Vector3(-3.5, PLATEAU_Y + 0.8, -19.5),
     ),
-    new StopMarker(station!, new THREE.Vector3(28, PLATEAU_Y, -25)),
+    new StopMarker(
+      station!,
+      new THREE.Vector3(28, PLATEAU_Y, -25),
+      new THREE.Vector3(28, PLATEAU_Y + 2.0, -33),
+      1.45,
+    ),
   ];
   for (const s of stops) scene.add(s.group);
 
@@ -239,6 +249,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     spawn: new THREE.Vector3(-4, PROM_Y, 4),
     spawnHeading: Math.PI,
     stops,
+    staticDrawCalls: staticGroup.children.length,
     look: {
       sky: 0xaad0e6,
       fog: 0xbedae8,
@@ -316,6 +327,39 @@ function basqueVilla(batch: StaticBatch, ctx: PhysicsCtx, x: number, y: number, 
           x: x + wx + s * 0.72,
           y: y + fy,
           z: front + 0.02,
+        });
+      }
+    }
+  }
+  // East (+X) and north (-Z) windows with red shutters so the villa facade reads from the camera side too.
+  for (const wx of [-4.2, -2.0, 2.0, 4.2]) {
+    for (const fy of [1.6, 4.6]) {
+      batch.add(0x2c3138, new THREE.BoxGeometry(0.95, 1.35, 0.1), {
+        x: x + wx,
+        y: y + fy,
+        z: z - d / 2 - 0.05,
+      });
+      for (const s of [-1, 1]) {
+        batch.add(palette.basqueRed, new THREE.BoxGeometry(0.4, 1.35, 0.08), {
+          x: x + wx + s * 0.72,
+          y: y + fy,
+          z: z - d / 2 - 0.07,
+        });
+      }
+    }
+  }
+  for (const wz of [-2.4, 2.4]) {
+    for (const fy of [1.6, 4.6]) {
+      batch.add(0x2c3138, new THREE.BoxGeometry(0.1, 1.35, 0.95), {
+        x: x + w / 2 + 0.05,
+        y: y + fy,
+        z: z + wz,
+      });
+      for (const s of [-1, 1]) {
+        batch.add(palette.basqueRed, new THREE.BoxGeometry(0.08, 1.35, 0.4), {
+          x: x + w / 2 + 0.07,
+          y: y + fy,
+          z: z + wz + s * 0.72,
         });
       }
     }
