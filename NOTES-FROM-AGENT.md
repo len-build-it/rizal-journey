@@ -110,3 +110,29 @@ Summary of implementation choices, environment workarounds, and observations fro
 - `git diff d424394 -- src/content/`: empty (`src/content/` unmodified).
 - `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`: all pass cleanly.
 - Headless Edge Playwright verification (`1280x800`): `errors: []` across all 6 area overviews, stop scenes, and reaction captures.
+
+## Handoff 6 ("soft cardstock" UI kit, finished brochure & scene fixes)
+
+- **Typography & preview tooling (`package.json`, `src/main.ts`, `preview/*`)**: Installed `@fontsource-variable/fraunces` (`full.css`) and `@fontsource-variable/literata` (`standard.css` + `standard-italic.css`), removed `@fontsource-variable/bodoni-moda` and `@fontsource-variable/instrument-sans`, imported `src/ui/kit/kit.css` and `src/ui/brochure/brochure.css` before `src/styles.css`, and added `npm run preview` (`vite build --config preview/vite.config.ts`). Replaced the previous `npm run preview` (`vite preview`) script so the kit/brochure preview builds to `dist-preview/`.
+- **2D UI kit & 3D trail/stop markers (`src/ui/*.ts`, `src/story/SceneUI.ts`, `src/world/palette.ts`, `src/world/PathTrail.ts`, `src/world/StopMarker.ts`, `src/styles.css`)**: Applied the soft cardstock kit classes (`.k-card`, `.k-chip`, `.k-stamps`, `.k-band`, `.k-btn`, `.k-key`, `.k-toast`, `.k-chapter`, `.k-story`) across the title card (`.intro-inner.k-card` so ink focus outlines stay high-contrast), chapter cards (spelled-out chapter numbers, goal visible right away, `"Press any key to ride"`), HUD pills/stamps/prompts/toast, story cards, scene caption/action bands, and travel spread. Switched 3D trail dots and stop markers to vermilion (`palette.vermilion`, `0xc2452d`) with Prussian ink outer rims (`palette.ink`, `0x20324a`). Removed all legacy CSS variables from `src/styles.css`.
+- **Desk cover & finished brochure integration (`src/ui/DeskScene.ts`, `src/ui/BrochureView.ts`, `src/main.ts`, `index.html`)**: Redrew `DeskScene`'s cover canvas to match the brochure's panel 1 (`#efe6d1` cardstock, Fraunces display title, Literata italic vermilion subtitle, `routeMapSvg()` SVG data URI with resolved palette tokens, intro copy, and student credit) after awaiting `document.fonts` + SVG image readiness. Integrated `renderBrochure`, `fitBrochure`, and `overflowingPanels` into `src/ui/BrochureView.ts` for both the finale (collected snapshots) and "Read as a brochure" fallback (all 13 stories marked visited, no snapshots), with staggered side A / side B settle animations (`prefers-reduced-motion` aware) and two-page A4 landscape `@media print` styling. Note: `src/ui/kit/kit.css`, `src/ui/brochure/*`, and `src/content/*` were left untouched.
+- **Five 3D scene fixes (`src/world/areas/paris.ts`, `src/story/scenes/parisScenes.ts`, `src/story/scenes/props.ts`, `src/story/scenes/marseilleScenes.ts`, `src/story/scenes/biarritzScenes.ts`, `src/player/models.ts`, `src/main.ts`)**:
+  1. `paris-1885-studio`: Built out Luna's top-floor studio interior (`deckWood` floorboards, enclosing side walls, back framed paintings, paint table with pots and crimson draped cloth, slim skylight mullions, primary large easel with a low-poly study suggestive of *The Parisian Life*, and secondary easel) and aligned the painter to face the canvas while Rizal and Trinidad converse beside him.
+  2. `marseille-landing`: Tuned night arrival sky/fog (`0x1b2b4a` / `0x24375c`) and added warm shipboard lantern `PointLight`s illuminating the gangway and white deckhouses, recessed brass-rimmed portholes flush against the Djemnah hull (`z = 14.08`), and ensured path trail, stop markers, and off-screen arrow remain hidden during scenes and cards.
+  3. `paris-1889-indios-bravos` & arena horses: Restricted saddle/blanket meshes in `buildHorseModel(neckScale, withRider)` to `withRider === true` only, and raised arena idle and galloping horse `y` bases so hooves stay grounded on the `y = 0.09` packed-earth track.
+  4. `paris-1889-tower`: Switched the French tricolor flag stripes in `createFrenchFlag()` to unlit `MeshBasicMaterial` and tuned final summit framing so blue, white, and red read crisply against 1889 evening sunlight.
+  5. `biarritz-manuscript`: Hid the hatted walking `ctx.rizal` during the indoor terrace writing scene, spawned bareheaded Rizal sitting at the table with his bowler hat resting beside the manuscript sheets, and replaced the harsh side point light with softer dusk fill and gentle table lamp glow.
+
+### Review Screenshots (`review/handoff6/`, `1280x800` desktop & `390x844` mobile)
+
+- Opening & riding UI: `desk-intro.png`, `desk-brochure-fallback.png`, `desk-chapter-card.png`, `desk-riding.png`, `desk-travel.png`, `desk-timelapse.png`
+- Scene UI & story card: `desk-scene-caption.png`, `desk-scene-end.png`, `desk-story-card.png`
+- Fixed Section 7 scenes: `desk-scene-marseille-landing.png`, `desk-scene-paris-1885-studio.png`, `desk-scene-paris-1889-tower.png`, `desk-scene-paris-1889-indios-bravos.png`, `desk-scene-biarritz-manuscript.png`
+- Finished brochure & A4 print sheets: `desk-finale-side-a.png`, `desk-finale-side-b.png`, `desk-print-page1.png`, `desk-print-page2.png`, `desk-brochure-print.pdf` (2 A4 landscape pages)
+- Area overviews & mobile counterparts: `desk-<area>-overview.png`, `mob-*.png`
+
+### Verification (Handoff 6)
+
+- `git diff src/content/ src/ui/kit/ src/ui/brochure/`: empty.
+- `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`, `npm run preview`: all passed cleanly.
+- `python -I scripts/review.py "http://localhost:4173/?review" review/handoff6 mobile` (desktop `1280x800` + mobile `390x844` via headless Edge SwiftShader): exit code 0, zero console/page errors, `fallback overflow=[]` and `finale overflow=[]` on both desktop and mobile, and `desk-brochure-print.pdf` verified as 2 A4 landscape pages.
