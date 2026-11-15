@@ -1104,6 +1104,92 @@ function deWeckerClinic(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: numbe
   parkBench(batch, ctx, x + 1.6, z - 4.4, 0);
 }
 
+/** Helper to add a canvas painting onto an easel group or back wall. */
+function studioEasel(
+  batch: StaticBatch,
+  cx: number,
+  floorY: number,
+  cz: number,
+  ry: number,
+  cw: number,
+  ch: number,
+  withParisianLife: boolean,
+): void {
+  const cos = Math.cos(ry);
+  const sin = Math.sin(ry);
+  const place = (lx: number, ly: number, lz: number): { x: number; y: number; z: number } => ({
+    x: cx + lx * cos + lz * sin,
+    y: floorY + ly,
+    z: cz - lx * sin + lz * cos,
+  });
+
+  // Two front legs, back strut leg, and ledge tray.
+  for (const lx of [-cw * 0.3, cw * 0.3]) {
+    batch.add(palette.crateDark, new THREE.BoxGeometry(0.07, 2.05, 0.07), {
+      ...place(lx, 1.0, 0.06),
+      rx: -0.14,
+      ry,
+    });
+  }
+  batch.add(palette.crateDark, new THREE.BoxGeometry(0.07, 1.95, 0.07), {
+    ...place(0, 0.94, -0.45),
+    rx: 0.34,
+    ry,
+  });
+  batch.add(palette.deckWood, new THREE.BoxGeometry(cw * 0.92, 0.08, 0.16), {
+    ...place(0, 0.78, 0.16),
+    ry,
+  });
+
+  // Canvas frame + pale linen ground, angled back slightly with the easel.
+  const canvasCenterY = 0.84 + ch / 2;
+  const tilt = -0.14;
+  batch.add(palette.crateDark, new THREE.BoxGeometry(cw + 0.12, ch + 0.12, 0.05), {
+    ...place(0, canvasCenterY, 0.08),
+    rx: tilt,
+    ry,
+  });
+  batch.add(palette.sail, new THREE.BoxGeometry(cw, ch, 0.06), {
+    ...place(0, canvasCenterY, 0.095),
+    rx: tilt,
+    ry,
+  });
+
+  if (withParisianLife) {
+    // Low-poly study suggestive of The Parisian Life: warm lamplit wall, table, silhouettes.
+    const dabs: [number, number, number, number, number, number][] = [
+      [palette.awningOchre, -cw * 0.12, 0.18, cw * 0.7, ch * 0.56, 0.02],
+      [palette.gaslight, -cw * 0.2, 0.28, cw * 0.34, ch * 0.24, 0.026],
+      [palette.awningRed, cw * 0.24, 0.08, cw * 0.42, ch * 0.62, 0.02],
+      [palette.cafeTable, -cw * 0.02, -0.18, cw * 0.54, ch * 0.22, 0.028],
+      [palette.shirt, -cw * 0.18, -0.02, cw * 0.18, ch * 0.32, 0.032],
+      [palette.coat, cw * 0.14, 0.0, cw * 0.16, ch * 0.34, 0.032],
+      [palette.coat, cw * 0.31, -0.04, cw * 0.14, ch * 0.3, 0.032],
+      [palette.skin, -cw * 0.18, 0.2, cw * 0.08, ch * 0.11, 0.036],
+      [palette.hat, cw * 0.14, 0.22, cw * 0.09, ch * 0.12, 0.036],
+    ];
+    for (const [col, lx, lyOff, dw, dh, dz] of dabs) {
+      batch.add(col, new THREE.BoxGeometry(dw, dh, 0.02), {
+        ...place(lx, canvasCenterY + lyOff, 0.1 + dz),
+        rx: tilt,
+        ry,
+      });
+    }
+  } else {
+    // Secondary landscape study on the smaller easel.
+    batch.add(palette.parisGlass, new THREE.BoxGeometry(cw * 0.86, ch * 0.42, 0.02), {
+      ...place(0, canvasCenterY + ch * 0.18, 0.12),
+      rx: tilt,
+      ry,
+    });
+    batch.add(palette.grassDark, new THREE.BoxGeometry(cw * 0.86, ch * 0.36, 0.02), {
+      ...place(0, canvasCenterY - ch * 0.2, 0.12),
+      rx: tilt,
+      ry,
+    });
+  }
+}
+
 /** Juan Luna's studio: tall north-facing (-Z) glass studio window on the top floor, easels inside. */
 function lunaStudio(
   batch: StaticBatch,
@@ -1137,45 +1223,127 @@ function lunaStudio(
   }
 
   const studioH = 4.4;
+  // Back wall and left/right gable side walls enclosing the top-floor studio.
   batch.add(palette.parisLimestone, new THREE.BoxGeometry(w, studioH, d * 0.45), {
     x,
     y: baseH + studioH / 2,
     z: z + d * 0.25,
   });
-  batch.add(palette.zincRoofDark, new THREE.BoxGeometry(w + 0.4, 0.35, d * 0.6), {
+  for (const sx of [-1, 1]) {
+    batch.add(palette.parisLimestone, new THREE.BoxGeometry(0.36, studioH, d * 0.56), {
+      x: x + sx * (w / 2 - 0.18),
+      y: baseH + studioH / 2,
+      z: z - d * 0.16,
+    });
+  }
+  batch.add(palette.zincRoofDark, new THREE.BoxGeometry(w + 0.4, 0.35, d * 0.65), {
     x,
     y: baseH + studioH + 0.15,
-    z: z + d * 0.2,
+    z: z + d * 0.18,
   });
-  // Translucent north skylight pane so the interior painting studio is visible from outside.
-  const skylightGeo = new THREE.BoxGeometry(w - 1.2, studioH - 0.5, 0.12);
+
+  // Wooden studio floorboards.
+  const floorY = baseH + 0.04;
+  batch.add(palette.deckWood, new THREE.BoxGeometry(w - 0.6, 0.04, d * 0.55), {
+    x,
+    y: baseH + 0.02,
+    z: z - 1.5,
+  });
+  // Framed canvases leaning and hung on the back plaster wall.
+  for (const [fx, fy, fw, fh, tone] of [
+    [-2.5, 2.2, 1.5, 1.1, palette.ochre],
+    [0.1, 2.35, 1.8, 1.25, palette.shutterBlue],
+    [2.6, 2.15, 1.3, 1.0, palette.roofTile],
+  ] as const) {
+    batch.add(palette.crateDark, new THREE.BoxGeometry(fw + 0.12, fh + 0.12, 0.06), {
+      x: x + fx,
+      y: floorY + fy,
+      z: z + 0.22,
+    });
+    batch.add(tone, new THREE.BoxGeometry(fw, fh, 0.07), {
+      x: x + fx,
+      y: floorY + fy,
+      z: z + 0.2,
+    });
+  }
+
+  // Translucent north skylight pane + slim mullions framing the tall studio window.
+  const skylightGeo = new THREE.BoxGeometry(w - 1.0, studioH - 0.45, 0.08);
   const skylightMat = new THREE.MeshStandardMaterial({
     color: palette.parisGlass,
-    roughness: 0.35,
+    roughness: 0.3,
     flatShading: true,
     transparent: true,
-    opacity: 0.34,
+    opacity: 0.24,
     depthWrite: false,
   });
   const skylight = new THREE.Mesh(skylightGeo, skylightMat);
   skylight.position.set(x, baseH + studioH / 2 - 0.1, z - d * 0.45);
   skylight.rotation.x = 0.22;
   scene.add(skylight);
-
-  for (const ex of [-2.0, 2.0]) {
-    batch.add(palette.deckWood, new THREE.BoxGeometry(0.12, 2.2, 0.12), {
-      x: x + ex,
-      y: baseH + 1.1,
-      z: z - 1.2,
-      rx: 0.15,
-    });
-    batch.add(palette.awningCream, new THREE.BoxGeometry(1.4, 1.0, 0.08), {
-      x: x + ex,
-      y: baseH + 1.45,
-      z: z - 1.35,
-      rx: 0.15,
+  for (const mx of [-4.4, -1.6, 1.6, 4.4]) {
+    batch.add(palette.lampIron, new THREE.BoxGeometry(0.07, studioH - 0.45, 0.1), {
+      x: x + mx,
+      y: baseH + studioH / 2 - 0.1,
+      z: z - d * 0.45,
+      rx: 0.22,
     });
   }
+
+  // Main large canvas (left-center, angled toward camera and painter) + smaller easel on right.
+  studioEasel(batch, x - 1.6, floorY, z - 1.15, Math.PI + 0.32, 1.85, 1.25, true);
+  studioEasel(batch, x + 2.75, floorY, z - 0.65, Math.PI - 0.35, 1.05, 1.2, false);
+
+  // Studio paint table beside painter with paint pots, palette, and draped crimson cloth.
+  const tx = x - 3.55;
+  const tz = z - 1.2;
+  const tableH = 0.74;
+  batch.add(palette.crateDark, new THREE.BoxGeometry(1.1, 0.07, 0.75), {
+    x: tx,
+    y: floorY + tableH,
+    z: tz,
+  });
+  for (const lx of [-0.46, 0.46]) {
+    for (const lz of [-0.3, 0.3]) {
+      batch.add(palette.crateDark, new THREE.BoxGeometry(0.07, tableH, 0.07), {
+        x: tx + lx,
+        y: floorY + tableH / 2,
+        z: tz + lz,
+      });
+    }
+  }
+  // Draped red studio cloth over the left corner of the table.
+  batch.add(palette.awningRed, new THREE.BoxGeometry(0.46, 0.04, 0.66), {
+    x: tx - 0.24,
+    y: floorY + tableH + 0.04,
+    z: tz + 0.02,
+    rz: 0.06,
+  });
+  batch.add(palette.awningRed, new THREE.BoxGeometry(0.06, 0.44, 0.56), {
+    x: tx - 0.49,
+    y: floorY + tableH - 0.18,
+    z: tz + 0.02,
+    rz: 0.12,
+  });
+  // Paint pots and wooden palette on the tabletop.
+  for (const [px, pz, col] of [
+    [0.12, -0.14, palette.awningRed],
+    [0.24, -0.08, palette.streetSignBlue],
+    [0.18, 0.06, palette.gaslight],
+    [0.32, 0.1, palette.shirt],
+  ] as const) {
+    batch.add(col, new THREE.CylinderGeometry(0.045, 0.048, 0.1, 7), {
+      x: tx + px,
+      y: floorY + tableH + 0.08,
+      z: tz + pz,
+    });
+  }
+  batch.add(palette.deckWood, new THREE.CylinderGeometry(0.18, 0.18, 0.02, 9), {
+    x: tx + 0.05,
+    y: floorY + tableH + 0.045,
+    z: tz + 0.18,
+  });
+
   staticBox(ctx, x, baseH / 2, z, w, baseH, d);
   return skylight;
 }

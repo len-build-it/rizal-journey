@@ -169,27 +169,32 @@ const paris1885Studio: SceneScript = {
   storyId: 'paris-1885-studio',
   duration: 11.5,
   setup(ctx) {
-    // Inside Luna's top studio (floor y = 9.5); place painter beside the canvas so he reads clearly.
-    const painter = ctx.actor({ coat: 'smock', hat: 'none' }, 32.85, 9.5, 35.1, Math.PI * 0.72);
+    // Inside Luna's top studio (wooden floor y = 9.54); painter faces the main canvas on his easel.
+    const floorY = 9.54;
+    const painter = ctx.actor({ coat: 'smock', hat: 'none' }, 33.7, floorY, 34.05, 0.8);
     painter.setAction('paint');
 
-    const friend = ctx.actor({ coat: 'frock', hat: 'none' }, 36.2, 9.5, 33.8, -Math.PI * 0.5);
+    const friend = ctx.actor({ coat: 'frock', hat: 'none' }, 36.55, floorY, 34.1, -Math.PI * 0.48);
     friend.setAction('gesture');
 
-    ctx.rizal.setPose(35.3, 9.5, 33.8, Math.PI * 0.5, 'gesture');
+    ctx.rizal.setPose(35.6, floorY, 34.1, Math.PI * 0.48, 'gesture');
 
-    // Warm interior studio lamp light so the painted scene glows through the north glass skylight.
-    const studioLight = new THREE.PointLight(0xffdfa8, 3.2, 12, 1.5);
-    studioLight.position.set(35.5, 12.2, 34.2);
+    // Cool north skylight fill from the tall window + warm interior studio glow over the canvas.
+    const northFill = new THREE.PointLight(0xd8e8ff, 2.0, 12, 1.4);
+    northFill.position.set(35.2, 12.6, 32.6);
+    ctx.prop(northFill);
+
+    const studioLight = new THREE.PointLight(0xffdfa8, 2.8, 11, 1.5);
+    studioLight.position.set(35.0, 12.0, 34.9);
     ctx.prop(studioLight);
 
-    ctx.cutCamera(new THREE.Vector3(32.5, 11.8, 24.5), new THREE.Vector3(35.5, 11.0, 34.2));
+    ctx.cutCamera(new THREE.Vector3(33.0, 11.8, 25.0), new THREE.Vector3(35.1, 10.9, 34.4));
   },
   update(ctx, elapsed, dt) {
     const u = THREE.MathUtils.clamp(elapsed / ctx.duration, 0, 1);
     const camU = THREE.MathUtils.smoothstep(u, 0, 0.95);
-    tmpPos.lerpVectors(new THREE.Vector3(32.5, 11.8, 24.5), new THREE.Vector3(35.6, 11.4, 27.6), camU);
-    tmpTarget.lerpVectors(new THREE.Vector3(35.5, 11.0, 34.2), new THREE.Vector3(35.3, 10.75, 34.4), camU);
+    tmpPos.lerpVectors(new THREE.Vector3(33.0, 11.8, 25.0), new THREE.Vector3(35.4, 11.4, 27.7), camU);
+    tmpTarget.lerpVectors(new THREE.Vector3(35.1, 10.9, 34.4), new THREE.Vector3(35.1, 10.7, 34.4), camU);
     ctx.moveCamera(tmpPos, tmpTarget, dt, 2.4);
   },
 };
