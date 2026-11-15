@@ -90,6 +90,7 @@ export interface RoamAnimalSpec {
   count?: number;
   roamRadius?: number;
   graze?: boolean;
+  yAt?: (x: number, z: number) => number;
 }
 
 export interface AreaDressing {
@@ -555,13 +556,14 @@ export class BackgroundLife {
         const dist = effective > 1 ? Math.sqrt(rnd()) * spread : 0;
         const ax = a.x + Math.cos(ang) * dist;
         const az = a.z + Math.sin(ang) * dist;
+        const ay = a.yAt ? a.yAt(ax, az) : a.y;
         this.animals.push({
           species: a.species,
           homeX: ax,
-          homeY: a.y,
+          homeY: ay,
           homeZ: az,
           x: ax,
-          y: a.y,
+          y: ay,
           z: az,
           ry: a.ry ?? rnd() * Math.PI * 2,
           roamRadius: a.roamRadius ?? 1.4,
