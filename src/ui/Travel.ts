@@ -255,3 +255,30 @@ export async function playTowerTimelapse(
     raf = requestAnimationFrame(tick);
   });
 }
+
+/** Quick night-blue ink sweep across screen used when riding past the edge margin. */
+export async function playInkWipe(
+  parent: HTMLElement,
+  onMidpoint: () => void,
+): Promise<void> {
+  const reduced = prefersReducedMotion();
+  const wipe = el('div', { class: 'ink-wipe', 'aria-hidden': 'true' });
+  parent.append(wipe);
+
+  if (reduced) {
+    wipe.classList.add('is-in');
+    await new Promise((r) => setTimeout(r, 90));
+    onMidpoint();
+    wipe.classList.remove('is-in');
+    await new Promise((r) => setTimeout(r, 90));
+    wipe.remove();
+    return;
+  }
+
+  requestAnimationFrame(() => wipe.classList.add('is-in'));
+  await new Promise((r) => setTimeout(r, 240));
+  onMidpoint();
+  wipe.classList.add('is-out');
+  await new Promise((r) => setTimeout(r, 260));
+  wipe.remove();
+}

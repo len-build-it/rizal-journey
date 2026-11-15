@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { StaticBatch, disposeObject, seeded } from '../kit';
 import { palette } from '../palette';
-import { boundary, disposePhysics, staticBox, type PhysicsCtx } from '../physics';
+import { disposePhysics, staticBox, type PhysicsCtx } from '../physics';
+import { buildPaperSurround } from '../paperShader';
 import { bollard, gasLamp, houseRow, planeTree, townHouse } from '../builders';
 import { fishingBoat, steamer, buildTrain } from '../vessels';
 import { Props } from '../Props';
@@ -28,12 +29,12 @@ export function buildMarseille(
 
   // Ground: the land block ends in a stone quay wall at z = 12.
   const QUAY_Z = 12;
-  batch.add(palette.marseilleLand, new THREE.BoxGeometry(220, 4, 160), {
-    x: 0,
+  batch.add(palette.marseilleLand, new THREE.BoxGeometry(280, 4, 200), {
+    x: 5,
     y: -2,
-    z: QUAY_Z - 80,
+    z: QUAY_Z - 100,
   });
-  staticBox(ctx, 0, -2, QUAY_Z - 80, 220, 4, 160);
+  staticBox(ctx, 5, -2, QUAY_Z - 100, 280, 4, 200);
 
   // Quay paving and its edge stones.
   batch.add(palette.quayStone, new THREE.BoxGeometry(110, 0.06, 12), {
@@ -52,7 +53,7 @@ export function buildMarseille(
     z: QUAY_Z + 0.2,
   });
   // A low curb keeps the horse out of the water.
-  staticBox(ctx, 5, 0.6, QUAY_Z + 0.2, 110, 1.2, 0.8);
+  staticBox(ctx, 5, 0.6, QUAY_Z + 0.2, 280, 1.2, 0.8);
 
   // Avenue and plaza paving, slightly warmer than the quay.
   batch.add(palette.cobble, new THREE.BoxGeometry(12, 0.05, 30), { x: 10, y: 0.025, z: -12 });
@@ -192,7 +193,14 @@ export function buildMarseille(
     );
   }
 
-  boundary(ctx, -34, 50, -47, QUAY_Z);
+  const playBounds = { minX: -34, maxX: 50, minZ: -47, maxZ: QUAY_Z };
+  const visualBounds = { minX: -34, maxX: 50, minZ: -47, maxZ: 68 };
+  const paperSurround = buildPaperSurround(playBounds, {
+    borderSides: ['north', 'east', 'west'],
+    landMaxZ: QUAY_Z,
+  });
+  scene.add(paperSurround);
+
   const staticGroup = batch.build('marseille-static');
   scene.add(staticGroup);
 
@@ -290,6 +298,8 @@ export function buildMarseille(
     stops,
     look,
     roadGraph,
+    playBounds,
+    visualBounds,
     staticDrawCalls: staticGroup.children.length + shipGroup.children.length,
     setTrainOffset(offsetX: number, doorClose = 1) {
       train.setState(offsetX, doorClose);
@@ -305,6 +315,7 @@ export function buildMarseille(
     dispose() {
       disposeObject(staticGroup);
       disposeObject(shipGroup);
+      disposeObject(paperSurround);
       train.dispose();
       water.dispose();
       props.dispose();

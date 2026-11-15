@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { palette } from './palette';
+import { injectWorldShader } from './paperShader';
 
 /**
  * Low-poly sea: a coarse grid whose vertices bob on a few overlapping waves.
@@ -45,15 +46,14 @@ export class Water {
     }
     this.geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    this.mesh = new THREE.Mesh(
-      this.geo,
-      new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        flatShading: true,
-        roughness: 0.35,
-        metalness: 0.1,
-      }),
-    );
+    const waterMat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      flatShading: true,
+      roughness: 0.35,
+      metalness: 0.1,
+    });
+    injectWorldShader(waterMat);
+    this.mesh = new THREE.Mesh(this.geo, waterMat);
     this.mesh.position.copy(center);
     this.mesh.receiveShadow = true;
   }

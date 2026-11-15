@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { StaticBatch, disposeObject, mat, seeded } from '../kit';
 import { palette } from '../palette';
-import { boundary, disposePhysics, staticBox, type PhysicsCtx } from '../physics';
+import { disposePhysics, staticBox, type PhysicsCtx } from '../physics';
+import { buildPaperSurround } from '../paperShader';
 import { gasLamp, parkBench, planeTree } from '../builders';
 import { buildTrain, fishingBoat } from '../vessels';
 import { Props } from '../Props';
@@ -68,11 +69,11 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
       rx: 0.075,
     });
   }
-  staticBox(ctx, 0, -1.25, 13, 140, 2, 22);
+  staticBox(ctx, 0, -1.25, 13, 220, 2, 22);
 
   // Promenade stone shelf base behind the seawall curb.
   batch.add(palette.quayStone, new THREE.BoxGeometry(110, 2.0, 14), { x: 0, y: -0.65, z: -4.2 });
-  staticBox(ctx, 0, -0.65, -4.2, 110, 2.0, 14);
+  staticBox(ctx, 0, -0.65, -4.2, 220, 2.0, 14);
 
   // Curving seawall promenade + parapet curb along shoreZ(x).
   const segs = 12;
@@ -121,7 +122,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     }
   }
   // Keep horse on dry beach sand above the waterline.
-  staticBox(ctx, 0, 0.5, 16.2, 120, 2.0, 0.8);
+  staticBox(ctx, 0, 0.5, 16.2, 220, 2.0, 0.8);
 
   // Rocky west headland topped with a small white lighthouse, plus east rocks & dark outcrops in the surf.
   const rnd = seeded(1891);
@@ -176,21 +177,21 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
   // Coastal grassy slope from promenade (z = 0, y = PROM_Y) up to plateau (z = -12, y = PLATEAU_Y).
   const slopeLen = Math.hypot(12, PLATEAU_Y - PROM_Y);
   const slopeAngle = Math.atan2(PLATEAU_Y - PROM_Y, 12);
-  batch.add(palette.grass, new THREE.BoxGeometry(140, 1.2, slopeLen), {
+  batch.add(palette.grass, new THREE.BoxGeometry(220, 1.2, slopeLen), {
     x: 0,
     y: (PROM_Y + PLATEAU_Y) / 2 - 0.6,
     z: -6,
     rx: slopeAngle,
   });
-  staticBox(ctx, 0, (PROM_Y + PLATEAU_Y) / 2 - 0.6, -6, 140, 1.2, slopeLen, 0, slopeAngle);
+  staticBox(ctx, 0, (PROM_Y + PLATEAU_Y) / 2 - 0.6, -6, 220, 1.2, slopeLen, 0, slopeAngle);
 
   // Outer coastal grass banks outside the villa garden estate.
-  batch.add(palette.grass, new THREE.BoxGeometry(140, 4, 48), {
+  batch.add(palette.grass, new THREE.BoxGeometry(220, 4, 96), {
     x: 0,
     y: PLATEAU_Y - 2,
-    z: -35.8,
+    z: -59.8,
   });
-  staticBox(ctx, 0, PLATEAU_Y - 2, -35.8, 140, 4, 48);
+  staticBox(ctx, 0, PLATEAU_Y - 2, -59.8, 220, 4, 96);
 
   // Near the villa & station: warm stone and gravel estate gardens bordered by clipped hedges (grass only on slopes).
   batch.add(palette.parisSidewalk, new THREE.BoxGeometry(66, 0.05, 31), {
@@ -317,7 +318,20 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     });
   }
 
-  boundary(ctx, -42, 42, -44, 20);
+  const playBounds = { minX: -42, maxX: 42, minZ: -44, maxZ: 16 };
+  const visualBounds = { minX: -42, maxX: 42, minZ: -44, maxZ: 45 };
+  const paperSurround = buildPaperSurround(playBounds, {
+    getY: (_x, z) =>
+      z <= -12
+        ? PLATEAU_Y
+        : z >= 0
+          ? PROM_Y
+          : PLATEAU_Y + ((z + 12) / 12) * (PROM_Y - PLATEAU_Y),
+    borderSides: ['north', 'east', 'west'],
+    landMaxZ: 16,
+  });
+  scene.add(paperSurround);
+
   const staticGroup = batch.build('biarritz-static');
   scene.add(staticGroup);
 
@@ -439,6 +453,8 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     spawnHeading: Math.PI * 0.15,
     stops,
     roadGraph,
+    playBounds,
+    visualBounds,
     staticDrawCalls: staticGroup.children.length,
     setTrainOffset(offsetX: number, doorClose = 1) {
       train.setState(offsetX, doorClose);
@@ -462,6 +478,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     },
     dispose() {
       disposeObject(staticGroup);
+      disposeObject(paperSurround);
       train.dispose();
       foamMesh.removeFromParent();
       foamMesh.dispose();

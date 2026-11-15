@@ -18,6 +18,7 @@ import {
 import { Player } from './player/Player';
 import { AreaManager } from './world/AreaManager';
 import { PathTrail } from './world/PathTrail';
+import { outsidePlayDistance, setEdgeShadingEnabled } from './world/paperShader';
 import type { StopMarker } from './world/StopMarker';
 import { journeyFrom } from './content/journeys';
 import { chapterFor } from './content/narrative';
@@ -27,7 +28,7 @@ import { Hud } from './ui/Hud';
 import { StoryCard } from './ui/StoryCard';
 import { Joystick } from './ui/Joystick';
 import { showIntro } from './ui/Intro';
-import { playTowerTimelapse, playTrainJourney } from './ui/Travel';
+import { playInkWipe, playTowerTimelapse, playTrainJourney } from './ui/Travel';
 import { showBrochureView } from './ui/BrochureView';
 import { SceneDirector } from './story/SceneDirector';
 
@@ -39,6 +40,7 @@ async function main(): Promise<void> {
   await engine.initPhysics();
   const touch = engine.quality.mobile;
   document.documentElement.classList.toggle('is-touch', touch);
+  setEdgeShadingEnabled(!touch);
 
   const input = new Input();
   input.enabled = false;
@@ -93,6 +95,7 @@ async function main(): Promise<void> {
   let focusOverride: THREE.Vector3 | null = null;
   let cinematic = false;
   let traveling = false;
+  let resettingEdge = false;
   const camTarget = new THREE.Vector3();
 
   const persist = (): void => {
@@ -275,6 +278,33 @@ async function main(): Promise<void> {
         }
       }
       if (current && input.interactPressed && !card.open) playStopScene(current);
+
+      if (!resettingEdge && area.playBounds && input.enabled) {
+        const b = area.playBounds;
+        const outDist = outsidePlayDistance(player.position, b);
+        if (outDist > 0) {
+          const cx = (b.minX + b.maxX) * 0.5;
+          const cz = (b.minZ + b.maxZ) * 0.5;
+          const inward = Math.atan2(cx - player.position.x, cz - player.position.z);
+          if (player.speed > 0.2) {
+            player.steerToward(inward, 0.5 + Math.min(1, outDist / 25) * 2.2, dt);
+          }
+          if (outDist > 30) {
+            resettingEdge = true;
+            input.enabled = false;
+            void playInkWipe(uiRoot, () => {
+              const nx = THREE.MathUtils.clamp(player.position.x, b.minX + 3, b.maxX - 3);
+              const nz = THREE.MathUtils.clamp(player.position.z, b.minZ + 3, b.maxZ - 3);
+              const faceIn = Math.atan2(cx - nx, cz - nz);
+              player.teleport(new THREE.Vector3(nx, player.position.y, nz), faceIn);
+              cam.snap(player.position);
+            }).then(() => {
+              resettingEdge = false;
+              input.enabled = true;
+            });
+          }
+        }
+      }
 
       camTarget.copy(focusOverride ?? player.position);
       cam.update(

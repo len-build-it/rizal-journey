@@ -754,6 +754,28 @@ button {
   text-align: center;
 }
 
+.ink-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  background: var(--night);
+  opacity: 0;
+  clip-path: circle(0% at 50% 50%);
+  transition:
+    clip-path 0.24s var(--ease-out),
+    opacity 0.22s ease;
+  pointer-events: none;
+}
+
+.ink-wipe.is-in {
+  opacity: 1;
+  clip-path: circle(120% at 50% 50%);
+}
+
+.ink-wipe.is-in.is-out {
+  opacity: 0;
+}
+
 @media (max-width: 640px) {
   .card {
     top: auto;

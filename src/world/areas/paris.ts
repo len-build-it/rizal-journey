@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { StaticBatch, disposeObject, mat, seeded } from '../kit';
 import { palette } from '../palette';
 import { buildIdleHorse, type IdleHorsePose } from '../../player/models';
-import { boundary, disposePhysics, staticBox, type PhysicsCtx } from '../physics';
+import { disposePhysics, staticBox, type PhysicsCtx } from '../physics';
+import { buildPaperSurround } from '../paperShader';
 import {
   gasLamp,
   haussmannBlock,
@@ -44,9 +45,9 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   const lit = era === '1889';
   const look = parisLook(era);
 
-  // City ground: grey-brown cobble east of the Seine embankment (x = -56..86), no bare dirt.
-  batch.add(palette.parisCobble, new THREE.BoxGeometry(142, 4, 160), { x: 15, y: -2, z: -2 });
-  staticBox(ctx, 15, -2, -2, 142, 4, 160);
+  // City ground: grey-brown cobble east of the Seine embankment (x = -56..124), no bare dirt.
+  batch.add(palette.parisCobble, new THREE.BoxGeometry(180, 4, 210), { x: 34, y: -2, z: -2 });
+  staticBox(ctx, 34, -2, -2, 180, 4, 210);
 
   // Seine embankments, lower quay paths, and two bridges.
   buildSeine(batch, ctx);
@@ -475,7 +476,11 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     });
   }
 
-  boundary(ctx, -53.5, 55, -55, 53);
+  const playBounds = { minX: -53.5, maxX: 55, minZ: -55, maxZ: 53 };
+  const visualBounds = { minX: -135, maxX: 55, minZ: -55, maxZ: 53 };
+  const paperSurround = buildPaperSurround(playBounds, { landMinX: -56 });
+  scene.add(paperSurround);
+
   const staticGroup = batch.build(`paris-${era}-static`);
   scene.add(staticGroup);
   scene.add(signsGroup);
@@ -567,6 +572,8 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     stops,
     look,
     roadGraph,
+    playBounds,
+    visualBounds,
     towerCenter: TOWER_CENTER,
     staticDrawCalls: staticGroup.children.length,
     setTowerProgress: tower ? (p: number) => tower.setProgress(p) : undefined,
@@ -585,6 +592,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     dispose() {
       disposeObject(staticGroup);
       disposeObject(skylight);
+      disposeObject(paperSurround);
       if (arenaHorsesGroup) disposeObject(arenaHorsesGroup);
       train.dispose();
       signsGroup.removeFromParent();
@@ -635,7 +643,7 @@ function buildSeine(batch: StaticBatch, ctx: PhysicsCtx): void {
     y: -1.1,
     z: 0,
   });
-  staticBox(ctx, -56, 0.6, 0, 1.2, 1.2, 164);
+  staticBox(ctx, -56, 0.6, 0, 1.2, 1.2, 210);
 
   // West bank embankment wall & lower quay path (x = -89..-85), plus Trocadero esplanade.
   batch.add(palette.quayStoneDark, new THREE.BoxGeometry(0.6, 1.4, 164), {

@@ -15,6 +15,13 @@ export interface AreaLook {
   hemiIntensity: number;
 }
 
+export interface PlayBounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
 export interface RoadGraph {
   waypoints: THREE.Vector3[];
   edges: [number, number][];
@@ -29,6 +36,8 @@ export interface Area {
   stops: StopMarker[];
   look: AreaLook;
   roadGraph?: RoadGraph;
+  playBounds?: PlayBounds;
+  visualBounds?: PlayBounds;
   update(dt: number, time: number): void;
   dispose(): void;
   setTowerProgress?(p: number): void;

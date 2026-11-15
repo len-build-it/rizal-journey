@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { injectWorldShader } from './paperShader';
 
 const materialCache = new Map<string, THREE.MeshStandardMaterial>();
 const tmpColor = new THREE.Color();
@@ -23,6 +24,7 @@ export function mat(
       m.emissive = new THREE.Color(opts.emissive);
       m.emissiveIntensity = 1;
     }
+    injectWorldShader(m);
     materialCache.set(key, m);
   }
   return m;

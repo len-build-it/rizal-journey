@@ -5,6 +5,7 @@ import type { Player } from '../player/Player';
 import type { Hud } from '../ui/Hud';
 import { destinationPlace, type AreaDestination } from '../core/progress';
 import { createPhysicsCtx } from './physics';
+import { setPlayBounds } from './paperShader';
 import type { Area } from './Area';
 
 /**
@@ -34,6 +35,7 @@ export class AreaManager {
     }
 
     applyLook(this.engine, area);
+    setPlayBounds(area.visualBounds ?? area.playBounds);
     this.player.teleport(area.spawn, area.spawnHeading);
     this.cam.snap(this.player.position);
 

@@ -87,6 +87,13 @@ export class Player {
     this.syncVisual(0);
   }
 
+  /** Gently steers the horse back toward an inward angle when past the page edge. */
+  steerToward(targetHeading: number, strength: number, dt: number): void {
+    const diff = wrapAngle(targetHeading - this.heading);
+    const maxStep = strength * dt;
+    this.heading = wrapAngle(this.heading + THREE.MathUtils.clamp(diff, -maxStep, maxStep));
+  }
+
   /** Shows or hides the seated rider (when Rizal dismounts during a scene, the horse stands alone). */
   setRiderMounted(mounted: boolean): void {
     this.rig.rider.root.visible = mounted;
