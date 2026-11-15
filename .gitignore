@@ -1,5 +1,7 @@
 node_modules/
 dist/
 scripts/out/
+review/*
+!review/polish/
 *.log
 .DS_Store
