@@ -28,7 +28,11 @@ export function buildMarseille(
 
   // Ground: the land block ends in a stone quay wall at z = 12.
   const QUAY_Z = 12;
-  batch.add(0xd9bf94, new THREE.BoxGeometry(220, 4, 160), { x: 0, y: -2, z: QUAY_Z - 80 });
+  batch.add(palette.marseilleLand, new THREE.BoxGeometry(220, 4, 160), {
+    x: 0,
+    y: -2,
+    z: QUAY_Z - 80,
+  });
   staticBox(ctx, 0, -2, QUAY_Z - 80, 220, 4, 160);
 
   // Quay paving and its edge stones.
@@ -214,16 +218,16 @@ export function buildMarseille(
   const look =
     year === 1891
       ? {
-          sky: 0xc9d9de,
-          fog: 0xd3dcd9,
+          sky: 0xc6d8e0,
+          fog: 0xd0dcdf,
           fogNear: 55,
           fogFar: 165,
-          sunColor: 0xffdcae,
-          sunIntensity: 3.0,
+          sunColor: 0xffe6c4,
+          sunIntensity: 2.6,
           sunDirection: new THREE.Vector3(0.7, 0.55, 0.35).normalize(),
-          hemiSky: 0xd7e4ec,
-          hemiGround: 0xa0805e,
-          hemiIntensity: 1.15,
+          hemiSky: 0xd2e2ee,
+          hemiGround: 0x9a8a72,
+          hemiIntensity: 1.3,
         }
       : {
           sky: 0xa9cfdc,

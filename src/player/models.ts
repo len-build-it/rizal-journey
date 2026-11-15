@@ -6,6 +6,8 @@ import { palette } from '../world/palette';
 export const NECK_REST = 0.82;
 export const HEAD_REST = 1.12;
 
+export type IdleHorsePose = 'grazing' | 'resting';
+
 /** Joints the animation system drives. Each leg has a hip and a knee pivot. */
 export interface HorseRig {
   root: THREE.Group;
@@ -144,11 +146,7 @@ function buildRider(): RiderRig {
   return { root, torso, head, armL: arm(-1), armR: arm(1) };
 }
 
-/**
- * A low-poly bay horse with a rider in an 1880s frock coat and bowler hat.
- * The model faces +Z and stands on y = 0.
- */
-export function buildHorseAndRider(): HorseRig {
+function buildHorseModel(neckScale: number, withRider: boolean): HorseRig {
   const root = new THREE.Group();
   root.name = 'horse';
   const body = new THREE.Group();
@@ -181,17 +179,18 @@ export function buildHorseAndRider(): HorseRig {
   const neck = at(new THREE.Group(), 0, 1.36, 0.64);
   neck.rotation.x = NECK_REST;
   body.add(neck);
-  const neckGeo = new THREE.CylinderGeometry(0.15, 0.27, 0.78, 7);
-  neckGeo.translate(0, 0.34, 0);
+  const neckLen = 0.78 * neckScale;
+  const neckGeo = new THREE.CylinderGeometry(0.15, 0.27, neckLen, 7);
+  neckGeo.translate(0, 0.34 * neckScale, 0);
   const neckMesh = mesh(neckGeo, palette.bay);
   neckMesh.scale.set(0.8, 1, 1.15);
   neck.add(neckMesh);
-  const mane = mesh(new THREE.BoxGeometry(0.07, 0.74, 0.12), palette.bayDark);
-  mane.position.set(0, 0.38, -0.17);
+  const mane = mesh(new THREE.BoxGeometry(0.07, 0.74 * neckScale, 0.12), palette.bayDark);
+  mane.position.set(0, 0.38 * neckScale, -0.17);
   mane.rotation.x = -0.12;
   neck.add(mane);
 
-  const head = at(new THREE.Group(), 0, 0.72, 0.02);
+  const head = at(new THREE.Group(), 0, 0.72 * neckScale, 0.02);
   head.rotation.x = HEAD_REST;
   neck.add(head);
   const skullGeo = new THREE.CylinderGeometry(0.1, 0.17, 0.5, 6);
@@ -234,9 +233,46 @@ export function buildHorseAndRider(): HorseRig {
   ];
   for (const l of legs) root.add(l.hip);
 
-  const rider = buildRider();
-  rider.root.position.set(0, 1.64, -0.02);
-  body.add(rider.root);
+  const rider = withRider
+    ? buildRider()
+    : {
+        root: new THREE.Group(),
+        torso: new THREE.Group(),
+        head: new THREE.Group(),
+        armL: new THREE.Group(),
+        armR: new THREE.Group(),
+      };
+  if (withRider) {
+    rider.root.position.set(0, 1.64, -0.02);
+    body.add(rider.root);
+  }
 
   return { root, body, legs, neck, head, tail, rider };
+}
+
+/**
+ * A low-poly bay horse with a rider in an 1880s frock coat and bowler hat.
+ * The model faces +Z and stands on y = 0.
+ */
+export function buildHorseAndRider(): HorseRig {
+  return buildHorseModel(1, true);
+}
+
+/**
+ * Riderless bay horse at full size with a 15% shorter neck and an idle pose
+ * (grazing with muzzle near the ground, or resting with a relaxed ~45 deg neck).
+ */
+export function buildIdleHorse(pose: IdleHorsePose): THREE.Group {
+  const rig = buildHorseModel(0.85, false);
+  if (pose === 'grazing') {
+    rig.body.rotation.x = 0.08;
+    rig.neck.rotation.x = 2.72;
+    rig.head.rotation.x = 0.22;
+    rig.tail.rotation.x = -0.35;
+  } else {
+    rig.neck.rotation.x = 0.85;
+    rig.head.rotation.x = 0.88;
+    rig.tail.rotation.x = -0.35;
+  }
+  return rig.root;
 }

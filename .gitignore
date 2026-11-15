@@ -3,5 +3,6 @@ dist/
 scripts/out/
 review/*
 !review/polish/
+!review/polish3/
 *.log
 .DS_Store

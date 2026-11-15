@@ -200,8 +200,8 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
   });
   // Clipped parterre lawn beds framed inside stone borders and low hedges in the garden.
   for (const [bx, bz, bw, bd] of [
-    [-21, -20.5, 9.5, 7.0],
-    [-7.5, -26.5, 4.5, 6.0],
+    [-23.5, -18.5, 6.2, 4.6],
+    [-2.5, -27.2, 4.4, 5.5],
     [-19.5, -35.5, 16, 4.5],
     [6.5, -24.5, 10, 6.5],
     [18, -31.5, 8.5, 6.0],
@@ -432,16 +432,28 @@ function headlandAndLighthouse(
   z: number,
   rnd: () => number,
 ): void {
-  // Craggy rocky headland mass.
+  // Craggy rocky headland mass (~40% smaller main boulders + smaller coastal rock outcrops).
   for (let i = 0; i < 12; i++) {
-    const ox = (i % 4 - 1.5) * 3.1 + (rnd() - 0.5) * 1.4;
-    const oz = (Math.floor(i / 4) - 1) * 2.6 + (rnd() - 0.5) * 1.2;
-    const r = 2.4 + rnd() * 1.6;
+    const ox = (i % 4 - 1.5) * 2.25 + (rnd() - 0.5) * 1.1;
+    const oz = (Math.floor(i / 4) - 1) * 1.9 + (rnd() - 0.5) * 0.9;
+    const r = 1.35 + rnd() * 0.95;
     batch.add(i % 2 ? palette.rockDark : palette.rock, new THREE.IcosahedronGeometry(r, 0), {
       x: x + ox,
-      y: 0.4 + rnd() * 1.2,
+      y: 0.25 + rnd() * 0.65,
       z: z + oz,
-      sy: 0.85,
+      sy: 0.68,
+      ry: rnd() * 3,
+    });
+  }
+  for (let i = 0; i < 10; i++) {
+    const ang = (i / 10) * Math.PI * 2 + rnd() * 0.4;
+    const dist = 3.2 + rnd() * 3.4;
+    const r = 0.48 + rnd() * 0.52;
+    batch.add(i % 2 ? palette.rock : palette.rockDark, new THREE.IcosahedronGeometry(r, 0), {
+      x: x + 2.4 + Math.cos(ang) * dist,
+      y: 0.1 + rnd() * 0.35,
+      z: z + Math.sin(ang) * dist * 0.8,
+      sy: 0.6,
       ry: rnd() * 3,
     });
   }
@@ -728,180 +740,374 @@ function tamariskTree(batch: StaticBatch, x: number, y: number, z: number, tilt:
   }
 }
 
-/** Helper to stamp half-timbered red Basque framing on one facade face (Z-facing). */
+/** Helper to stamp thin red half-timbered Basque framing across one Z-facing facade (beams, posts, diagonal braces). */
 function timberFacadeZ(
   batch: StaticBatch,
   cx: number,
-  yFloor: number,
+  yBase: number,
+  yUpper: number,
   zFace: number,
   w: number,
   hUpper: number,
 ): void {
-  batch.add(palette.basqueRed, new THREE.BoxGeometry(w + 0.14, 0.22, 0.12), {
-    x: cx,
-    y: yFloor,
-    z: zFace,
-  });
-  const count = Math.max(3, Math.round(w / 2.2));
-  for (let i = 0; i <= count; i++) {
-    const px = cx - w / 2 + (i / count) * w;
-    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.16, hUpper, 0.1), {
-      x: px,
-      y: yFloor + hUpper / 2,
+  // Ground-to-upper horizontal divider beam + upper eave beam.
+  for (const by of [yUpper, yUpper + hUpper - 0.12]) {
+    batch.add(palette.basqueRed, new THREE.BoxGeometry(w + 0.12, 0.16, 0.1), {
+      x: cx,
+      y: by,
       z: zFace,
     });
   }
-  // Corner diagonal Basque timber braces.
-  for (const sx of [-1, 1]) {
-    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.14, hUpper * 1.05, 0.1), {
-      x: cx + sx * (w / 2 - 0.9),
-      y: yFloor + hUpper / 2,
+  const count = Math.max(4, Math.round(w / 2.1));
+  for (let i = 0; i <= count; i++) {
+    const px = cx - w / 2 + (i / count) * w;
+    // Upper floor full posts + ground floor corner/intermediate posts.
+    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.13, hUpper, 0.09), {
+      x: px,
+      y: yUpper + hUpper / 2,
       z: zFace,
-      rz: sx * 0.48,
+    });
+    if (i === 0 || i === count || i % 2 === 0) {
+      batch.add(palette.basqueRed, new THREE.BoxGeometry(0.13, yUpper - yBase, 0.08), {
+        x: px,
+        y: (yBase + yUpper) / 2,
+        z: zFace,
+      });
+    }
+  }
+  // Diagonal Basque timber braces in outer upper-floor bays.
+  const bayW = w / count;
+  for (const sx of [-1, 1]) {
+    const braceLen = Math.hypot(bayW * 0.9, hUpper * 0.92);
+    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.11, braceLen, 0.08), {
+      x: cx + sx * (w / 2 - bayW * 0.5),
+      y: yUpper + hUpper / 2,
+      z: zFace,
+      rz: sx * Math.atan2(bayW, hUpper),
     });
   }
 }
 
+/** Helper to stamp thin red half-timbered Basque framing across one X-facing facade & gable triangle. */
+function timberFacadeX(
+  batch: StaticBatch,
+  xFace: number,
+  yBase: number,
+  yUpper: number,
+  cz: number,
+  d: number,
+  hUpper: number,
+  gableH: number,
+): void {
+  const topY = yUpper + hUpper;
+  // Horizontal floor, eave, and mid-gable collar beams.
+  for (const [by, bw] of [
+    [yUpper, d + 0.12],
+    [topY, d + 0.12],
+    [topY + gableH * 0.52, d * 0.52],
+  ] as const) {
+    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.1, 0.15, bw), {
+      x: xFace,
+      y: by,
+      z: cz,
+    });
+  }
+  // Vertical posts across upper floor + ground-floor corners.
+  const count = Math.max(4, Math.round(d / 2.1));
+  for (let i = 0; i <= count; i++) {
+    const pz = cz - d / 2 + (i / count) * d;
+    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.09, hUpper, 0.13), {
+      x: xFace,
+      y: yUpper + hUpper / 2,
+      z: pz,
+    });
+    if (i === 0 || i === count) {
+      batch.add(palette.basqueRed, new THREE.BoxGeometry(0.09, yUpper - yBase, 0.13), {
+        x: xFace,
+        y: (yBase + yUpper) / 2,
+        z: pz,
+      });
+    }
+  }
+  // Upper floor corner diagonal braces.
+  const bayD = d / count;
+  for (const sz of [-1, 1]) {
+    const braceLen = Math.hypot(bayD * 0.9, hUpper * 0.92);
+    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.08, braceLen, 0.11), {
+      x: xFace,
+      y: yUpper + hUpper / 2,
+      z: cz + sz * (d / 2 - bayD * 0.5),
+      rx: -sz * Math.atan2(bayD, hUpper),
+    });
+  }
+  // Gable triangle framing: king post, flanking posts, and diagonal braces.
+  if (gableH > 0) {
+    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.09, gableH * 0.96, 0.13), {
+      x: xFace,
+      y: topY + gableH * 0.48,
+      z: cz,
+    });
+    for (const sz of [-1, 1]) {
+      const postH = gableH * 0.52;
+      batch.add(palette.basqueRed, new THREE.BoxGeometry(0.09, postH, 0.12), {
+        x: xFace,
+        y: topY + postH / 2,
+        z: cz + sz * (d * 0.24),
+      });
+      const diagLen = Math.hypot(d * 0.24, gableH * 0.46);
+      batch.add(palette.basqueRed, new THREE.BoxGeometry(0.08, diagLen, 0.11), {
+        x: xFace,
+        y: topY + gableH * 0.26,
+        z: cz + sz * (d * 0.13),
+        rx: sz * Math.atan2(d * 0.24, gableH * 0.46),
+      });
+    }
+  }
+}
+
+/** Stamps a two-sided Basque gable roof (ridge along X, gable ends on +X and -X) over white gable walls. */
+function gableRoofX(
+  batch: StaticBatch,
+  cx: number,
+  baseY: number,
+  cz: number,
+  lenX: number,
+  spanZ: number,
+  gableH: number,
+  overhang: number,
+  roofColor: number,
+): void {
+  const halfSpan = spanZ / 2;
+  const shape = new THREE.Shape();
+  shape.moveTo(-halfSpan, 0);
+  shape.lineTo(0, gableH);
+  shape.lineTo(halfSpan, 0);
+  shape.closePath();
+  const gablePrism = new THREE.ExtrudeGeometry(shape, {
+    depth: lenX,
+    bevelEnabled: false,
+    steps: 1,
+  });
+  gablePrism.translate(0, 0, -lenX / 2);
+  gablePrism.rotateY(Math.PI / 2);
+  batch.add(palette.basqueWhite, gablePrism, { x: cx, y: baseY, z: cz });
+
+  const eaveSpan = halfSpan + overhang;
+  const slopeAngle = Math.atan2(gableH, halfSpan);
+  const eaveDrop = overhang * (gableH / halfSpan);
+  const midDist = eaveSpan / 2;
+  const midY = (gableH - eaveDrop) / 2;
+  const slopeLen = Math.hypot(eaveSpan, gableH + eaveDrop) + 0.06;
+
+  for (const sz of [-1, 1]) {
+    batch.add(roofColor, new THREE.BoxGeometry(lenX + overhang * 2, 0.14, slopeLen), {
+      x: cx,
+      y: baseY + midY + 0.07,
+      z: cz + sz * midDist,
+      rx: sz * slopeAngle,
+    });
+    // Subtle red gable rake trim under the roof edge on both ends.
+    for (const sx of [-1, 1]) {
+      batch.add(palette.basqueRed, new THREE.BoxGeometry(0.14, 0.15, slopeLen * 0.98), {
+        x: cx + sx * (lenX / 2 + 0.06),
+        y: baseY + midY + 0.01,
+        z: cz + sz * midDist,
+        rx: sz * slopeAngle,
+      });
+    }
+  }
+  batch.add(palette.roofTileDark, new THREE.BoxGeometry(lenX + overhang * 2, 0.14, 0.24), {
+    x: cx,
+    y: baseY + gableH + 0.06,
+    z: cz,
+  });
+}
+
 /**
- * Large Basque house: two connected volumes of different heights, exposed red-painted timbering,
- * red shutters, deep overhanging roofs, walled garden with gate pillars, shrubs and two tamarisk trees.
+ * Large Basque house: two connected volumes of different heights, low-pitch gable roof facing the camera,
+ * exposed thin red timber framing, upper wooden balcony under the gable, red shutters, walled garden.
  * Styled as a generic Basque residence (not an accurate picture of Villa Eliada).
  */
 function basqueVilla(batch: StaticBatch, ctx: PhysicsCtx, x: number, y: number, z: number): void {
-  // Main 2.5-floor volume (west/left).
-  const mw = 11.5;
-  const mh = 6.6;
-  const md = 9.2;
-  const mx = x - 1.5;
+  // Main 2.5-floor volume positioned on the east (+X) side so the gable end & balcony face the camera cleanly.
+  const mw = 10.6;
+  const mh = 6.2;
+  const md = 8.8;
+  const mx = x + 1.4;
+  const gableH = 1.95;
   batch.add(palette.basqueWhite, new THREE.BoxGeometry(mw, mh, md), {
     x: mx,
     y: y + mh / 2,
     z,
   });
-  batch.add(palette.quayStoneDark, new THREE.BoxGeometry(mw + 0.25, 0.65, md + 0.25), {
+  batch.add(palette.quayStoneDark, new THREE.BoxGeometry(mw + 0.22, 0.65, md + 0.22), {
     x: mx,
     y: y + 0.32,
     z,
   });
-  // Deep overhanging roof (+1.6u eave spread) with red fascia beam and stone chimney.
-  const mainRoof = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1);
-  mainRoof.rotateY(Math.PI / 4);
-  mainRoof.scale(mw + 2.2, 2.7, md + 2.2);
-  batch.add(palette.roofTile, mainRoof, { x: mx, y: y + mh + 1.35, z });
-  batch.add(palette.basqueRed, new THREE.BoxGeometry(mw + 2.3, 0.16, md + 2.3), {
-    x: mx,
-    y: y + mh + 0.04,
-    z,
-  });
-  batch.add(palette.limestone, new THREE.BoxGeometry(0.8, 1.5, 0.8), {
-    x: mx - 3.2,
-    y: y + mh + 2.1,
-    z: z - 1.5,
+  gableRoofX(batch, mx, y + mh, z, mw, md, gableH, 0.38, palette.roofTile);
+  batch.add(palette.limestone, new THREE.BoxGeometry(0.75, 1.35, 0.75), {
+    x: mx - 2.6,
+    y: y + mh + gableH + 0.2,
+    z: z - 1.4,
   });
 
-  // Lower connected east wing (different height: 4.7u vs 6.6u).
-  const ww = 7.4;
-  const wh = 4.7;
-  const wd = 7.2;
-  const wx = x + 6.4;
-  const wz = z + 0.5;
+  // Lower connected west wing (different height: 4.5u vs 6.2u).
+  const ww = 6.6;
+  const wh = 4.5;
+  const wd = 6.8;
+  const wx = x - 6.0;
+  const wz = z + 0.4;
   batch.add(palette.basqueWhite, new THREE.BoxGeometry(ww, wh, wd), {
     x: wx,
     y: y + wh / 2,
     z: wz,
   });
-  batch.add(palette.quayStoneDark, new THREE.BoxGeometry(ww + 0.2, 0.65, wd + 0.2), {
+  batch.add(palette.quayStoneDark, new THREE.BoxGeometry(ww + 0.2, 0.62, wd + 0.2), {
     x: wx,
-    y: y + 0.32,
+    y: y + 0.31,
     z: wz,
   });
-  const wingRoof = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1);
-  wingRoof.rotateY(Math.PI / 4);
-  wingRoof.scale(ww + 2.0, 2.0, wd + 2.0);
-  batch.add(palette.roofTileDark, wingRoof, { x: wx, y: y + wh + 1.0, z: wz });
-  batch.add(palette.basqueRed, new THREE.BoxGeometry(ww + 2.1, 0.16, wd + 2.1), {
-    x: wx,
-    y: y + wh + 0.04,
-    z: wz,
-  });
+  gableRoofX(batch, wx, y + wh, wz, ww, wd, 1.35, 0.35, palette.roofTileDark);
 
-  // Exposed red Basque half-timbering on upper floor & gables.
-  timberFacadeZ(batch, mx, y + 3.4, z + md / 2 + 0.06, mw, 3.1);
-  timberFacadeZ(batch, mx, y + 3.4, z - md / 2 - 0.06, mw, 3.1);
-  timberFacadeZ(batch, wx, y + 2.5, wz + wd / 2 + 0.06, ww, 2.1);
-  // East (+X) timbering facing the camera & terrace.
-  const wingEastX = wx + ww / 2 + 0.06;
-  batch.add(palette.basqueRed, new THREE.BoxGeometry(0.12, 0.22, wd + 0.14), {
-    x: wingEastX,
-    y: y + 2.5,
-    z: wz,
+  // Exposed thin red Basque half-timbering on gable end, camera-facing walls (+X and -Z), and garden front (+Z).
+  const mainEastX = mx + mw / 2 + 0.05;
+  timberFacadeX(batch, mainEastX, y + 0.65, y + 3.25, z, md, mh - 3.25, gableH);
+  timberFacadeZ(batch, mx, y + 0.65, y + 3.25, z + md / 2 + 0.05, mw, mh - 3.25);
+  timberFacadeZ(batch, mx, y + 0.65, y + 3.25, z - md / 2 - 0.05, mw, mh - 3.25);
+  timberFacadeZ(batch, wx, y + 0.62, y + 2.45, wz + wd / 2 + 0.05, ww, wh - 2.45);
+  timberFacadeZ(batch, wx, y + 0.62, y + 2.45, wz - wd / 2 - 0.05, ww, wh - 2.45);
+
+  // Upper-floor wooden Basque balcony projecting under the camera-facing (+X) gable.
+  const balcW = 1.45;
+  const balcD = 4.8;
+  const balcY = y + 3.22;
+  const balcX = mx + mw / 2 + balcW / 2;
+  batch.add(palette.crateDark, new THREE.BoxGeometry(balcW, 0.16, balcD), {
+    x: balcX,
+    y: balcY,
+    z,
   });
-  for (const tz of [-2.8, 0, 2.8]) {
-    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.1, 2.1, 0.16), {
-      x: wingEastX,
-      y: y + 3.55,
-      z: wz + tz,
+  for (const bz of [-1.85, 0, 1.85]) {
+    batch.add(palette.doorBrown, new THREE.BoxGeometry(balcW * 0.82, 0.22, 0.16), {
+      x: mx + mw / 2 + balcW * 0.41,
+      y: balcY - 0.18,
+      z: z + bz,
     });
   }
+  const railTopY = balcY + 0.92;
+  const outerX = mx + mw / 2 + balcW - 0.06;
+  batch.add(palette.doorBrown, new THREE.BoxGeometry(0.11, 0.09, balcD + 0.06), {
+    x: outerX,
+    y: railTopY,
+    z,
+  });
+  for (const sz of [-1, 1]) {
+    batch.add(palette.doorBrown, new THREE.BoxGeometry(balcW, 0.09, 0.11), {
+      x: balcX,
+      y: railTopY,
+      z: z + sz * (balcD / 2 - 0.05),
+    });
+  }
+  for (let i = 0; i <= 8; i++) {
+    const pz = z - balcD / 2 + 0.06 + (i / 8) * (balcD - 0.12);
+    const isCorner = i === 0 || i === 4 || i === 8;
+    batch.add(
+      isCorner ? palette.doorBrown : palette.crateDark,
+      new THREE.BoxGeometry(isCorner ? 0.11 : 0.07, 0.88, isCorner ? 0.11 : 0.07),
+      { x: outerX, y: balcY + 0.46, z: pz },
+    );
+  }
+  // French balcony doorway behind the wooden balcony + side windows with red shutters on +X.
+  batch.add(palette.doorBrown, new THREE.BoxGeometry(0.12, 2.05, 1.35), {
+    x: mainEastX,
+    y: balcY + 1.05,
+    z,
+  });
+  batch.add(palette.parisWindow, new THREE.BoxGeometry(0.14, 1.75, 1.05), {
+    x: mainEastX + 0.02,
+    y: balcY + 1.1,
+    z,
+  });
+  for (const sz of [-1, 1]) {
+    batch.add(palette.basqueRed, new THREE.BoxGeometry(0.08, 1.8, 0.42), {
+      x: mainEastX + 0.03,
+      y: balcY + 1.1,
+      z: z + sz * 0.92,
+    });
+    // Flanking upper windows inside the corners + lower ground-floor windows on +X.
+    for (const wy of [y + 1.65, balcY + 1.3]) {
+      const wzPos = z + sz * 3.15;
+      batch.add(palette.parisWindow, new THREE.BoxGeometry(0.1, 1.25, 0.85), {
+        x: mainEastX,
+        y: wy,
+        z: wzPos,
+      });
+      for (const s2 of [-1, 1]) {
+        batch.add(palette.basqueRed, new THREE.BoxGeometry(0.08, 1.25, 0.32), {
+          x: mainEastX + 0.02,
+          y: wy,
+          z: wzPos + s2 * 0.62,
+        });
+      }
+    }
+  }
+  // Small arched attic loft window centered inside the gable wall.
+  batch.add(palette.parisWindow, new THREE.BoxGeometry(0.1, 0.78, 0.72), {
+    x: mainEastX,
+    y: y + mh + gableH * 0.46,
+    z,
+  });
 
-  // Front doorway & recessed windows with red-painted shutters on both volumes.
+  // Front (+Z) doorway & recessed windows with red-painted shutters on both volumes.
   const frontZ = z + md / 2 + 0.05;
   batch.add(palette.doorBrown, new THREE.BoxGeometry(1.45, 2.4, 0.14), {
     x: mx,
     y: y + 1.2,
     z: frontZ,
   });
-  // Timber porch hood over front entrance.
-  batch.add(palette.roofTileDark, new THREE.BoxGeometry(2.6, 0.25, 1.3), {
+  batch.add(palette.roofTileDark, new THREE.BoxGeometry(2.5, 0.22, 1.15), {
     x: mx,
-    y: y + 2.9,
-    z: frontZ + 0.55,
+    y: y + 2.85,
+    z: frontZ + 0.48,
     rx: 0.2,
   });
-  for (const wPos of [-3.6, -1.7, 1.7, 3.6]) {
-    for (const fy of [1.65, 4.85]) {
-      batch.add(palette.parisWindow, new THREE.BoxGeometry(0.9, 1.3, 0.1), {
-        x: mx + wPos,
-        y: y + fy,
-        z: frontZ,
-      });
-      for (const s of [-1, 1]) {
-        batch.add(palette.basqueRed, new THREE.BoxGeometry(0.36, 1.3, 0.08), {
-          x: mx + wPos + s * 0.68,
+  for (const wPos of [-3.3, -1.65, 1.65, 3.3]) {
+    for (const fy of [1.65, 4.75]) {
+      for (const zFace of [frontZ, z - md / 2 - 0.05]) {
+        batch.add(palette.parisWindow, new THREE.BoxGeometry(0.86, 1.25, 0.1), {
+          x: mx + wPos,
           y: y + fy,
-          z: frontZ + 0.02,
+          z: zFace,
         });
+        const sOff = zFace > z ? 0.02 : -0.02;
+        for (const s of [-1, 1]) {
+          batch.add(palette.basqueRed, new THREE.BoxGeometry(0.34, 1.25, 0.08), {
+            x: mx + wPos + s * 0.64,
+            y: y + fy,
+            z: zFace + sOff,
+          });
+        }
       }
     }
   }
   for (const wPos of [-1.4, 1.4]) {
-    for (const fy of [1.5, 3.5]) {
-      batch.add(palette.parisWindow, new THREE.BoxGeometry(0.85, 1.15, 0.1), {
-        x: wx + wPos,
-        y: y + fy,
-        z: wz + wd / 2 + 0.05,
-      });
-      for (const s of [-1, 1]) {
-        batch.add(palette.basqueRed, new THREE.BoxGeometry(0.34, 1.15, 0.08), {
-          x: wx + wPos + s * 0.64,
+    for (const fy of [1.5, 3.45]) {
+      for (const zFace of [wz + wd / 2 + 0.05, wz - wd / 2 - 0.05]) {
+        batch.add(palette.parisWindow, new THREE.BoxGeometry(0.82, 1.1, 0.1), {
+          x: wx + wPos,
           y: y + fy,
-          z: wz + wd / 2 + 0.07,
+          z: zFace,
         });
+        const sOff = zFace > wz ? 0.02 : -0.02;
+        for (const s of [-1, 1]) {
+          batch.add(palette.basqueRed, new THREE.BoxGeometry(0.32, 1.1, 0.08), {
+            x: wx + wPos + s * 0.62,
+            y: y + fy,
+            z: zFace + sOff,
+          });
+        }
       }
-    }
-  }
-  for (const oz of [-1.6, 1.6]) {
-    batch.add(palette.parisWindow, new THREE.BoxGeometry(0.1, 1.2, 0.85), {
-      x: wingEastX,
-      y: y + 1.5,
-      z: wz + oz,
-    });
-    for (const s of [-1, 1]) {
-      batch.add(palette.basqueRed, new THREE.BoxGeometry(0.08, 1.2, 0.34), {
-        x: wingEastX + 0.02,
-        y: y + 1.5,
-        z: wz + oz + s * 0.64,
-      });
     }
   }
   staticBox(ctx, mx, y + mh / 2, z, mw, mh, md);

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { StaticBatch, disposeObject, mat, seeded } from '../kit';
 import { palette } from '../palette';
-import { NECK_REST, buildHorseAndRider } from '../../player/models';
+import { buildIdleHorse, type IdleHorsePose } from '../../player/models';
 import { boundary, disposePhysics, staticBox, type PhysicsCtx } from '../physics';
 import {
   gasLamp,
@@ -54,61 +54,86 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   trocaderoPalace(batch, -108, 0);
   distantSkyline(batch, era);
 
-  // Raised lighter stone sidewalks with curbs under every city block.
-  sidewalk(batch, -36, -46.5, 36, 12);
-  sidewalk(batch, -33, -27, 43, 11);
-  sidewalk(batch, -33, 57, 45, 10);
+  // Raised lighter stone sidewalks with curbs along both sides of the main boulevard (walls 20u apart: x = -5.5..14.5)
+  // and along Avenue de l'Alma and the east side streets.
+  sidewalk(batch, -34.5, -46, 39, 10); // North-west block (west of terminus)
+  sidewalk(batch, -3.6, -50, 5.2, 20); // Paris terminus forecourt sidewalk (x = -6.2..-1.0)
+  sidewalk(batch, -29.5, -28, 48, 10.5); // South of Avenue de l'Alma up to x = -5.5
+  sidewalk(batch, -3.25, 1, 4.5, 50); // West boulevard sidewalk along Champ de Mars (x = -5.5..-1.0)
+  sidewalk(batch, -33, 57, 55, 10); // Southern perimeter sidewalk
   if (era === '1889') {
-    sidewalk(batch, -15, 42, 10, 22);
+    // Garden path linking west boulevard sidewalk to the Wild West arena arch (no bare paving slab).
+    sidewalk(batch, -3.25, 40, 4.5, 28);
   } else {
-    sidewalk(batch, -33, 42, 43, 22);
+    sidewalk(batch, -27.5, 42, 53, 22); // South-west Haussmann blocks up to x = -1.0
   }
 
-  // East side sidewalks (boulevard east curb at x = 9.5, east frontage at x = 14.5).
-  sidewalk(batch, 39, -37, 56, 20); // North of Rue de Maubeuge
-  sidewalk(batch, 28, -4, 34, 30); // Between Maubeuge & Cherche-Midi (west of hospital street)
+  // East side sidewalks (boulevard east curb at x = 10.0, east frontage at x = 14.5).
+  sidewalk(batch, 39.5, -52.5, 59, 15); // North-east station block (z = -60..-45)
+  sidewalk(batch, 39.5, -31.5, 59, 10.5); // North of Rue de Maubeuge (z = -36.75..-26.25)
+  sidewalk(batch, 27, -4, 34, 30); // Between Maubeuge & Cherche-Midi (west of hospital street)
   sidewalk(batch, 58, -4, 14, 30); // East of hospital street
-  sidewalk(batch, 27, 18, 35, 9.5); // Between Cherche-Midi & Saints-Peres (west)
+  sidewalk(batch, 26.5, 18, 33, 9.5); // Between Cherche-Midi & Saints-Peres (west)
   sidewalk(batch, 56.5, 18, 17, 9.5); // Between Cherche-Midi & Saints-Peres (east)
-  sidewalk(batch, 29, 36.5, 39, 11.5); // South of Saints-Peres (west)
+  sidewalk(batch, 29.5, 36.5, 39, 11.5); // South of Saints-Peres (west)
   sidewalk(batch, 58, 36.5, 14, 11.5); // South of Saints-Peres (east)
-  sidewalk(batch, 39, 53.5, 56, 11); // Southern perimeter block
+  sidewalk(batch, 39.5, 53.5, 59, 11); // Southern perimeter block
 
   // East-side stone quay walkway along the Seine.
   sidewalk(batch, -54, 0, 4.2, 132);
 
-  // Champ de Mars: central lawn and pale gravel paths (no bare dirt).
-  batch.add(palette.grass, new THREE.BoxGeometry(38, 0.06, 46), { x: -33, y: 0.03, z: 1 });
-  batch.add(palette.grassDark, new THREE.BoxGeometry(28, 0.07, 36), { x: -33, y: 0.035, z: 1 });
-  batch.add(palette.parisSidewalk, new THREE.BoxGeometry(6, 0.09, 46), { x: -34, y: 0.045, z: 1 });
-  batch.add(palette.parisSidewalk, new THREE.BoxGeometry(40, 0.09, 6), { x: -33, y: 0.045, z: 0 });
-  batch.add(palette.parisSidewalk, new THREE.BoxGeometry(3, 0.09, 46), { x: -13, y: 0.045, z: 1 });
+  // Champ de Mars: central lawns and pale gravel paths extending to the west boulevard sidewalk (x = -5.5).
+  const parkLen = era === '1889' ? 76 : 48;
+  const parkCenterZ = era === '1889' ? 15 : 1;
+  batch.add(palette.grass, new THREE.BoxGeometry(46.5, 0.06, parkLen), {
+    x: -28.75,
+    y: 0.03,
+    z: parkCenterZ,
+  });
+  batch.add(palette.grassDark, new THREE.BoxGeometry(36, 0.07, parkLen - 10), {
+    x: -29.5,
+    y: 0.035,
+    z: parkCenterZ,
+  });
+  batch.add(palette.parisSidewalk, new THREE.BoxGeometry(6, 0.09, 48), { x: -34, y: 0.045, z: 1 });
+  batch.add(palette.parisSidewalk, new THREE.BoxGeometry(46.5, 0.09, 6), {
+    x: -28.75,
+    y: 0.045,
+    z: 0,
+  });
+  batch.add(palette.parisSidewalk, new THREE.BoxGeometry(3.2, 0.09, parkLen), {
+    x: -7.6,
+    y: 0.045,
+    z: parkCenterZ,
+  });
+  if (era === '1889') {
+    batch.add(palette.parisSidewalk, new THREE.BoxGeometry(17, 0.09, 4.8), {
+      x: -14,
+      y: 0.045,
+      z: 41.5,
+    });
+  }
 
-  // Grand Paris railway terminus on the west side of the station square, facing +X toward the camera.
-  parisTerminus(batch, ctx, -14, -50);
+  // Grand Paris railway terminus on the west side of the station square, facing +X toward the boulevard.
+  parisTerminus(batch, ctx, -10.5, -50);
   // Backdrop Haussmann row behind the northern station tracks so the horizon is enclosed.
-  haussmannRow(batch, ctx, -18, 56, -68, 39, { depth: 8, floors: [5] });
+  haussmannRow(batch, ctx, -24, 56, -68, 39, { depth: 8, floors: [5] });
 
-  // West-of-boulevard Haussmann blocks (north of Champ de Mars, framing Avenue de l'Alma at z = -36).
-  haussmannRow(batch, ctx, -53, -38, -45.5, 41, {
+  // West-of-boulevard Haussmann blocks framing Avenue de l'Alma (z = -41..-32) up to x = -5.5.
+  haussmannRow(batch, ctx, -53, -15.5, -46, 41, {
     depth: 8,
     startCorner: 'round',
     endCorner: 'cut',
     sideWindows: true,
   });
-  haussmannRow(batch, ctx, -32, -20, -45.5, 42, {
-    depth: 8,
-    startCorner: 'cut',
-    sideWindows: true,
-  });
-  haussmannRow(batch, ctx, -53, -37, -27, 46, {
+  haussmannRow(batch, ctx, -53, -37, -28, 46, {
     flip: true,
     depth: 8,
     startCorner: 'cut',
     endCorner: 'cut',
     sideWindows: true,
   });
-  haussmannRow(batch, ctx, -31, -11.5, -27, 47, {
+  haussmannRow(batch, ctx, -31, -5.5, -28, 47, {
     flip: true,
     depth: 8,
     startCorner: 'cut',
@@ -116,7 +141,20 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     sideWindows: true,
   });
 
-  // North of Rue de Maubeuge (east of Grand Boulevard, keeping front at x = 14.5 and 5 floors for sightlines).
+  // East-of-boulevard blocks north of Rue de Maubeuge (west front aligned at x = 14.5).
+  haussmannCol(batch, ctx, 18.5, -60, -45, 45, {
+    faceEast: false,
+    depth: 8,
+    floors: [5],
+    startCorner: 'cut',
+    endCorner: 'cut',
+  });
+  haussmannRow(batch, ctx, 22.5, 62, -49, 48, {
+    flip: true,
+    depth: 8,
+    startCorner: 'cut',
+    sideWindows: true,
+  });
   haussmannRow(batch, ctx, 14.5, 36, -31.5, 43, {
     depth: 8,
     floors: [5],
@@ -125,20 +163,6 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     sideWindows: true,
   });
   haussmannRow(batch, ctx, 43, 62, -31.5, 44, {
-    depth: 8,
-    startCorner: 'cut',
-    sideWindows: true,
-  });
-  haussmannRow(batch, ctx, 20, 36, -42, 45, {
-    flip: true,
-    depth: 8,
-    floors: [5],
-    startCorner: 'round',
-    endCorner: 'cut',
-    sideWindows: true,
-  });
-  haussmannRow(batch, ctx, 43, 62, -42, 48, {
-    flip: true,
     depth: 8,
     startCorner: 'cut',
     sideWindows: true,
@@ -239,28 +263,61 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     startCorner: 'cut',
     sideWindows: true,
   });
-  haussmannRow(batch, ctx, -54, -19.5, 57, 66, {
+  haussmannRow(batch, ctx, -54, -13.5, 57, 66, {
     flip: true,
     depth: 8,
   });
 
-  // Plane trees (6 to 7 units tall, iron grates at bases) lined evenly along boulevards & quays.
+  // Single row of plane trees (6-7u tall, iron grates) and gas lamps along each boulevard sidewalk edge.
   const rnd = seeded(188);
-  for (let z = -38; z <= 42; z += 9) {
-    planeTree(batch, ctx, -9.2, z, Math.floor(rnd() * 1000), { scale: 0.78, grate: true });
-    planeTree(batch, ctx, 10.6, z, Math.floor(rnd() * 1000), { scale: 0.78, grate: true });
+  const inGap = (z: number, gaps: readonly [number, number][]): boolean =>
+    gaps.some(([a, b]) => z >= a && z <= b);
+  const westGaps: [number, number][] =
+    era === '1889'
+      ? [
+          [-40.5, -32.5],
+          [-4, 4],
+          [38.5, 44.5],
+        ]
+      : [
+          [-40.5, -32.5],
+          [-4, 4],
+        ];
+  const eastGaps: [number, number][] = [
+    [-44.5, -36.5],
+    [-25, -17.5],
+    [6, 13.5],
+    [22.5, 29.5],
+  ];
+
+  for (let z = -53; z <= 47; z += 9) {
+    if (!inGap(z, westGaps)) {
+      planeTree(batch, ctx, -2.1, z, Math.floor(rnd() * 1000), { scale: 0.78, grate: true });
+    }
+    if (!inGap(z, eastGaps)) {
+      planeTree(batch, ctx, 11.1, z, Math.floor(rnd() * 1000), { scale: 0.78, grate: true });
+    }
   }
-  for (let z = -38; z <= 42; z += 12) {
-    gasLamp(batch, ctx, -7.8, z + 4, lit);
-    gasLamp(batch, ctx, 9.2, z + 4, lit);
+  // Corner trees flanking Avenue de l'Alma & station square so the avenue edge reads cleanly.
+  planeTree(batch, ctx, -2.1, -31.5, 912, { scale: 0.78, grate: true });
+  planeTree(batch, ctx, 11.1, -35.8, 913, { scale: 0.78, grate: true });
+  for (let z = -50; z <= 44; z += 9) {
+    const lz = z + 4.5;
+    if (!inGap(lz, westGaps)) gasLamp(batch, ctx, -1.6, lz, lit);
+    if (!inGap(lz, eastGaps)) gasLamp(batch, ctx, 10.6, lz, lit);
   }
-  // Avenue de l'Alma & Rue de Maubeuge trees and gas lamps.
-  for (const x of [-49, -40, -29, -20]) {
-    planeTree(batch, ctx, x, -41.5, Math.floor(rnd() * 1000), { scale: 0.76, grate: true });
-    gasLamp(batch, ctx, x + 4.5, -40.8, lit);
+
+  // Avenue de l'Alma sidewalks (z = -41..-32) trees and gas lamps.
+  for (const x of [-49, -40, -29, -20, -10]) {
+    planeTree(batch, ctx, x, -40.8, Math.floor(rnd() * 1000), { scale: 0.76, grate: true });
+    planeTree(batch, ctx, x, -33.2, Math.floor(rnd() * 1000), { scale: 0.76, grate: true });
+    if (x < -12) {
+      gasLamp(batch, ctx, x + 4.5, -40.2, lit);
+      gasLamp(batch, ctx, x + 4.5, -33.8, lit);
+    }
   }
   for (const [lx, lz] of [
-    [15, -27.5],
+    [16, -27.5],
     [26, -27.5],
     [35, -27.5],
     [47, -27.5],
@@ -286,33 +343,38 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     gasLamp(batch, ctx, -53.8, z + 5, lit);
   }
 
-  // Street furniture spaced so the camera always sees Morris columns, kiosks, benches, carriages.
+  // Street furniture placed on the sidewalks so the carriageway stays clear.
   for (const [mx, mz] of [
-    [-9.5, -13],
-    [11.2, -19],
-    [11.2, 12],
-    [11.2, 29],
-    [-9.5, -34],
+    [-3.8, -42.5],
+    [12.6, -45.0],
+    [12.6, -29.0],
+    [-3.8, -24.5],
+    [12.6, -15.0],
+    [-3.8, -8.5],
+    [12.6, 12.0],
+    [12.6, 29.0],
     [29, -20],
-    [6, -42],
   ] as const) {
     morrisColumn(batch, ctx, mx, mz);
   }
   for (const [kx, kz, kry] of [
-    [11.6, -31, -Math.PI / 2],
-    [-10.2, -23, Math.PI / 2],
-    [11.6, 3, -Math.PI / 2],
+    [12.6, -34.2, -Math.PI / 2],
+    [-3.8, -29.5, Math.PI / 2],
+    [-3.8, 12.0, Math.PI / 2],
+    [12.6, 2.0, -Math.PI / 2],
     [28, 22.5, 0],
   ] as const) {
     parisKiosk(batch, ctx, kx, kz, kry);
   }
   for (const [bx, bz, bry] of [
-    [-8.5, -27, Math.PI / 2],
-    [-8.5, 0, Math.PI / 2],
-    [-8.5, 18, Math.PI / 2],
-    [9.8, -8, -Math.PI / 2],
-    [9.8, 22, -Math.PI / 2],
-    [14, -40, 0],
+    [-3.6, -52.5, Math.PI / 2],
+    [12.4, -52.0, -Math.PI / 2],
+    [12.4, -46.5, -Math.PI / 2],
+    [-3.6, -17.0, Math.PI / 2],
+    [-3.6, 5.0, Math.PI / 2],
+    [-3.6, 20.0, Math.PI / 2],
+    [12.4, -8.0, -Math.PI / 2],
+    [12.4, 21.5, -Math.PI / 2],
     [26, -20.2, 0],
     [30, 13.6, 0],
     [26, 30.2, 0],
@@ -321,10 +383,14 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   ] as const) {
     parkBench(batch, ctx, bx, bz, bry);
   }
+  // Carriages parked on the carriageway right against the west (x = -1) and east (x = 10) curbs.
   for (const [cx, cz, cry] of [
-    [-5.8, -32, 0.05],
-    [6.2, -14, Math.PI],
-    [6.0, -47, 0.2],
+    [0.2, -52.5, 0.04],
+    [8.8, -46.5, Math.PI],
+    [0.2, -28.0, 0.05],
+    [8.8, -12.0, Math.PI],
+    [0.2, 7.5, 0.0],
+    [8.8, 16.5, Math.PI],
     [25, -24.8, Math.PI / 2],
     [28, 10.5, -Math.PI / 2],
     [24, 26.8, Math.PI / 2],
@@ -332,20 +398,21 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     parkedCarriage(batch, ctx, cx, cz, cry);
   }
 
-  // Loose street life props: cafe terraces, flower carts, crates & barrels.
+  // Loose street life props on sidewalks & cafe terraces.
   props.cafeTable(13.2, -20.2);
   props.cafeTable(27.5, -20.0);
   props.cafeTable(27, 13.8);
   props.cafeTable(32, 30.2);
-  props.cafeTable(13.2, -40.5);
-  props.flowerCart(11.8, -5, 0.25);
-  props.flowerCart(-9.5, 12, -0.35);
+  props.cafeTable(13.2, -33.0);
+  props.flowerCart(12.5, -31.5, 0.25);
+  props.flowerCart(12.5, -48.5, -0.2);
+  props.flowerCart(-3.6, -26.5, -0.3);
+  props.flowerCart(-3.6, 15.0, 0.2);
   props.flowerCart(23.5, 13.5, 0.15);
   props.flowerCart(13.5, 30.2, -0.2);
-  props.flowerCart(2.5, -39, 0.4);
-  props.crate(11, -44, 0.85);
-  props.barrel(12.2, -43.6);
-  props.barrel(12.8, -44.5);
+  props.crate(12.6, -54.5, 0.85);
+  props.barrel(13.2, -53.4);
+  props.barrel(12.2, -53.2);
 
   // Era-specific Eiffel Tower, 1889 fair pavilions & Wild West arena, or 1883/1885 south blocks.
   let tower: EiffelTower | null = null;
@@ -383,19 +450,19 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     for (const bz of [-8, 8]) {
       parkBench(batch, ctx, -24, bz, 0);
     }
-    haussmannCol(batch, ctx, -15.5, 32, 52, 65, {
+    haussmannCol(batch, ctx, -9.5, 29, 53, 65, {
       faceEast: true,
       depth: 8,
       startCorner: 'round',
     });
-    haussmannRow(batch, ctx, -53, -22, 34, 67, {
+    haussmannRow(batch, ctx, -53, -13.5, 34, 67, {
       flip: true,
       depth: 8,
       startCorner: 'cut',
       endCorner: 'round',
       sideWindows: true,
     });
-    haussmannRow(batch, ctx, -53, -22, 46, 68, {
+    haussmannRow(batch, ctx, -53, -13.5, 46, 68, {
       depth: 8,
       startCorner: 'round',
       endCorner: 'cut',
@@ -417,7 +484,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   return {
     id: `paris-${era}`,
     name: `Paris, ${era}`,
-    spawn: era === '1889' ? new THREE.Vector3(-13.5, 0, 5.5) : new THREE.Vector3(0, 0, -37),
+    spawn: era === '1889' ? new THREE.Vector3(-13.5, 0, 5.5) : new THREE.Vector3(4.5, 0, -37),
     spawnHeading: era === '1889' ? -Math.PI * 0.5 : 0,
     stops,
     look,
@@ -664,8 +731,8 @@ function buildParisStops(era: ParisEra): StopMarker[] {
       ),
       new StopMarker(
         byId('paris-1883-station'),
-        new THREE.Vector3(-4, 0, -48),
-        new THREE.Vector3(-10, 3.8, -50),
+        new THREE.Vector3(0.5, 0, -48),
+        new THREE.Vector3(-7.5, 3.8, -50),
         1.3,
       ),
     ];
@@ -686,8 +753,8 @@ function buildParisStops(era: ParisEra): StopMarker[] {
       ),
       new StopMarker(
         byId('paris-1885-station'),
-        new THREE.Vector3(-4, 0, -48),
-        new THREE.Vector3(-10, 3.8, -50),
+        new THREE.Vector3(0.5, 0, -48),
+        new THREE.Vector3(-7.5, 3.8, -50),
         1.3,
       ),
     ];
@@ -719,8 +786,8 @@ function buildParisStops(era: ParisEra): StopMarker[] {
     ),
     new StopMarker(
       byId('paris-1889-station'),
-      new THREE.Vector3(-4, 0, -48),
-      new THREE.Vector3(-10, 3.8, -50),
+      new THREE.Vector3(0.5, 0, -48),
+      new THREE.Vector3(-7.5, 3.8, -50),
       1.3,
     ),
   ];
@@ -1076,32 +1143,27 @@ function fairStall(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number, ry
   staticBox(ctx, x, 1.0, z, 3.4, 2.0, 1.8, ry);
 }
 
-/** Stamps the idle bay horse (without its rider) into the static batch inside the arena ring. */
+/** Stamps an idle bay horse (without a rider) into the static batch inside the arena ring. */
 function stampIdleHorse(
   batch: StaticBatch,
   x: number,
   z: number,
   ry: number,
-  neckPitch = NECK_REST,
+  pose: IdleHorsePose = 'resting',
 ): void {
-  const horse = buildHorseAndRider();
-  horse.rider.root.removeFromParent();
-  horse.neck.rotation.x = neckPitch;
-  horse.root.position.set(x, 0, z);
-  horse.root.rotation.y = ry;
-  horse.root.updateMatrixWorld(true);
+  const horse = buildIdleHorse(pose);
+  horse.position.set(x, 0, z);
+  horse.rotation.y = ry;
+  horse.updateMatrixWorld(true);
   const byMat = new Map<THREE.Material, number>(
     [palette.bay, palette.bayDark, palette.hoof, palette.saddle].map((c) => [mat(c), c]),
   );
-  horse.root.traverse((child) => {
+  horse.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       const c = byMat.get(child.material as THREE.Material) ?? palette.bay;
       batch.addTransformed(c, child.geometry, child.matrixWorld);
       child.geometry.dispose();
     }
-  });
-  horse.rider.root.traverse((c) => {
-    if (c instanceof THREE.Mesh) c.geometry.dispose();
   });
 }
 
@@ -1292,9 +1354,10 @@ function wildWestArena(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number
     z,
   });
 
-  // Standing riderless horses inside the ring in calm idle poses.
-  stampIdleHorse(batch, x + 5.2, z - 1.1, 0.95);
-  stampIdleHorse(batch, x - 0.8, z + 1.2, -2.05, 1.28);
-  stampIdleHorse(batch, x - 5.4, z - 1.5, 0.35);
-  stampIdleHorse(batch, x - 3.6, z + 2.3, 2.35, 1.15);
+  // Standing riderless horses inside the ring in calm grazing and resting poses.
+  stampIdleHorse(batch, x + 5.2, z - 1.1, 0.95, 'grazing');
+  stampIdleHorse(batch, x - 0.6, z + 1.0, -2.05, 'resting');
+  stampIdleHorse(batch, x - 5.4, z - 1.5, 0.35, 'resting');
+  stampIdleHorse(batch, x - 3.4, z + 2.1, 2.35, 'grazing');
+  stampIdleHorse(batch, x + 1.8, z - 2.4, -0.75, 'grazing');
 }

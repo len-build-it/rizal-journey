@@ -1166,6 +1166,63 @@ button {
   z-index: 8;
 }
 
+@media (min-width: 901px) {
+  .brochure-view.is-finale {
+    overflow-x: hidden;
+  }
+
+  .brochure-view.is-finale .brochure-panel {
+    max-height: calc(100dvh - 136px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(28 35 64 / 0.36) rgb(28 35 64 / 0.08);
+  }
+
+  .brochure-view.is-finale .brochure-panel::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .brochure-view.is-finale .brochure-panel::-webkit-scrollbar-track {
+    background: rgb(28 35 64 / 0.08);
+  }
+
+  .brochure-view.is-finale .brochure-panel::-webkit-scrollbar-thumb {
+    background: rgb(28 35 64 / 0.36);
+    border-radius: 3px;
+  }
+
+  .brochure-view.is-finale .brochure-panel[data-panel='6']::after {
+    content: '';
+    position: sticky;
+    bottom: -18px;
+    left: 0;
+    right: 0;
+    display: block;
+    height: 32px;
+    flex-shrink: 0;
+    margin-top: -32px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, var(--paper) 90%);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @keyframes finale-scroll-fade {
+      0%,
+      82% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    .brochure-view.is-finale .brochure-panel[data-panel='6']::after {
+      animation: finale-scroll-fade linear both;
+      animation-timeline: scroll(nearest);
+    }
+  }
+}
+
 @media (max-width: 900px) {
   .brochure-side {
     grid-template-columns: 1fr;
@@ -1254,7 +1311,8 @@ button {
   .brochure-view.is-finale .brochure-panel.is-cover {
     width: 99mm;
     height: 210mm;
-    padding: 6mm;
+    max-height: none;
+    padding: 3.5mm 4mm;
     margin: 0;
     animation: none !important;
     transform: none !important;
@@ -1266,6 +1324,10 @@ button {
     border-top: 2px solid var(--iron);
     border-right: 0.25mm dashed rgb(28 35 64 / 0.25);
     overflow: hidden;
+  }
+
+  .brochure-view.is-finale .brochure-panel[data-panel='6']::after {
+    display: none;
   }
 
   .brochure-panel:last-child,
@@ -1283,9 +1345,14 @@ button {
     color: var(--iron);
   }
 
+  .bp-kicker {
+    font-size: 7pt;
+    margin-bottom: 2pt;
+  }
+
   .bp-heading {
-    font-size: 11pt;
-    margin-bottom: 6pt;
+    font-size: 10pt;
+    margin-bottom: 3pt;
   }
 
   .bp-story-btn {
@@ -1299,56 +1366,71 @@ button {
   }
 
   .bp-stories {
-    gap: 5pt;
+    gap: 3pt;
   }
 
   .bp-full-story,
   .bp-print-story {
-    padding-top: 4pt;
+    padding-top: 2.5pt;
     border-top: 0.5pt solid rgb(28 35 64 / 0.18);
   }
 
   .bp-story-date {
-    font-size: 7.5pt;
+    font-size: 7pt;
   }
 
   .bp-story-heading {
-    font-size: 9pt;
-    margin: 1pt 0 3pt;
+    font-size: 8.2pt;
+    margin: 0.5pt 0 1.5pt;
   }
 
   .bp-body {
-    font-size: 7.4pt;
-    line-height: 1.32;
-    margin-bottom: 3pt;
+    font-size: 7pt;
+    line-height: 1.18;
+    margin-bottom: 1.8pt;
   }
 
   .bp-note {
-    font-size: 6.8pt;
-    line-height: 1.28;
+    font-size: 7pt;
+    line-height: 1.16;
   }
 
   .bp-print-refs,
   .bp-refs-block {
-    margin-top: 6pt;
-    padding-top: 4pt;
+    margin-top: 3pt;
+    padding-top: 2.5pt;
     border-top: 0.5pt solid rgb(28 35 64 / 0.25);
   }
 
   .bp-refs-heading {
-    margin: 0 0 3pt;
-    font-size: 8pt;
+    margin: 0 0 1.5pt;
+    font-size: 7.5pt;
   }
 
   .bp-refs-list,
   .bp-refs-block .bp-refs-list {
     margin: 0;
-    padding-left: 10pt;
-    font-size: 5.8pt;
-    line-height: 1.22;
+    padding-left: 0;
+    list-style: none;
+    counter-reset: ref;
+    font-size: 7pt;
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+
+  .bp-refs-list li {
+    display: inline;
+    counter-increment: ref;
+  }
+
+  .bp-refs-list li::before {
+    content: counter(ref) '. ';
+    font-weight: 600;
+    color: var(--ink);
   }
 
   .bp-refs-list li + li {
-    margin-top: 1.5pt;
+    margin-top: 0;
+    margin-left: 3pt;
   }
 }

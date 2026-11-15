@@ -34,3 +34,23 @@ Summary of implementation choices, environment workarounds, and observations fro
   - `paris-1889`: `calls=119`, `staticCalls=2`, `triangles=158694`
   - `biarritz-1891`: `calls=109`, `staticCalls=3`, `triangles=27142`
   - `marseille-1891`: `calls=104`, `staticCalls=2`, `triangles=36454`
+
+## Polish Pass 3 & Before/After Screenshots (`review/polish3/`)
+
+- `review/polish3/1-before.png`, `review/polish3/1-after.png`: Narrowed the main Paris boulevard (`src/world/areas/paris.ts`) to a 20-unit building-to-building cross-section (11u cobbled carriageway plus two 4.5u raised sidewalks with curbstones, single rows of plane trees and gas lamps along each curb, Morris columns/kiosks/benches/flower carts on the sidewalks, and carriages parked against the curbs). Replaced bare open Champ de Mars apron slabs with lawn beds, dirt paths, benches, and station spawn clearance (`paris-*-station` at `(0.5, 0, -48)`).
+- `review/polish3/2-before.png`, `review/polish3/2-after.png`: Tuned Marseille 1891 atmosphere (`src/world/areas/marseille.ts`, `src/world/palette.ts`) with cool harbor sky (`0xc6d8e0`), warm late-afternoon sunlight (`0xffe6c4`), clean `quayStone` masonry, `crate`/`crateDark` timber props, and matching `marseilleLand` earth tones (`0xd9bf94`).
+- `review/polish3/3-before.png`, `review/polish3/3-after.png`: Added `buildIdleHorse(pose)` in `src/player/models.ts` with a 15% shorter neck than the ridden mount while keeping full horse scale, plus `'grazing'` and `'resting'` poses mixed across the Wild West arena in `src/world/areas/paris.ts`.
+- `review/polish3/4-before.png`, `review/polish3/4-after.png`: Rebuilt `basqueVilla` and `headlandAndLighthouse` in `src/world/areas/biarritz1891.ts` with lower-pitch two-sided gable roofs, reduced height and eave overhang, east-facing gable and upper wooden balcony toward the camera, thin `palette.basqueRed` timber framing (floor/eave/collar beams, vertical posts, and diagonal braces), ~40% smaller headland boulders with smaller coastal outcrops, and shifted garden parterre beds clear of the villa walls.
+- `review/polish3/5-before.png`, `review/polish3/5-after.png`: Scoped desktop finale panels (`src/styles.css`, `@media (min-width: 901px)`) to `max-height: calc(100dvh - 136px)` with independent panel scrolling, visible thin scrollbar, and sticky bottom scroll-fade edge on panel 6 so all 22 references are reachable at `1280x800` and `1440x900` without horizontal page overflow. Set `@media print` `.bp-refs-list` to `7pt` inline-numbered entries with tight panel padding so all 22 references fit cleanly on printed panel 6.
+- **Git line-ending and filemode normalization (Task 6)**: System `C:/Program Files/Git/etc/gitconfig` had `core.autocrlf=true` and `.git/config` had `core.filemode=true`, causing files governed by `.gitattributes` (`* text=auto eol=lf`) to report spurious CRLF/mode diffs on Windows. Setting `core.autocrlf false` and `core.fileMode false` locally and running `git add --renormalize .` resolved the false modifications.
+
+## Final Verification Status (Polish 3, 1280x800 Desktop)
+
+- `npm run typecheck`, `npm run lint`, `npm run build`, and `npx vitest run tests/content.test.ts` (7/7 tests) pass with zero changes to `src/content/`. (Note: an unrelated untracked `handoff4/` directory present in the workspace contains a pending test file whose module does not yet exist.)
+- Desktop Playwright (`scripts/review.py` at `1280x800`):
+  - `marseille-1882`: `calls=111`, `staticCalls=2`, `triangles=36390`
+  - `paris-1883`: `calls=115`, `staticCalls=2`, `triangles=165584`
+  - `paris-1885`: `calls=114`, `staticCalls=2`, `triangles=165576`
+  - `paris-1889`: `calls=119`, `staticCalls=2`, `triangles=175862`
+  - `biarritz-1891`: `calls=109`, `staticCalls=3`, `triangles=30302`
+  - `marseille-1891`: `calls=104`, `staticCalls=2`, `triangles=36454`

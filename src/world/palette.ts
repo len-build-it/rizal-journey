@@ -19,6 +19,7 @@ export const palette = {
   doorBrown: 0x5b3a29,
   quayStone: 0xc9b694,
   quayStoneDark: 0xa08f73,
+  marseilleLand: 0xd9bf94,
   cobble: 0xb59a76,
   dirt: 0xc9a77c,
   grass: 0x9bb06a,
