@@ -5,7 +5,8 @@ export default defineConfig({
   base: './',
   build: {
     target: 'es2022',
-    assetsInlineLimit: 0,
+    // The hosted page only allows fonts from Google or data URIs, so fonts are inlined.
+    assetsInlineLimit: (file: string) => (file.endsWith('.woff2') ? true : undefined),
     chunkSizeWarningLimit: 2500,
   },
 });

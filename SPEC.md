@@ -1,5 +1,9 @@
 # Through Rizal's Eyes: France, 1882-1891
 
+> Status: the project changed from a scroll-driven page to an explorable 3D world.
+> The fact sheet and sources (section 4) still apply and now live in `src/content/facts.ts`.
+> Sections 1, 5, 6, 7, 8 and 10 are replaced by `HANDOFF.md`.
+
 Project specification for an interactive, scroll-driven Z-fold travel brochure website.
 
 Owner: Lenard (Software Engineering, Aklan State University).

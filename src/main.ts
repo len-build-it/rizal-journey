@@ -9,6 +9,7 @@ import { Player } from './player/Player';
 import { buildMarseille1882 } from './world/areas/marseille1882';
 import type { Area } from './world/Area';
 import type { StopMarker } from './world/StopMarker';
+import type { Destination } from './content/stories';
 import { Hud } from './ui/Hud';
 import { StoryCard } from './ui/StoryCard';
 import { Joystick } from './ui/Joystick';
@@ -73,12 +74,18 @@ async function main(): Promise<void> {
         cam.framing.shiftX = 0;
         cam.framing.shiftY = 0;
       },
-      onAction: () => {
-        hud.toast('The train to the next stop is still being built. Check back soon.');
+      onAction: (story) => {
         card.hide();
+        if (story.action) travelTo(story.action.to);
       },
     });
   };
+  // Travel between areas. Only Marseille 1882 exists so far; see HANDOFF.md.
+  const travelTo = (to: Destination): void => {
+    const label = to.area === 'paris' ? `Paris, ${to.era}` : to.area;
+    hud.toast(`${label} is still being built. Check back soon.`);
+  };
+
   hud.onPrompt = () => current && !card.open && openStory(current);
 
   engine.onUpdate((dt, time) => {
