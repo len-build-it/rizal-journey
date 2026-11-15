@@ -15,6 +15,12 @@ export interface AreaLook {
   hemiIntensity: number;
 }
 
+export interface RoadGraph {
+  waypoints: THREE.Vector3[];
+  edges: [number, number][];
+  stopWaypoints: Record<string, number>;
+}
+
 export interface Area {
   id: string;
   name: string;
@@ -22,6 +28,7 @@ export interface Area {
   spawnHeading: number;
   stops: StopMarker[];
   look: AreaLook;
+  roadGraph?: RoadGraph;
   update(dt: number, time: number): void;
   dispose(): void;
   setTowerProgress?(p: number): void;

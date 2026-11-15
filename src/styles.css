@@ -3,6 +3,7 @@
   --night-deep: #121729;
   --iron: #9c3b2a;
   --gaslight: #e2b04a;
+  --gold: #c9a34a;
   --zinc: #d9dee0;
   --paper: #eef0ec;
   --ink: #1c2340;
@@ -197,6 +198,27 @@ button {
 }
 
 .prompt[hidden] {
+  display: none;
+}
+
+.hud-arrow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgb(28 35 64 / 0.86);
+  border: 1.5px solid rgb(226 176 74 / 0.6);
+  box-shadow: 0 4px 14px rgb(18 23 41 / 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gaslight);
+  pointer-events: none;
+}
+
+.hud-arrow[hidden] {
   display: none;
 }
 

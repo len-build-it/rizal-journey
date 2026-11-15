@@ -489,6 +489,76 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   const stops = buildParisStops(era);
   for (const s of stops) scene.add(s.group);
 
+  const waypoints = [
+    new THREE.Vector3(4.5, 0, -48), // 0: station
+    new THREE.Vector3(4.5, 0, -37), // 1: Avenue de l'Alma
+    new THREE.Vector3(4.5, 0, -23.5), // 2: Rue de Maubeuge
+    new THREE.Vector3(4.5, 0, -10), // 3: mid boulevard
+    new THREE.Vector3(4.5, 0, 0), // 4: Champ de Mars cross
+    new THREE.Vector3(4.5, 0, 9.5), // 5: Rue du Cherche-Midi
+    new THREE.Vector3(4.5, 0, 26), // 6: Rue des Saints-Peres
+    new THREE.Vector3(4.5, 0, 41.5), // 7: South boulevard
+    new THREE.Vector3(-7.6, 0, 0), // 8: Champ de Mars entrance
+    new THREE.Vector3(-19, 0, 0), // 9: near Eiffel Tower
+    new THREE.Vector3(19.25, 0, -22.5), // 10: Hotel de Paris
+    new THREE.Vector3(34, 0, -23.5), // 11: Maubeuge east
+    new THREE.Vector3(47.5, 0, -23.5), // 12: Hospital street north
+    new THREE.Vector3(47.5, 0, -4), // 13: Hospital street gate
+    new THREE.Vector3(41.5, 0, -4), // 14: Hospital courtyard
+    new THREE.Vector3(47.5, 0, 9.5), // 15: Hospital street / Cherche-Midi
+    new THREE.Vector3(18.7, 0, 9.5), // 16: Galezowski clinic
+    new THREE.Vector3(33, 0, 9.5), // 17: Cherche-Midi east
+    new THREE.Vector3(18.5, 0, 26), // 18: Morga bookshop
+    new THREE.Vector3(36, 0, 26), // 19: Luna's studio
+    new THREE.Vector3(47.5, 0, 26), // 20: Saints-Peres east
+  ];
+  const edges: [number, number][] = [
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 4],
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [4, 8],
+    [8, 9],
+    [2, 10],
+    [10, 11],
+    [11, 12],
+    [12, 13],
+    [13, 14],
+    [13, 15],
+    [5, 16],
+    [16, 17],
+    [17, 15],
+    [6, 18],
+    [18, 19],
+    [19, 20],
+    [15, 20],
+  ];
+  if (era === '1889') {
+    const a = waypoints.length;
+    waypoints.push(new THREE.Vector3(-6, 0, 41.5), new THREE.Vector3(-17.5, 0, 41.5));
+    edges.push([7, a], [a, a + 1]);
+  }
+  const roadGraph = {
+    waypoints,
+    edges,
+    stopWaypoints: {
+      'paris-1883-station': 0,
+      'paris-1885-station': 0,
+      'paris-1889-station': 0,
+      'paris-1883-hotel': 10,
+      'paris-1883-hospital': 14,
+      'paris-1885-clinic': 16,
+      'paris-1885-studio': 19,
+      'paris-1889-tower': 9,
+      'paris-1889-indios-bravos': 22,
+      'paris-1889-godfather': 19,
+      'paris-1889-morga': 18,
+    },
+  };
+
   return {
     id: `paris-${era}`,
     name: `Paris, ${era}`,
@@ -496,6 +566,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     spawnHeading: era === '1889' ? -Math.PI * 0.5 : 0,
     stops,
     look,
+    roadGraph,
     towerCenter: TOWER_CENTER,
     staticDrawCalls: staticGroup.children.length,
     setTowerProgress: tower ? (p: number) => tower.setProgress(p) : undefined,

@@ -1,4 +1,9 @@
+import * as THREE from 'three';
 import { el } from './dom';
+
+const _view = new THREE.Vector3();
+const _ndc = new THREE.Vector3();
+const _targetLift = new THREE.Vector3(0, 1.0, 0);
 
 /**
  * Heads-up display: where you are, the brochure you are filling in,
@@ -14,6 +19,7 @@ export class Hud {
   private readonly prompt: HTMLElement;
   private readonly promptLabel: HTMLElement;
   private readonly toastEl: HTMLElement;
+  private readonly arrow: HTMLElement;
   private toastTimer = 0;
   onPrompt: (() => void) | null = null;
 
@@ -42,9 +48,68 @@ export class Hud {
 
     this.toastEl = el('p', { class: 'toast', role: 'status', 'aria-live': 'polite' });
 
-    this.root = el('div', { class: 'hud' }, [where, brochure, this.prompt, this.toastEl]);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '22');
+    svg.setAttribute('height', '22');
+    const poly = document.createElementNS(svgNS, 'polygon');
+    poly.setAttribute('points', '4,5 21,12 4,19 8.5,12');
+    poly.setAttribute('fill', 'currentColor');
+    poly.setAttribute('stroke', '#1c2340');
+    poly.setAttribute('stroke-width', '1.6');
+    poly.setAttribute('stroke-linejoin', 'round');
+    svg.append(poly);
+    this.arrow = el('div', { class: 'hud-arrow', 'aria-hidden': 'true', hidden: '' }, [svg]);
+
+    this.root = el('div', { class: 'hud' }, [
+      where,
+      brochure,
+      this.prompt,
+      this.toastEl,
+      this.arrow,
+    ]);
     parent.append(this.root);
     this.setPanels(new Set());
+  }
+
+  updateArrow(
+    targetWorld: THREE.Vector3 | null,
+    camera: THREE.Camera,
+    hidden: boolean,
+  ): void {
+    if (hidden || !targetWorld) {
+      this.arrow.hidden = true;
+      return;
+    }
+
+    _ndc.copy(targetWorld).add(_targetLift);
+    _view.copy(_ndc).applyMatrix4(camera.matrixWorldInverse);
+    _ndc.project(camera);
+
+    if (_view.z < 0 && Math.abs(_ndc.x) <= 0.94 && Math.abs(_ndc.y) <= 0.94) {
+      this.arrow.hidden = true;
+      return;
+    }
+
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    let dx = _view.z < -0.05 ? _ndc.x * (w * 0.5) : _view.x;
+    let dy = _view.z < -0.05 ? -_ndc.y * (h * 0.5) : -_view.y;
+    if (Math.abs(dx) < 1e-4 && Math.abs(dy) < 1e-4) {
+      dx = 0;
+      dy = 1;
+    }
+
+    const limitX = Math.max(40, w * 0.5 - 30);
+    const limitY = Math.max(40, h * 0.5 - 30);
+    const scale = Math.max(Math.abs(dx) / limitX, Math.abs(dy) / limitY) || 1;
+    const px = w * 0.5 + dx / scale;
+    const py = h * 0.5 + dy / scale;
+    const angle = Math.atan2(dy, dx);
+
+    this.arrow.hidden = false;
+    this.arrow.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) translate(-50%, -50%) rotate(${angle.toFixed(3)}rad)`;
   }
 
   setPlace(year: string, place: string): void {

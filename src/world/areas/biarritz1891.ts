@@ -390,12 +390,55 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
   ];
   for (const s of stops) scene.add(s.group);
 
+  const MID_Y = (PROM_Y + PLATEAU_Y) / 2 + 0.06;
+  const PLAT_PATH_Y = PLATEAU_Y + 0.06;
+  const roadGraph = {
+    waypoints: [
+      new THREE.Vector3(-24, PROM_Y + 0.04, 4.5), // 0
+      new THREE.Vector3(-14, PROM_Y + 0.04, 4.5), // 1
+      new THREE.Vector3(-14, PROM_Y + 0.04, 0), // 2
+      new THREE.Vector3(-14, MID_Y, -6), // 3
+      new THREE.Vector3(-14, PLAT_PATH_Y, -12.5), // 4: villa
+      new THREE.Vector3(4, PROM_Y + 0.04, 4.5), // 5
+      new THREE.Vector3(24, PROM_Y + 0.04, 4.5), // 6
+      new THREE.Vector3(24, PROM_Y + 0.04, 0), // 7
+      new THREE.Vector3(24, MID_Y, -6), // 8
+      new THREE.Vector3(24, PLAT_PATH_Y, -14), // 9
+      new THREE.Vector3(-3.5, PLAT_PATH_Y, -14), // 10: near manuscript
+      new THREE.Vector3(10, PLAT_PATH_Y, -14), // 11
+      new THREE.Vector3(28, PLAT_PATH_Y, -14), // 12
+      new THREE.Vector3(28, PLAT_PATH_Y, -25), // 13: station
+    ],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [1, 5],
+      [5, 6],
+      [6, 7],
+      [7, 8],
+      [8, 9],
+      [4, 10],
+      [10, 11],
+      [11, 9],
+      [9, 12],
+      [12, 13],
+    ] as [number, number][],
+    stopWaypoints: {
+      'biarritz-villa': 4,
+      'biarritz-manuscript': 10,
+      'biarritz-station': 13,
+    },
+  };
+
   return {
     id: 'biarritz-1891',
     name: 'Biarritz, 1891',
     spawn: new THREE.Vector3(-13.0, PROM_Y, 5.2),
     spawnHeading: Math.PI * 0.15,
     stops,
+    roadGraph,
     staticDrawCalls: staticGroup.children.length,
     setTrainOffset(offsetX: number, doorClose = 1) {
       train.setState(offsetX, doorClose);

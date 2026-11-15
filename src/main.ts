@@ -17,6 +17,7 @@ import {
 } from './core/progress';
 import { Player } from './player/Player';
 import { AreaManager } from './world/AreaManager';
+import { PathTrail } from './world/PathTrail';
 import type { StopMarker } from './world/StopMarker';
 import { journeyFrom } from './content/journeys';
 import { chapterFor } from './content/narrative';
@@ -61,6 +62,7 @@ async function main(): Promise<void> {
     0,
   );
   const areaManager = new AreaManager(engine, player, cam, hud);
+  const pathTrail = new PathTrail(engine.scene);
   const director = new SceneDirector(engine, player, cam, hud, card, uiRoot);
 
   const currentChapter = () => {
@@ -245,8 +247,12 @@ async function main(): Promise<void> {
     if (director.isPlaying) {
       director.update(dt, time);
       for (const s of area.stops) s.update(dt, time, player.position);
+      pathTrail.update(area, player.position, visited, true, time);
+      hud.updateArrow(null, engine.camera, true);
       return;
     }
+
+    const hideGuides = chapterCard.open || card.open || cinematic || traveling;
 
     if (!cinematic && !traveling) {
       let inside: StopMarker | null = null;
@@ -280,6 +286,10 @@ async function main(): Promise<void> {
     } else {
       for (const s of area.stops) s.update(dt, time, player.position);
     }
+
+    const nextTarget = pathTrail.update(area, player.position, visited, hideGuides, time);
+    engine.camera.updateMatrixWorld();
+    hud.updateArrow(nextTarget?.position ?? null, engine.camera, hideGuides);
 
     engine.followSun(
       cinematic && area.towerCenter ? area.towerCenter : player.position,

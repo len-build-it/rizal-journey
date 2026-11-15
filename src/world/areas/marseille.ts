@@ -3,7 +3,7 @@ import { StaticBatch, disposeObject, seeded } from '../kit';
 import { palette } from '../palette';
 import { boundary, disposePhysics, staticBox, type PhysicsCtx } from '../physics';
 import { bollard, gasLamp, houseRow, planeTree, townHouse } from '../builders';
-import { fishingBoat, steamer } from '../vessels';
+import { fishingBoat, steamer, buildTrain } from '../vessels';
 import { Props } from '../Props';
 import { Water } from '../Water';
 import { StopMarker } from '../StopMarker';
@@ -118,12 +118,15 @@ export function buildMarseille(
     bollard(batch, ctx, x, QUAY_Z - 0.9);
   }
 
-  // Steamer alongside the quay: Djemnah in 1882, slightly larger Melbourne in 1891.
+  // Steamer alongside the quay: Djemnah in 1882, slightly larger Melbourne in 1891 (movable for departure).
+  const shipBatch = new StaticBatch();
   if (year === 1891) {
-    steamer(batch, ctx, 16, QUAY_Z + 4.4, 33, palette.funnel);
+    steamer(shipBatch, ctx, 16, QUAY_Z + 4.4, 33, palette.funnel);
   } else {
-    steamer(batch, ctx, 14, QUAY_Z + 4.4, 28, palette.hull);
+    steamer(shipBatch, ctx, 14, QUAY_Z + 4.4, 28, palette.hull);
   }
+  const shipGroup = shipBatch.build('marseille-steamer');
+  scene.add(shipGroup);
   batch.add(palette.deckWood, new THREE.BoxGeometry(1.4, 0.12, 3.4), {
     x: 10.5,
     y: 0.55,
@@ -242,6 +245,43 @@ export function buildMarseille(
           hemiIntensity: 1.05,
         };
 
+  const train = buildTrain(30, 0, -52, 1);
+  scene.add(train.group);
+
+  const roadGraph = {
+    waypoints: [
+      new THREE.Vector3(-27, 0, 5.5),
+      new THREE.Vector3(-16, 0, 5.5),
+      new THREE.Vector3(-4, 0, 5.5),
+      new THREE.Vector3(10, 0, 5.5),
+      new THREE.Vector3(10, 0, -4),
+      new THREE.Vector3(10, 0, -14),
+      new THREE.Vector3(10, 0, -24),
+      new THREE.Vector3(4.5, 0, -34),
+      new THREE.Vector3(15.5, 0, -34),
+      new THREE.Vector3(10, 0, -43),
+    ],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [6, 8],
+      [7, 9],
+      [8, 9],
+    ] as [number, number][],
+    stopWaypoints: {
+      'marseille-landing': 3,
+      'marseille-chateau-dif': 0,
+      'marseille-station': 9,
+      'marseille-1891-melbourne': 3,
+      'marseille-1891-lessons': 0,
+    },
+  };
+
   return {
     id: year === 1891 ? 'marseille-1891' : 'marseille-1882',
     name: `Marseille, ${year}`,
@@ -249,13 +289,23 @@ export function buildMarseille(
     spawnHeading: year === 1891 ? 0 : Math.PI,
     stops,
     look,
-    staticDrawCalls: staticGroup.children.length,
+    roadGraph,
+    staticDrawCalls: staticGroup.children.length + shipGroup.children.length,
+    setTrainOffset(offsetX: number, doorClose = 1) {
+      train.setState(offsetX, doorClose);
+    },
+    setShipOffset(offsetX: number, offsetZ = 0, yaw = 0) {
+      shipGroup.position.set(offsetX, 0, offsetZ);
+      shipGroup.rotation.y = yaw;
+    },
     update(_dt, time) {
       water.update(time);
       props.update();
     },
     dispose() {
       disposeObject(staticGroup);
+      disposeObject(shipGroup);
+      train.dispose();
       water.dispose();
       props.dispose();
       for (const s of stops) s.dispose();
@@ -323,38 +373,10 @@ function station(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): voi
   batch.add(palette.limestone, new THREE.BoxGeometry(31, 0.3, 0.3), { x, y: 6.2, z: z + 4.1 });
   staticBox(ctx, x, h / 2, z, w, h, 8);
 
-  // A locomotive waiting beside the hall.
+  // Rail bed beside the hall (locomotive + carriage are added as a movable group).
   const lx = x + 20;
   const lz = z - 1;
-  batch.add(palette.railSteel, new THREE.BoxGeometry(14, 0.2, 2.2), { x: lx, y: 0.1, z: lz });
-  batch.add(palette.hull, new THREE.CylinderGeometry(0.95, 0.95, 5, 12), {
-    x: lx + 1,
-    y: 1.9,
-    z: lz,
-    rz: Math.PI / 2,
-  });
-  batch.add(palette.hull, new THREE.BoxGeometry(2.2, 2.6, 2.3), { x: lx - 2.6, y: 2.3, z: lz });
-  batch.add(palette.iron, new THREE.BoxGeometry(2.4, 0.25, 2.5), { x: lx - 2.6, y: 3.7, z: lz });
-  batch.add(palette.hull, new THREE.CylinderGeometry(0.28, 0.4, 1.3, 8), {
-    x: lx + 2.8,
-    y: 3.2,
-    z: lz,
-  });
-  batch.add(palette.funnel, new THREE.CylinderGeometry(0.3, 0.3, 0.5, 8), {
-    x: lx + 0.8,
-    y: 3.0,
-    z: lz,
-  });
-  for (const wx of [-2.4, -0.6, 1.2, 3.0]) {
-    for (const s of [-1, 1]) {
-      batch.add(palette.iron, new THREE.CylinderGeometry(0.6, 0.6, 0.15, 12), {
-        x: lx + wx,
-        y: 0.75,
-        z: lz + s * 1.05,
-        rx: Math.PI / 2,
-      });
-    }
-  }
+  batch.add(palette.railSteel, new THREE.BoxGeometry(28, 0.2, 2.2), { x: lx, y: 0.1, z: lz });
   staticBox(ctx, lx, 1.8, lz, 9, 3.6, 2.6);
 }
 
