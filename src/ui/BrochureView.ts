@@ -149,10 +149,10 @@ export function showBrochureView(parent: HTMLElement, opts: BrochureViewOpts): H
 
     if (panelNum === 6) {
       panel.append(
-        el('div', { class: 'bp-print-refs' }, [
+        el('div', { class: isFinale ? 'bp-refs-block' : 'bp-print-refs' }, [
           el('h3', { class: 'bp-refs-heading' }, ['References']),
           el(
-            'ul',
+            'ol',
             { class: 'bp-refs-list' },
             refs.map((r) => el('li', {}, [r.text])),
           ),
@@ -206,7 +206,9 @@ export function showBrochureView(parent: HTMLElement, opts: BrochureViewOpts): H
       role: 'region',
       'aria-label': 'Travel brochure',
     },
-    [header, el('div', { class: 'brochure-fold' }, [sideA, sideB]), refsSection],
+    isFinale
+      ? [header, el('div', { class: 'brochure-fold' }, [sideA, sideB])]
+      : [header, el('div', { class: 'brochure-fold' }, [sideA, sideB]), refsSection],
   );
   parent.append(root);
 

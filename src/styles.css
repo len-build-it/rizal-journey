@@ -830,7 +830,162 @@ button {
   border-top-color: var(--gaslight);
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
+}
+
+/* Finale: one continuous 6-panel printed-paper Z-fold strip on the night-blue desk */
+.brochure-view.is-finale .brochure-header {
+  max-width: 1240px;
+  margin-bottom: 18px;
+}
+
+.brochure-view.is-finale .brochure-fold {
+  max-width: 1240px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+  perspective: 1800px;
+  transform-style: preserve-3d;
+  box-shadow: 0 24px 56px rgb(8 11 22 / 0.55);
+}
+
+.brochure-view.is-finale .brochure-side {
+  display: contents;
+}
+
+.brochure-view.is-finale .brochure-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 16px 14px 18px;
+  border-top: 4px solid var(--iron);
+  border-right: 1px solid rgb(28 35 64 / 0.18);
+  box-shadow: none;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+}
+
+.brochure-view.is-finale .brochure-panel.is-even {
+  background-image: linear-gradient(90deg, rgb(28 35 64 / 0.055), rgb(28 35 64 / 0.015) 26%, transparent);
+}
+
+.brochure-view.is-finale .brochure-panel.is-odd {
+  background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.18) 85%, rgb(28 35 64 / 0.06));
+}
+
+.brochure-view.is-finale .brochure-panel[data-panel='3'] {
+  border-right: 2px solid rgb(28 35 64 / 0.32);
+}
+
+.brochure-view.is-finale .brochure-panel[data-panel='6'] {
+  border-right: 0;
+}
+
+.brochure-view.is-finale .brochure-panel.is-cover {
+  background: var(--paper);
+  color: var(--ink);
+  border-top-color: var(--iron);
+  justify-content: flex-start;
+}
+
+.brochure-view.is-finale .is-cover .bp-kicker,
+.brochure-view.is-finale .is-cover .bp-credit {
+  color: var(--ink-soft);
+}
+
+.brochure-view.is-finale .is-cover .bp-cover-title {
+  margin-top: 18px;
+  font-size: 1.75rem;
+}
+
+.brochure-view.is-finale .is-cover .bp-cover-sub {
+  color: var(--iron);
+  font-size: 1rem;
+  margin: 8px 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgb(28 35 64 / 0.18);
+}
+
+.brochure-view.is-finale .is-cover .bp-body {
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.brochure-view.is-finale .is-cover .bp-credit {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgb(28 35 64 / 0.14);
+  font-size: 0.72rem;
+  line-height: 1.38;
+}
+
+@keyframes zfold-cover {
+  0% {
+    transform: rotateY(-12deg);
+  }
+  100% {
+    transform: rotateY(1.4deg);
+  }
+}
+
+@keyframes zfold-odd {
+  0% {
+    transform: rotateY(-168deg);
+    opacity: 0.15;
+  }
+  100% {
+    transform: rotateY(1.4deg);
+    opacity: 1;
+  }
+}
+
+@keyframes zfold-even {
+  0% {
+    transform: rotateY(168deg);
+    opacity: 0.15;
+  }
+  100% {
+    transform: rotateY(-1.8deg);
+    opacity: 1;
+  }
+}
+
+.brochure-view.is-finale .brochure-panel[data-panel='1'] {
+  animation: zfold-cover 0.2s var(--ease-out) both;
+}
+
+.brochure-view.is-finale .brochure-panel[data-panel='2'] {
+  animation: zfold-even 0.24s var(--ease-out) 0.04s both;
+}
+
+.brochure-view.is-finale .brochure-panel[data-panel='3'] {
+  animation: zfold-odd 0.24s var(--ease-out) 0.1s both;
+}
+
+.brochure-view.is-finale .brochure-panel[data-panel='4'] {
+  animation: zfold-even 0.24s var(--ease-out) 0.16s both;
+}
+
+.brochure-view.is-finale .brochure-panel[data-panel='5'] {
+  animation: zfold-odd 0.22s var(--ease-out) 0.21s both;
+}
+
+.brochure-view.is-finale .brochure-panel[data-panel='6'] {
+  animation: zfold-even 0.2s var(--ease-out) 0.25s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brochure-view.is-finale .brochure-panel {
+    animation: none !important;
+  }
+  .brochure-view.is-finale .brochure-panel.is-odd {
+    transform: rotateY(1.4deg);
+  }
+  .brochure-view.is-finale .brochure-panel.is-even {
+    transform: rotateY(-1.8deg);
+  }
 }
 
 .bp-kicker {
@@ -866,33 +1021,38 @@ button {
 }
 
 .bp-heading {
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   font-family: var(--display);
-  font-size: 1.35rem;
+  font-size: 1.12rem;
   font-weight: 500;
   line-height: 1.15;
 }
 
 .bp-stories {
   display: grid;
-  gap: 12px;
+  gap: 0;
 }
 
 .bp-story-btn {
   display: grid;
   gap: 2px;
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid rgb(28 35 64 / 0.16);
-  border-radius: 10px;
-  background: #fff;
+  padding: 9px 0;
+  border: 0;
+  border-top: 1px solid rgb(28 35 64 / 0.16);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   color: var(--ink);
   text-align: left;
-  transition: border-color 0.2s ease;
+  cursor: pointer;
 }
 
-.bp-story-btn:hover {
-  border-color: var(--iron);
+.bp-story-btn:hover .bp-story-title,
+.bp-story-btn:focus-visible .bp-story-title {
+  color: var(--iron);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .bp-story-btn.is-unvisited {
@@ -901,14 +1061,18 @@ button {
 
 .bp-story-date {
   margin: 0;
-  font-family: var(--display);
-  font-size: 0.88rem;
+  font-family: var(--body);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
   color: var(--iron);
 }
 
 .bp-story-title {
-  font-weight: 600;
+  font-family: var(--display);
+  font-weight: 500;
   font-size: 0.98rem;
+  line-height: 1.18;
+  transition: color 0.15s ease;
 }
 
 .bp-story-heading {
@@ -940,6 +1104,33 @@ button {
 .bp-print-story,
 .bp-print-refs {
   display: none;
+}
+
+.bp-refs-block {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgb(28 35 64 / 0.2);
+}
+
+.bp-refs-heading {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.bp-refs-block .bp-refs-list {
+  margin: 0;
+  padding-left: 14px;
+  font-size: 0.58rem;
+  line-height: 1.24;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.bp-refs-block .bp-refs-list li + li {
+  margin-top: 2px;
 }
 
 .brochure-refs {
@@ -985,6 +1176,11 @@ button {
   .brochure-panel.is-even {
     transform: none;
   }
+
+  .brochure-view.is-finale .brochure-fold {
+    grid-template-columns: repeat(6, minmax(220px, 72vw));
+    overflow-x: auto;
+  }
 }
 
 /* Print stylesheet: A4 landscape, two pages, 3 x 99mm Z-fold panels per side */
@@ -1024,13 +1220,16 @@ button {
     overflow: visible;
   }
 
-  .brochure-fold {
+  .brochure-fold,
+  .brochure-view.is-finale .brochure-fold {
     display: block;
     max-width: none;
     margin: 0;
+    box-shadow: none;
   }
 
-  .brochure-side {
+  .brochure-side,
+  .brochure-view.is-finale .brochure-side {
     display: grid;
     grid-template-columns: repeat(3, 99mm);
     width: 297mm;
@@ -1039,7 +1238,8 @@ button {
     break-after: page;
   }
 
-  .brochure-side:last-child {
+  .brochure-side:last-child,
+  .brochure-view.is-finale .brochure-side:last-child {
     page-break-after: auto;
     break-after: auto;
   }
@@ -1047,21 +1247,30 @@ button {
   .brochure-panel,
   .brochure-panel.is-odd,
   .brochure-panel.is-even,
-  .brochure-panel.is-cover {
+  .brochure-panel.is-cover,
+  .brochure-view.is-finale .brochure-panel,
+  .brochure-view.is-finale .brochure-panel.is-odd,
+  .brochure-view.is-finale .brochure-panel.is-even,
+  .brochure-view.is-finale .brochure-panel.is-cover {
     width: 99mm;
     height: 210mm;
     padding: 6mm;
     margin: 0;
-    transform: none;
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
     box-shadow: none;
     background: #fff;
+    background-image: none;
     color: var(--ink);
     border-top: 2px solid var(--iron);
     border-right: 0.25mm dashed rgb(28 35 64 / 0.25);
     overflow: hidden;
   }
 
-  .brochure-panel:last-child {
+  .brochure-panel:last-child,
+  .brochure-view.is-finale .brochure-panel[data-panel='3'],
+  .brochure-view.is-finale .brochure-panel:last-child {
     border-right: 0;
   }
 
@@ -1084,7 +1293,8 @@ button {
   }
 
   .bp-print-story,
-  .bp-print-refs {
+  .bp-print-refs,
+  .bp-refs-block {
     display: block;
   }
 
@@ -1118,7 +1328,8 @@ button {
     line-height: 1.28;
   }
 
-  .bp-print-refs {
+  .bp-print-refs,
+  .bp-refs-block {
     margin-top: 6pt;
     padding-top: 4pt;
     border-top: 0.5pt solid rgb(28 35 64 / 0.25);
@@ -1129,7 +1340,8 @@ button {
     font-size: 8pt;
   }
 
-  .bp-refs-list {
+  .bp-refs-list,
+  .bp-refs-block .bp-refs-list {
     margin: 0;
     padding-left: 10pt;
     font-size: 5.8pt;
