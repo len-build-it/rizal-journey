@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { StaticBatch, disposeObject, seeded } from '../kit';
+import { StaticBatch, disposeObject, mat, seeded } from '../kit';
 import { palette } from '../palette';
+import { NECK_REST, buildHorseAndRider } from '../../player/models';
 import { boundary, disposePhysics, staticBox, type PhysicsCtx } from '../physics';
 import {
   gasLamp,
@@ -238,11 +239,6 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     startCorner: 'cut',
     sideWindows: true,
   });
-  haussmannCol(batch, ctx, -15.5, 32, 52, 65, {
-    faceEast: true,
-    depth: 8,
-    startCorner: 'round',
-  });
   haussmannRow(batch, ctx, -54, -19.5, 57, 66, {
     flip: true,
     depth: 8,
@@ -376,17 +372,22 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
       batch.add(palette.lampIron, new THREE.BoxGeometry(3.8, 0.9, 0.12), {
         x,
         y: 0.45,
-        z: 29.5,
+        z: 28.5,
       });
     }
-    staticBox(ctx, -36.5, 0.5, 29.5, 32, 1.2, 0.5);
+    staticBox(ctx, -36.5, 0.5, 28.5, 32, 1.2, 0.5);
 
     // Wild West show open-air arena outside the fair at the south edge.
-    wildWestArena(batch, ctx, -36, 42);
+    wildWestArena(batch, ctx, -36, 41.5);
   } else {
     for (const bz of [-8, 8]) {
       parkBench(batch, ctx, -24, bz, 0);
     }
+    haussmannCol(batch, ctx, -15.5, 32, 52, 65, {
+      faceEast: true,
+      depth: 8,
+      startCorner: 'round',
+    });
     haussmannRow(batch, ctx, -53, -22, 34, 67, {
       flip: true,
       depth: 8,
@@ -698,7 +699,12 @@ function buildParisStops(era: ParisEra): StopMarker[] {
       new THREE.Vector3(-34, 18.5, 0),
       2.8,
     ),
-    new StopMarker(byId('paris-1889-indios-bravos'), new THREE.Vector3(-14, 0, 39)),
+    new StopMarker(
+      byId('paris-1889-indios-bravos'),
+      new THREE.Vector3(-17.5, 0, 41.5),
+      new THREE.Vector3(-29.5, 1.6, 42.5),
+      1.22,
+    ),
     new StopMarker(
       byId('paris-1889-godfather'),
       new THREE.Vector3(36, 0, 28.5),
@@ -1070,41 +1076,225 @@ function fairStall(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number, ry
   staticBox(ctx, x, 1.0, z, 3.4, 2.0, 1.8, ry);
 }
 
-/** Open-air Wild West show arena with tiered grandstands and flags outside the fair. */
+/** Stamps the idle bay horse (without its rider) into the static batch inside the arena ring. */
+function stampIdleHorse(
+  batch: StaticBatch,
+  x: number,
+  z: number,
+  ry: number,
+  neckPitch = NECK_REST,
+): void {
+  const horse = buildHorseAndRider();
+  horse.rider.root.removeFromParent();
+  horse.neck.rotation.x = neckPitch;
+  horse.root.position.set(x, 0, z);
+  horse.root.rotation.y = ry;
+  horse.root.updateMatrixWorld(true);
+  const byMat = new Map<THREE.Material, number>(
+    [palette.bay, palette.bayDark, palette.hoof, palette.saddle].map((c) => [mat(c), c]),
+  );
+  horse.root.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      const c = byMat.get(child.material as THREE.Material) ?? palette.bay;
+      batch.addTransformed(c, child.geometry, child.matrixWorld);
+      child.geometry.dispose();
+    }
+  });
+  horse.rider.root.traverse((c) => {
+    if (c instanceof THREE.Mesh) c.geometry.dispose();
+  });
+}
+
+/** Wooden grandstand on one long side of the arena with 3 stepped tiers, canvas roof and pennants. */
+function arenaGrandstand(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  zFront: number,
+  dirZ: 1 | -1,
+  roofH: number,
+): void {
+  const len = 20;
+  const tiers: [number, number, number][] = [
+    [0.5, 0.7, palette.deckWood],
+    [1.6, 1.4, palette.crate],
+    [2.7, 2.1, palette.deckWood],
+  ];
+  for (const [offset, h, col] of tiers) {
+    batch.add(col, new THREE.BoxGeometry(len, h, 1.1), {
+      x,
+      y: h / 2,
+      z: zFront + dirZ * offset,
+    });
+  }
+  const backZ = zFront + dirZ * 3.45;
+  batch.add(palette.crateDark, new THREE.BoxGeometry(len, roofH - 0.5, 0.3), {
+    x,
+    y: (roofH - 0.5) / 2,
+    z: backZ,
+  });
+  for (let px = x - 9; px <= x + 9; px += 4.5) {
+    batch.add(palette.crateDark, new THREE.BoxGeometry(0.18, roofH - 0.35, 0.18), {
+      x: px,
+      y: (roofH - 0.35) / 2,
+      z: zFront + dirZ * 0.2,
+    });
+  }
+  const roofCenterZ = zFront + dirZ * 1.85;
+  batch.add(palette.awningCream, new THREE.BoxGeometry(len + 0.8, 0.16, 4.1), {
+    x,
+    y: roofH,
+    z: roofCenterZ,
+    rx: -dirZ * 0.12,
+  });
+  batch.add(palette.iron, new THREE.BoxGeometry(len + 0.9, 0.18, 0.12), {
+    x,
+    y: roofH + 0.22,
+    z: zFront - dirZ * 0.15,
+  });
+
+  const pennants = [palette.iron, palette.streetSignBlue, palette.gaslight, palette.shirt];
+  for (let i = 0; i < 4; i++) {
+    const fx = x - 6.9 + i * 4.6;
+    const fz = roofCenterZ;
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.04, 0.04, 2.1, 5), {
+      x: fx,
+      y: roofH + 1.05,
+      z: fz,
+    });
+    const pCol = pennants[i % pennants.length]!;
+    batch.add(pCol, new THREE.ConeGeometry(0.28, 1.0, 3), {
+      x: fx + 0.5,
+      y: roofH + 1.8,
+      z: fz,
+      rz: -Math.PI / 2,
+      sx: 0.25,
+    });
+  }
+  staticBox(ctx, x, roofH / 2, roofCenterZ, len + 0.6, roofH, 3.8);
+}
+
+/** Open-air Wild West show arena outside the fair with oval track, grandstands, arch and horses. */
 function wildWestArena(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
-  batch.add(palette.sand, new THREE.CylinderGeometry(11.5, 11.5, 0.08, 18), { x, y: 0.04, z });
-  const segs = 12;
-  const r = 13.5;
+  const rx = 13.8;
+  const rz = 6.9;
+
+  // Packed-earth oval arena floor inside a slightly wider sandy apron.
+  batch.add(palette.sandWet, new THREE.CylinderGeometry(1, 1, 0.06, 22), {
+    x,
+    y: 0.03,
+    z,
+    sx: rx + 1.2,
+    sz: rz + 1.1,
+  });
+  batch.add(palette.dirt, new THREE.CylinderGeometry(1, 1, 0.09, 22), {
+    x,
+    y: 0.045,
+    z,
+    sx: rx,
+    sz: rz,
+  });
+
+  // Oval rail fence around the ring, with an opening on the east side (+X) under the arch.
+  const segs = 26;
+  const ringPts: { px: number; pz: number; open: boolean }[] = [];
   for (let i = 0; i < segs; i++) {
     const a = (i / segs) * Math.PI * 2;
-    if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.45) continue;
-    const sx = x + Math.cos(a) * r;
-    const sz = z + Math.sin(a) * r;
-    const rot = -a + Math.PI / 2;
-    batch.add(palette.deckWood, new THREE.BoxGeometry(6.8, 2.4, 3.4), {
-      x: sx,
-      y: 1.2,
-      z: sz,
-      ry: rot,
+    ringPts.push({
+      px: x + Math.cos(a) * rx,
+      pz: z + Math.sin(a) * rz,
+      open: Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.26,
     });
-    batch.add(palette.awningCream, new THREE.BoxGeometry(6.8, 0.2, 3.8), {
-      x: sx,
-      y: 3.8,
-      z: sz,
-      ry: rot,
-    });
-    if (i % 2 === 0) {
-      batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.05, 1.6, 5), {
-        x: sx,
-        y: 4.7,
-        z: sz,
-      });
-      batch.add(palette.iron, new THREE.BoxGeometry(0.85, 0.5, 0.06), {
-        x: sx + 0.4,
-        y: 5.2,
-        z: sz,
+  }
+  for (let i = 0; i < segs; i++) {
+    const p0 = ringPts[i]!;
+    const p1 = ringPts[(i + 1) % segs]!;
+    if (!p0.open) {
+      batch.add(palette.crateDark, new THREE.BoxGeometry(0.14, 0.95, 0.14), {
+        x: p0.px,
+        y: 0.48,
+        z: p0.pz,
       });
     }
-    staticBox(ctx, sx, 1.5, sz, 6.8, 3.0, 3.4, rot);
+    if (!p0.open && !p1.open) {
+      const dx = p1.px - p0.px;
+      const dz = p1.pz - p0.pz;
+      const len = Math.hypot(dx, dz);
+      const ry = -Math.atan2(dz, dx);
+      for (const railY of [0.42, 0.78]) {
+        batch.add(palette.deckWood, new THREE.BoxGeometry(len, 0.08, 0.07), {
+          x: (p0.px + p1.px) / 2,
+          y: railY,
+          z: (p0.pz + p1.pz) / 2,
+          ry,
+        });
+      }
+    }
   }
+
+  // Grandstands along both long sides (north side kept slightly lower so camera sees into the ring).
+  arenaGrandstand(batch, ctx, x - 0.5, z - 8.1, -1, 3.15);
+  arenaGrandstand(batch, ctx, x - 0.5, z + 7.9, 1, 3.9);
+
+  // Tall wooden entrance arch on the east end (+X), facing the boulevard stop.
+  const ax = x + rx + 0.6;
+  for (const s of [-1, 1]) {
+    const pz = z + s * 2.55;
+    batch.add(palette.quayStone, new THREE.BoxGeometry(0.85, 0.55, 0.85), {
+      x: ax,
+      y: 0.28,
+      z: pz,
+    });
+    batch.add(palette.crateDark, new THREE.BoxGeometry(0.5, 5.1, 0.5), {
+      x: ax,
+      y: 2.55,
+      z: pz,
+    });
+    batch.add(palette.deckWood, new THREE.BoxGeometry(0.28, 1.5, 0.28), {
+      x: ax,
+      y: 3.95,
+      z: pz - s * 0.6,
+      rx: s * 0.72,
+    });
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.04, 0.04, 1.8, 5), {
+      x: ax,
+      y: 5.9,
+      z: pz,
+    });
+    batch.add(palette.iron, new THREE.ConeGeometry(0.26, 0.95, 3), {
+      x: ax,
+      y: 6.55,
+      z: pz + 0.45,
+      rx: Math.PI / 2,
+      sz: 0.25,
+    });
+    staticBox(ctx, ax, 2.5, pz, 0.9, 5.0, 0.9);
+  }
+  // Overhead timber beams and stepped pediment (plain wood + red trim, no text).
+  batch.add(palette.deckWood, new THREE.BoxGeometry(0.65, 0.75, 6.2), {
+    x: ax,
+    y: 4.55,
+    z,
+  });
+  batch.add(palette.iron, new THREE.BoxGeometry(0.72, 0.14, 6.4), {
+    x: ax,
+    y: 4.98,
+    z,
+  });
+  batch.add(palette.crate, new THREE.BoxGeometry(0.55, 0.65, 3.2), {
+    x: ax,
+    y: 5.38,
+    z,
+  });
+  batch.add(palette.iron, new THREE.BoxGeometry(0.62, 0.14, 3.4), {
+    x: ax,
+    y: 5.75,
+    z,
+  });
+
+  // Standing riderless horses inside the ring in calm idle poses.
+  stampIdleHorse(batch, x + 5.2, z - 1.1, 0.95);
+  stampIdleHorse(batch, x - 0.8, z + 1.2, -2.05, 1.28);
+  stampIdleHorse(batch, x - 5.4, z - 1.5, 0.35);
+  stampIdleHorse(batch, x - 3.6, z + 2.3, 2.35, 1.15);
 }
