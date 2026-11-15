@@ -146,6 +146,12 @@ export const FACTS: Fact[] = [
     confidence: 'ok',
   },
   {
+    id: 'F30',
+    text: 'On March 31, 1889, the day the tower was completed, Gustave Eiffel raised a French flag at its top with some of his collaborators and officials from the government and the City of Paris.',
+    sources: ['S5', 'S27'],
+    confidence: 'ok',
+  },
+  {
     id: 'F28',
     text: 'Student notes give March 19, 1889 as the day he both arrived in Paris and founded the Kidlat Club. Not confirmed; say "soon after arriving".',
     sources: ['S1'],
@@ -181,6 +187,7 @@ export const SOURCES: Record<string, string> = {
   S23: 'Cultural Center of the Philippines. CCP Encyclopedia of Philippine Art: El Pacto de Sangre. https://epa.culturalcenter.gov.ph/3/82/2253',
   S24: 'Popular Science. In 1889, Paris became obsessed with the Wild West. https://www.popsci.com/science/wild-west-paris-history/',
   S25: 'Wikipedia. El filibusterismo. https://en.wikipedia.org/wiki/El_filibusterismo',
+  S27: "Societe d'Exploitation de la Tour Eiffel. 1889-2019: 130 years of amazement. https://www.toureiffel.paris/en/news/130-years/1889-2019-130-years-amazement",
   S26: 'Filipinas Heritage Library. The Travels of Rizal. https://www.filipinaslibrary.org.ph/?p=1347',
 };
 
