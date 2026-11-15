@@ -41,6 +41,7 @@ import { showIntro } from './ui/Intro';
 import { DeskScene } from './ui/DeskScene';
 import { playInkWipe, playTowerTimelapse, playTrainJourney } from './ui/Travel';
 import { showBrochureView } from './ui/BrochureView';
+import { overflowingPanels } from './ui/brochure/renderBrochure';
 import { SceneDirector } from './story/SceneDirector';
 import { captureStorySnapshot } from './story/snapshot';
 import { PersonActor, rolePreset, type PersonAction, type PersonRole } from './story/figures';
@@ -650,6 +651,10 @@ async function main(): Promise<void> {
         },
         resetLook: () => {
           cinematic = false;
+        },
+        overflowingPanels: () => {
+          const el = document.querySelector<HTMLElement>('.b-brochure');
+          return el ? overflowingPanels(el) : ['missing'];
         },
       },
     });

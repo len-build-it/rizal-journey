@@ -1,18 +1,3 @@
-:root {
-  --night: #1c2340;
-  --night-deep: #121729;
-  --iron: #9c3b2a;
-  --gaslight: #e2b04a;
-  --gold: #c9a34a;
-  --zinc: #d9dee0;
-  --paper: #eef0ec;
-  --ink: #1c2340;
-  --ink-soft: #4a5068;
-  --display: var(--k-display);
-  --body: var(--k-text);
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
 *,
 *::before,
 *::after {
@@ -676,7 +661,7 @@ button {
   font-size: 1.05rem;
 }
 
-/* Brochure view (finale Z-fold and no-WebGL fallback) */
+/* Brochure view (finale Z-fold and read-as-brochure fallback) */
 
 .brochure-view {
   position: absolute;
@@ -685,41 +670,40 @@ button {
   overflow-y: auto;
   padding: max(28px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
     max(48px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
-  background: var(--night);
-  color: var(--ink);
+  background: var(--k-ink);
+  color: var(--k-card);
 }
 
 .brochure-header {
-  max-width: 1120px;
+  max-width: 1240px;
   margin: 0 auto 24px;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px 24px;
-  color: var(--zinc);
 }
 
 .brochure-title {
   margin: 0;
-  font-family: var(--display);
-  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  font-size: clamp(1.9rem, 3.8vw, 2.6rem);
   font-weight: 500;
   line-height: 1.05;
+  color: var(--k-card);
 }
 
 .brochure-sub {
   margin: 6px 0 0;
   font-size: 0.98rem;
-  color: #b8c0d4;
+  color: rgb(245 239 224 / 0.78);
 }
 
 .brochure-banner {
   margin: 12px 0 0;
   padding: 10px 14px;
-  border-left: 3px solid var(--gaslight);
-  background: rgb(238 240 236 / 0.1);
-  color: var(--paper);
+  border-left: 3px solid var(--k-vermilion);
+  background: rgb(245 239 224 / 0.1);
+  color: var(--k-card);
   font-size: 0.94rem;
 }
 
@@ -729,499 +713,46 @@ button {
   gap: 10px;
 }
 
-.brochure-btn {
-  padding: 11px 20px;
-  border: 1px solid rgb(217 222 224 / 0.4);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--zinc);
-  font-weight: 600;
-}
-
-.brochure-btn.is-primary {
-  border-color: var(--gaslight);
-  background: var(--gaslight);
-  color: var(--night-deep);
-}
-
 .brochure-print-note {
   width: 100%;
   margin: 0;
   font-size: 0.9rem;
-  color: var(--gaslight);
+  color: var(--k-card);
 }
 
 .brochure-print-note:empty {
   display: none;
 }
 
-.brochure-fold {
-  max-width: 1120px;
-  margin: 0 auto;
-  display: grid;
-  gap: 28px;
-}
-
-.brochure-side {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  perspective: 1400px;
-}
-
-.brochure-panel {
-  background: var(--paper);
-  padding: 24px 22px;
-  border-top: 5px solid var(--iron);
-  border-right: 1px solid rgb(28 35 64 / 0.14);
-  box-shadow: 0 14px 36px rgb(12 16 28 / 0.35);
-}
-
-.brochure-panel.is-odd {
-  transform: rotateY(2.2deg);
-}
-
-.brochure-panel.is-even {
-  background: #e6e9e3;
-  transform: rotateY(-2.2deg);
-}
-
-.brochure-panel.is-cover {
-  background: var(--night-deep);
-  color: var(--zinc);
-  border-top-color: var(--gaslight);
+.brochure-mount {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
-/* Finale: one continuous 6-panel printed-paper Z-fold strip on the night-blue desk */
-.brochure-view.is-finale .brochure-header {
-  max-width: 1240px;
-  margin-bottom: 18px;
-}
-
-.brochure-view.is-finale .brochure-fold {
-  max-width: 1240px;
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 0;
-  perspective: 1800px;
-  transform-style: preserve-3d;
-  box-shadow: 0 24px 56px rgb(8 11 22 / 0.55);
-}
-
-.brochure-view.is-finale .brochure-side {
-  display: contents;
-}
-
-.brochure-view.is-finale .brochure-panel {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 16px 14px 18px;
-  border-top: 4px solid var(--iron);
-  border-right: 1px solid rgb(28 35 64 / 0.18);
-  box-shadow: none;
-  transform-origin: left center;
-  transform-style: preserve-3d;
-}
-
-.brochure-view.is-finale .brochure-panel.is-even {
-  background-image: linear-gradient(90deg, rgb(28 35 64 / 0.055), rgb(28 35 64 / 0.015) 26%, transparent);
-}
-
-.brochure-view.is-finale .brochure-panel.is-odd {
-  background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.18) 85%, rgb(28 35 64 / 0.06));
-}
-
-.brochure-view.is-finale .brochure-panel[data-panel='3'] {
-  border-right: 2px solid rgb(28 35 64 / 0.32);
-}
-
-.brochure-view.is-finale .brochure-panel[data-panel='6'] {
-  border-right: 0;
-}
-
-.brochure-view.is-finale .brochure-panel.is-cover {
-  background: var(--paper);
-  color: var(--ink);
-  border-top-color: var(--iron);
-  justify-content: flex-start;
-}
-
-.brochure-view.is-finale .is-cover .bp-kicker,
-.brochure-view.is-finale .is-cover .bp-credit {
-  color: var(--ink-soft);
-}
-
-.brochure-view.is-finale .is-cover .bp-cover-title {
-  margin-top: 18px;
-  font-size: 1.75rem;
-}
-
-.brochure-view.is-finale .is-cover .bp-cover-sub {
-  color: var(--iron);
-  font-size: 1rem;
-  margin: 8px 0 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgb(28 35 64 / 0.18);
-}
-
-.brochure-view.is-finale .is-cover .bp-body {
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.brochure-view.is-finale .is-cover .bp-credit {
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px solid rgb(28 35 64 / 0.14);
-  font-size: 0.72rem;
-  line-height: 1.38;
-}
-
-@keyframes zfold-cover {
-  0% {
-    transform: rotateY(-12deg);
+@keyframes brochure-settle {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
   }
-  100% {
-    transform: rotateY(1.4deg);
-  }
-}
-
-@keyframes zfold-odd {
-  0% {
-    transform: rotateY(-168deg);
-    opacity: 0.15;
-  }
-  100% {
-    transform: rotateY(1.4deg);
+  to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes zfold-even {
-  0% {
-    transform: rotateY(168deg);
-    opacity: 0.15;
-  }
-  100% {
-    transform: rotateY(-1.8deg);
-    opacity: 1;
-  }
+.brochure-view .b-sheet--a {
+  animation: brochure-settle 0.6s var(--k-ease) both;
 }
 
-.brochure-view.is-finale .brochure-panel[data-panel='1'] {
-  animation: zfold-cover 0.2s var(--ease-out) both;
-}
-
-.brochure-view.is-finale .brochure-panel[data-panel='2'] {
-  animation: zfold-even 0.24s var(--ease-out) 0.04s both;
-}
-
-.brochure-view.is-finale .brochure-panel[data-panel='3'] {
-  animation: zfold-odd 0.24s var(--ease-out) 0.1s both;
-}
-
-.brochure-view.is-finale .brochure-panel[data-panel='4'] {
-  animation: zfold-even 0.24s var(--ease-out) 0.16s both;
-}
-
-.brochure-view.is-finale .brochure-panel[data-panel='5'] {
-  animation: zfold-odd 0.22s var(--ease-out) 0.21s both;
-}
-
-.brochure-view.is-finale .brochure-panel[data-panel='6'] {
-  animation: zfold-even 0.2s var(--ease-out) 0.25s both;
+.brochure-view .b-sheet--b {
+  animation: brochure-settle 0.6s var(--k-ease) 0.14s both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .brochure-view.is-finale .brochure-panel {
-    animation: none !important;
+  .brochure-view .b-sheet--a,
+  .brochure-view .b-sheet--b {
+    animation: none;
   }
-  .brochure-view.is-finale .brochure-panel.is-odd {
-    transform: rotateY(1.4deg);
-  }
-  .brochure-view.is-finale .brochure-panel.is-even {
-    transform: rotateY(-1.8deg);
-  }
-}
-
-.bp-kicker {
-  margin: 0 0 8px;
-  font-size: 0.8rem;
-  color: var(--ink-soft);
-}
-
-.is-cover .bp-kicker {
-  color: #9da6bc;
-}
-
-.bp-cover-title {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 2.1rem;
-  font-weight: 500;
-  line-height: 0.98;
-}
-
-.bp-cover-sub {
-  margin: 10px 0 18px;
-  font-family: var(--display);
-  font-size: 1.15rem;
-  color: var(--gaslight);
-}
-
-.bp-credit {
-  margin: 18px 0 0;
-  font-size: 0.8rem;
-  line-height: 1.45;
-  color: #9da6bc;
-}
-
-.bp-heading {
-  margin: 0 0 12px;
-  font-family: var(--display);
-  font-size: 1.12rem;
-  font-weight: 500;
-  line-height: 1.15;
-}
-
-.bp-stories {
-  display: grid;
-  gap: 0;
-}
-
-.bp-story-btn {
-  display: grid;
-  gap: 2px;
-  width: 100%;
-  padding: 9px 0;
-  border: 0;
-  border-top: 1px solid rgb(28 35 64 / 0.16);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--ink);
-  text-align: left;
-  cursor: pointer;
-}
-
-.bp-story-btn:hover .bp-story-title,
-.bp-story-btn:focus-visible .bp-story-title {
-  color: var(--iron);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.bp-story-btn.is-unvisited {
-  opacity: 0.72;
-}
-
-.bp-story-thumb {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  height: auto;
-  margin-bottom: 5px;
-  border-radius: 5px;
-  border: 1px solid rgb(28 35 64 / 0.22);
-  object-fit: cover;
-  background: var(--paper);
-}
-
-.bp-print-thumb {
-  display: none;
-}
-
-.bp-story-date {
-  margin: 0;
-  font-family: var(--body);
-  font-size: 0.72rem;
-  letter-spacing: 0.02em;
-  color: var(--iron);
-}
-
-.bp-story-title {
-  font-family: var(--display);
-  font-weight: 500;
-  font-size: 0.98rem;
-  line-height: 1.18;
-  transition: color 0.15s ease;
-}
-
-.bp-story-heading {
-  margin: 2px 0 8px;
-  font-family: var(--display);
-  font-size: 1.15rem;
-  font-weight: 500;
-}
-
-.bp-full-story {
-  padding-top: 12px;
-  border-top: 1px solid rgb(28 35 64 / 0.12);
-}
-
-.bp-body {
-  margin: 0 0 8px;
-  font-size: 0.92rem;
-  line-height: 1.52;
-}
-
-.bp-note {
-  margin: 8px 0 0;
-  padding-left: 10px;
-  border-left: 2px solid var(--iron);
-  font-size: 0.84rem;
-  color: var(--ink-soft);
-}
-
-.bp-print-story,
-.bp-print-refs {
-  display: none;
-}
-
-.bp-refs-block {
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px solid rgb(28 35 64 / 0.2);
-}
-
-.bp-refs-heading {
-  margin: 0 0 4px;
-  font-family: var(--display);
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.bp-refs-block .bp-refs-list {
-  margin: 0;
-  padding-left: 14px;
-  font-size: 0.58rem;
-  line-height: 1.24;
-  color: var(--ink-soft);
-  overflow-wrap: anywhere;
-}
-
-.bp-refs-block .bp-refs-list li + li {
-  margin-top: 2px;
-}
-
-.brochure-refs {
-  max-width: 1120px;
-  margin: 28px auto 0;
-  padding: 22px 26px;
-  border-radius: 12px;
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.brochure-refs-title {
-  margin: 0 0 12px;
-  font-family: var(--display);
-  font-size: 1.35rem;
-  font-weight: 500;
-}
-
-.brochure-refs-list {
-  margin: 0;
-  padding-left: 20px;
-  font-size: 0.84rem;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
-.brochure-refs-list li + li {
-  margin-top: 4px;
-}
-
-.card.is-brochure-card {
-  position: fixed;
-  z-index: 8;
-}
-
-@media (min-width: 901px) {
-  .brochure-view.is-finale {
-    overflow-x: hidden;
-  }
-
-  .brochure-view.is-finale .brochure-panel {
-    max-height: calc(100dvh - 136px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgb(28 35 64 / 0.36) rgb(28 35 64 / 0.08);
-  }
-
-  .brochure-view.is-finale .brochure-panel::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .brochure-view.is-finale .brochure-panel::-webkit-scrollbar-track {
-    background: rgb(28 35 64 / 0.08);
-  }
-
-  .brochure-view.is-finale .brochure-panel::-webkit-scrollbar-thumb {
-    background: rgb(28 35 64 / 0.36);
-    border-radius: 3px;
-  }
-
-  .brochure-view.is-finale .brochure-panel[data-panel='6']::after {
-    content: '';
-    position: sticky;
-    bottom: -18px;
-    left: 0;
-    right: 0;
-    display: block;
-    height: 32px;
-    flex-shrink: 0;
-    margin-top: -32px;
-    pointer-events: none;
-    background: linear-gradient(to bottom, transparent, var(--paper) 90%);
-  }
-
-  @supports (animation-timeline: scroll()) {
-    @keyframes finale-scroll-fade {
-      0%,
-      82% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0;
-      }
-    }
-
-    .brochure-view.is-finale .brochure-panel[data-panel='6']::after {
-      animation: finale-scroll-fade linear both;
-      animation-timeline: scroll(nearest);
-    }
-  }
-}
-
-@media (max-width: 900px) {
-  .brochure-side {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .brochure-panel.is-odd,
-  .brochure-panel.is-even {
-    transform: none;
-  }
-
-  .brochure-view.is-finale .brochure-fold {
-    grid-template-columns: repeat(6, minmax(220px, 72vw));
-    overflow-x: auto;
-  }
-}
-
-/* Print stylesheet: A4 landscape, two pages, 3 x 99mm Z-fold panels per side */
-
-@page {
-  size: A4 landscape;
-  margin: 0;
 }
 
 @media print {
@@ -1237,9 +768,9 @@ button {
   .intro,
   .stick-zone,
   .stick,
-  .card,
-  .brochure-header,
-  .brochure-refs {
+  .k-chapter,
+  .k-story,
+  .brochure-header {
     display: none !important;
   }
 
@@ -1254,171 +785,18 @@ button {
     overflow: visible;
   }
 
-  .brochure-fold,
-  .brochure-view.is-finale .brochure-fold {
+  .brochure-mount {
     display: block;
-    max-width: none;
-    margin: 0;
-    box-shadow: none;
   }
 
-  .brochure-side,
-  .brochure-view.is-finale .brochure-side {
-    display: grid;
-    grid-template-columns: repeat(3, 99mm);
-    width: 297mm;
-    height: 210mm;
-    page-break-after: always;
-    break-after: page;
-  }
-
-  .brochure-side:last-child,
-  .brochure-view.is-finale .brochure-side:last-child {
-    page-break-after: auto;
-    break-after: auto;
-  }
-
-  .brochure-panel,
-  .brochure-panel.is-odd,
-  .brochure-panel.is-even,
-  .brochure-panel.is-cover,
-  .brochure-view.is-finale .brochure-panel,
-  .brochure-view.is-finale .brochure-panel.is-odd,
-  .brochure-view.is-finale .brochure-panel.is-even,
-  .brochure-view.is-finale .brochure-panel.is-cover {
-    width: 99mm;
-    height: 210mm;
-    max-height: none;
-    padding: 3.5mm 4mm;
-    margin: 0;
+  .brochure-view .b-sheet--a,
+  .brochure-view .b-sheet--b {
     animation: none !important;
     transform: none !important;
     opacity: 1 !important;
-    box-shadow: none;
-    background: #fff;
-    background-image: none;
-    color: var(--ink);
-    border-top: 2px solid var(--iron);
-    border-right: 0.25mm dashed rgb(28 35 64 / 0.25);
-    overflow: hidden;
   }
 
-  .brochure-view.is-finale .brochure-panel[data-panel='6']::after {
-    display: none;
-  }
-
-  .brochure-panel:last-child,
-  .brochure-view.is-finale .brochure-panel[data-panel='3'],
-  .brochure-view.is-finale .brochure-panel:last-child {
-    border-right: 0;
-  }
-
-  .is-cover .bp-kicker,
-  .is-cover .bp-credit {
-    color: var(--ink-soft);
-  }
-
-  .bp-cover-sub {
-    color: var(--iron);
-  }
-
-  .bp-kicker {
-    font-size: 7pt;
-    margin-bottom: 2pt;
-  }
-
-  .bp-heading {
-    font-size: 10pt;
-    margin-bottom: 3pt;
-  }
-
-  .bp-story-btn {
-    display: none;
-  }
-
-  .bp-print-thumb {
-    display: block;
-    width: 100%;
-    height: 11mm;
-    margin-bottom: 1pt;
-    border-radius: 1mm;
-    border: 0.3pt solid rgb(28 35 64 / 0.28);
-    object-fit: cover;
-    background: var(--paper);
-  }
-
-  .bp-print-story,
-  .bp-print-refs,
-  .bp-refs-block {
-    display: block;
-  }
-
-  .bp-stories {
-    gap: 3pt;
-  }
-
-  .bp-full-story,
-  .bp-print-story {
-    padding-top: 2.5pt;
-    border-top: 0.5pt solid rgb(28 35 64 / 0.18);
-  }
-
-  .bp-story-date {
-    font-size: 7pt;
-  }
-
-  .bp-story-heading {
-    font-size: 8.2pt;
-    margin: 0.5pt 0 1.5pt;
-  }
-
-  .bp-body {
-    font-size: 6.4pt;
-    line-height: 1.12;
-    margin-bottom: 1.2pt;
-  }
-
-  .bp-note {
-    font-size: 6.4pt;
-    line-height: 1.1;
-  }
-
-  .bp-print-refs,
-  .bp-refs-block {
-    margin-top: 2pt;
-    padding-top: 2pt;
-    border-top: 0.5pt solid rgb(28 35 64 / 0.25);
-  }
-
-  .bp-refs-heading {
-    margin: 0 0 1pt;
-    font-size: 7pt;
-  }
-
-  .bp-refs-list,
-  .bp-refs-block .bp-refs-list {
-    margin: 0;
-    padding-left: 0;
-    list-style: none;
-    counter-reset: ref;
-    font-size: 6.3pt;
-    line-height: 1.08;
-    overflow-wrap: anywhere;
-  }
-
-  .bp-refs-list li {
-    display: inline;
-    counter-increment: ref;
-  }
-
-  .bp-refs-list li::before {
-    content: counter(ref) '. ';
-    font-weight: 600;
-    color: var(--ink);
-  }
-
-  .bp-refs-list li + li {
-    margin-top: 0;
-    margin-left: 3pt;
+  .brochure-view .b-sheet--b {
+    break-after: auto;
   }
 }
