@@ -82,6 +82,8 @@ export const palette = {
   seineWater: 0x4b747a,
   basqueWhite: 0xf2ede2,
   basqueRed: 0x8c3328,
+  hedgeGreen: 0x466340,
+  tamariskLeaf: 0x769478,
   sand: 0xe3cfa6,
   sandWet: 0xc9b082,
   brass: 0xcfa44e,
