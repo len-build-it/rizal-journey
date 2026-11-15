@@ -1,0 +1,62 @@
+/**
+ * One palette for the whole toy world, so every area reads as part of the same set.
+ * Colors are chosen per material, not per object, to keep the scene cohesive.
+ */
+export const palette = {
+  // Brand tokens shared with the UI.
+  night: 0x1c2340,
+  iron: 0x9c3b2a, // Venetian red, the Eiffel Tower's 1889 color.
+  gaslight: 0xe2b04a,
+
+  // Provencal town.
+  limestone: 0xe6dccb,
+  ochre: 0xd9a066,
+  apricot: 0xe8b98f,
+  roofTile: 0xb5543a,
+  roofTileDark: 0x96432f,
+  shutterGreen: 0x5e7a63,
+  shutterBlue: 0x58708a,
+  doorBrown: 0x5b3a29,
+  quayStone: 0xc9b694,
+  quayStoneDark: 0xa08f73,
+  cobble: 0xb59a76,
+  dirt: 0xc9a77c,
+  grass: 0x9bb06a,
+  grassDark: 0x7f9653,
+  pine: 0x4f6b45,
+  rock: 0xb8ad9c,
+  rockDark: 0x8f8574,
+
+  // Sea.
+  seaDeep: 0x2f6f86,
+  seaShallow: 0x5ea6b0,
+  foam: 0xf3efe6,
+
+  // Ships and rail.
+  hull: 0x24252b,
+  deckWood: 0xb08a5f,
+  funnel: 0xd9a441,
+  sail: 0xefe9dc,
+  railSteel: 0x5a5d66,
+
+  // Horse and rider.
+  bay: 0x8a5233,
+  bayDark: 0x2e1f17,
+  hoof: 0x2a2420,
+  saddle: 0x6b2e22,
+  coat: 0x262a35,
+  shirt: 0xf1eee7,
+  skin: 0xc68a5e,
+  hair: 0x1d1a19,
+  hat: 0x1f1d22,
+
+  // Props.
+  crate: 0xb88a57,
+  crateDark: 0x8d653c,
+  barrel: 0x8e5a36,
+  barrelHoop: 0x4a4a4f,
+  cafeTable: 0x2f3b33,
+  awningRed: 0xb24a3a,
+  awningCream: 0xf0e6d2,
+  lampIron: 0x2b2f36,
+} as const;
