@@ -251,16 +251,16 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     stops,
     staticDrawCalls: staticGroup.children.length,
     look: {
-      sky: 0xaad0e6,
-      fog: 0xbedae8,
+      sky: 0xa7d0e4,
+      fog: 0xbfdde8,
       fogNear: 58,
       fogFar: 175,
-      sunColor: 0xfff3e0,
+      sunColor: 0xfff1dc,
       sunIntensity: 3.3,
-      sunDirection: new THREE.Vector3(0.45, 0.65, 0.6).normalize(),
-      hemiSky: 0xd6eaf8,
-      hemiGround: 0x8f8574,
-      hemiIntensity: 1.05,
+      sunDirection: new THREE.Vector3(0.3, 0.75, 0.55).normalize(),
+      hemiSky: 0xdcebf4,
+      hemiGround: 0x9a8a6c,
+      hemiIntensity: 1.15,
     },
     update(_dt, time) {
       water.update(time);

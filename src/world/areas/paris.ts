@@ -723,43 +723,43 @@ function buildParisStops(era: ParisEra): StopMarker[] {
 function parisLook(era: ParisEra): AreaLook {
   if (era === '1883') {
     return {
-      sky: 0xb6d8ea,
-      fog: 0xc8e0eb,
+      sky: 0x9ecbe0,
+      fog: 0xb8d6e2,
       fogNear: 58,
       fogFar: 170,
-      sunColor: 0xffe9c8,
-      sunIntensity: 3.3,
-      sunDirection: new THREE.Vector3(0.45, 0.72, 0.52).normalize(),
-      hemiSky: 0xd9ebf5,
-      hemiGround: 0x9b866c,
-      hemiIntensity: 1.05,
+      sunColor: 0xffe9c7,
+      sunIntensity: 3.2,
+      sunDirection: new THREE.Vector3(0.4, 0.8, 0.45).normalize(),
+      hemiSky: 0xd6e8f3,
+      hemiGround: 0xa08460,
+      hemiIntensity: 1.1,
     };
   }
   if (era === '1885') {
     return {
-      sky: 0x9aaec2,
-      fog: 0xaab9c7,
-      fogNear: 42,
-      fogFar: 140,
-      sunColor: 0xdbe6f5,
-      sunIntensity: 2.3,
-      sunDirection: new THREE.Vector3(0.65, 0.42, 0.62).normalize(),
-      hemiSky: 0xb6c7d9,
-      hemiGround: 0x6f6e73,
-      hemiIntensity: 1.15,
+      sky: 0xb9c6cf,
+      fog: 0xc4ced4,
+      fogNear: 48,
+      fogFar: 150,
+      sunColor: 0xfff3e3,
+      sunIntensity: 2.4,
+      sunDirection: new THREE.Vector3(0.6, 0.45, 0.3).normalize(),
+      hemiSky: 0xdfe6ea,
+      hemiGround: 0x8c8478,
+      hemiIntensity: 1.25,
     };
   }
   return {
-    sky: 0x9a828f,
-    fog: 0xa88a87,
-    fogNear: 50,
-    fogFar: 165,
-    sunColor: 0xffba73,
-    sunIntensity: 2.9,
-    sunDirection: new THREE.Vector3(0.78, 0.3, 0.55).normalize(),
-    hemiSky: 0xaab0d1,
-    hemiGround: 0x735b4d,
-    hemiIntensity: 1.0,
+    sky: 0xd9b99a,
+    fog: 0xe3c7a6,
+    fogNear: 56,
+    fogFar: 170,
+    sunColor: 0xffd29a,
+    sunIntensity: 3.0,
+    sunDirection: new THREE.Vector3(0.75, 0.42, 0.2).normalize(),
+    hemiSky: 0xc7d4e6,
+    hemiGround: 0x8a6a4f,
+    hemiIntensity: 1.2,
   };
 }
 

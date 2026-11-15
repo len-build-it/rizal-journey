@@ -214,16 +214,16 @@ export function buildMarseille(
   const look =
     year === 1891
       ? {
-          sky: 0xd6b89e,
-          fog: 0xd8beaa,
+          sky: 0xc9d9de,
+          fog: 0xd3dcd9,
           fogNear: 55,
           fogFar: 165,
-          sunColor: 0xffba74,
-          sunIntensity: 3.1,
-          sunDirection: new THREE.Vector3(-0.68, 0.34, 0.65).normalize(),
-          hemiSky: 0xdec4b0,
-          hemiGround: 0x87684a,
-          hemiIntensity: 0.95,
+          sunColor: 0xffdcae,
+          sunIntensity: 3.0,
+          sunDirection: new THREE.Vector3(0.7, 0.55, 0.35).normalize(),
+          hemiSky: 0xd7e4ec,
+          hemiGround: 0xa0805e,
+          hemiIntensity: 1.15,
         }
       : {
           sky: 0xa9cfdc,
