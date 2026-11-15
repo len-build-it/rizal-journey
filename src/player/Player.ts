@@ -81,7 +81,10 @@ export class Player {
     this.body.setTranslation({ x: p.x, y: p.y + BODY_LIFT, z: p.z }, true);
     this.heading = heading;
     this.speed = 0;
+    this.verticalVelocity = 0;
+    this.lean = 0;
     this.position.copy(p);
+    this.syncVisual(0);
   }
 
   update(dt: number, input: Input, cameraYaw: number): void {
