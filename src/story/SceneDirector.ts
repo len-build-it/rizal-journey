@@ -91,6 +91,10 @@ export class SceneDirector {
     return this.active ? this.active.lastTarget : null;
   }
 
+  get activeStop(): StopMarker | null {
+    return this.active ? this.active.stop : null;
+  }
+
   play(stop: StopMarker, area: Area, callbacks: ScenePlayCallbacks): void {
     if (this.active) this.cleanup();
 

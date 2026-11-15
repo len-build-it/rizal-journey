@@ -22,6 +22,8 @@ import { StopMarker } from '../StopMarker';
 import { EiffelTower } from '../tower';
 import { buildTrain } from '../vessels';
 import { storiesFor, type ParisEra } from '../../content/stories';
+import { BackgroundLife } from '../life/BackgroundLife';
+import { parisDressing } from '../life/dressings';
 import type { Area, AreaLook } from '../Area';
 
 const TOWER_CENTER = new THREE.Vector3(-34, 0, 0);
@@ -37,7 +39,12 @@ const TOWER_CENTER = new THREE.Vector3(-34, 0, 0);
  *   east streets         : Rue de Maubeuge (z = -22), Laennec Hospital, Rue du Cherche-Midi (z = 10),
  *                          Rue des Saints-Peres (z = 26) and Juan Luna's studio
  */
-export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): Area {
+export function buildParis(
+  scene: THREE.Scene,
+  ctx: PhysicsCtx,
+  era: ParisEra,
+  mobile = false,
+): Area {
   const batch = new StaticBatch();
   const props = new Props(ctx, scene);
   const signsGroup = new THREE.Group();
@@ -568,6 +575,15 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     },
   };
 
+  const life = new BackgroundLife(
+    scene,
+    ctx,
+    stops,
+    parisDressing(era),
+    Number(era),
+    mobile,
+  );
+
   return {
     id: `paris-${era}`,
     name: `Paris, ${era}`,
@@ -589,9 +605,16 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
           arenaHorsesGroup!.visible = !active;
         }
       : undefined,
-    update(_dt, time) {
+    setLifeContext(lifeCtx) {
+      life.setContext(lifeCtx);
+    },
+    setLifeVisible(visible) {
+      life.group.visible = visible;
+    },
+    update(dt, time) {
       water.update(time);
       props.update();
+      life.update(dt, time);
     },
     dispose() {
       disposeObject(staticGroup);
@@ -611,6 +634,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
       tower?.dispose();
       water.dispose();
       props.dispose();
+      life.dispose();
       for (const s of stops) s.dispose();
       disposePhysics(ctx);
     },

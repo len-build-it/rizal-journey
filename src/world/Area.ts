@@ -28,6 +28,15 @@ export interface RoadGraph {
   stopWaypoints: Record<string, number>;
 }
 
+export interface LifeUpdateContext {
+  playerPos: THREE.Vector3;
+  playerHeading: number;
+  playerSpeed: number;
+  focusPos: THREE.Vector3;
+  excludeCenters: THREE.Vector3[];
+  excludeRadius: number;
+}
+
 export interface Area {
   id: string;
   name: string;
@@ -40,6 +49,8 @@ export interface Area {
   visualBounds?: PlayBounds;
   update(dt: number, time: number): void;
   dispose(): void;
+  setLifeContext?(ctx: LifeUpdateContext): void;
+  setLifeVisible?(visible: boolean): void;
   setTowerProgress?(p: number): void;
   towerCenter?: THREE.Vector3;
   setTrainOffset?(offsetX: number, doorClose?: number): void;

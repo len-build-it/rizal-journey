@@ -28,7 +28,7 @@ export class AreaManager {
 
     this.current?.dispose();
     const ctx = createPhysicsCtx(this.engine.rapier, this.engine.world);
-    const area = build(this.engine.scene, ctx);
+    const area = build(this.engine.scene, ctx, this.engine.quality.mobile);
 
     for (const stop of area.stops) {
       stop.visited = visited.has(stop.story.id);
@@ -50,24 +50,24 @@ export class AreaManager {
 
 async function loadBuilder(
   dest: AreaDestination,
-): Promise<(scene: THREE.Scene, ctx: ReturnType<typeof createPhysicsCtx>) => Area> {
+): Promise<(scene: THREE.Scene, ctx: ReturnType<typeof createPhysicsCtx>, mobile?: boolean) => Area> {
   switch (dest.area) {
     case 'marseille-1882': {
       const m = await import('./areas/marseille');
-      return (scene, ctx) => m.buildMarseille(scene, ctx, 1882);
+      return (scene, ctx, mobile) => m.buildMarseille(scene, ctx, 1882, mobile);
     }
     case 'marseille-1891': {
       const m = await import('./areas/marseille');
-      return (scene, ctx) => m.buildMarseille(scene, ctx, 1891);
+      return (scene, ctx, mobile) => m.buildMarseille(scene, ctx, 1891, mobile);
     }
     case 'paris': {
       const m = await import('./areas/paris');
       const era = dest.era;
-      return (scene, ctx) => m.buildParis(scene, ctx, era);
+      return (scene, ctx, mobile) => m.buildParis(scene, ctx, era, mobile);
     }
     case 'biarritz-1891': {
       const m = await import('./areas/biarritz1891');
-      return (scene, ctx) => m.buildBiarritz1891(scene, ctx);
+      return (scene, ctx, mobile) => m.buildBiarritz1891(scene, ctx, mobile);
     }
   }
 }

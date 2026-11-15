@@ -343,11 +343,23 @@ async function main(): Promise<void> {
 
     input.update();
     player.update(dt, input, cam.yaw);
+    const excludeCenters: THREE.Vector3[] = [];
+    if (director.isPlaying) {
+      if (director.activeStop) excludeCenters.push(director.activeStop.position);
+      if (director.focusTarget) excludeCenters.push(director.focusTarget);
+    }
+    const lifeFocus =
+      director.isPlaying && director.focusTarget ? director.focusTarget : cam.focusPosition;
+    area.setLifeContext?.({
+      playerPos: player.position,
+      playerHeading: player.heading,
+      playerSpeed: player.speed,
+      focusPos: lifeFocus,
+      excludeCenters,
+      excludeRadius: 14,
+    });
     area.update(dt, time);
-    setLifeFrame(
-      time,
-      director.isPlaying && director.focusTarget ? director.focusTarget : cam.focusPosition,
-    );
+    setLifeFrame(time, lifeFocus);
 
     if (director.isPlaying) {
       director.update(dt, time);

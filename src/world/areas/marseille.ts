@@ -9,6 +9,8 @@ import { Props } from '../Props';
 import { Water } from '../Water';
 import { StopMarker } from '../StopMarker';
 import { storiesFor } from '../../content/stories';
+import { BackgroundLife } from '../life/BackgroundLife';
+import { marseilleDressing } from '../life/dressings';
 import type { Area } from '../Area';
 
 /**
@@ -23,6 +25,7 @@ export function buildMarseille(
   scene: THREE.Scene,
   ctx: PhysicsCtx,
   year: 1882 | 1891 = 1882,
+  mobile = false,
 ): Area {
   const batch = new StaticBatch();
   const props = new Props(ctx, scene);
@@ -290,6 +293,15 @@ export function buildMarseille(
     },
   };
 
+  const life = new BackgroundLife(
+    scene,
+    ctx,
+    stops,
+    marseilleDressing(year),
+    year === 1891 ? 1891 : 1882,
+    mobile,
+  );
+
   return {
     id: year === 1891 ? 'marseille-1891' : 'marseille-1882',
     name: `Marseille, ${year}`,
@@ -308,9 +320,16 @@ export function buildMarseille(
       shipGroup.position.set(offsetX, 0, offsetZ);
       shipGroup.rotation.y = yaw;
     },
-    update(_dt, time) {
+    setLifeContext(lifeCtx) {
+      life.setContext(lifeCtx);
+    },
+    setLifeVisible(visible) {
+      life.group.visible = visible;
+    },
+    update(dt, time) {
       water.update(time);
       props.update();
+      life.update(dt, time);
     },
     dispose() {
       disposeObject(staticGroup);
@@ -319,6 +338,7 @@ export function buildMarseille(
       train.dispose();
       water.dispose();
       props.dispose();
+      life.dispose();
       for (const s of stops) s.dispose();
       disposePhysics(ctx);
     },

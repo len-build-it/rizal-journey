@@ -9,6 +9,8 @@ import { Props } from '../Props';
 import { Water } from '../Water';
 import { StopMarker } from '../StopMarker';
 import { storiesFor } from '../../content/stories';
+import { BackgroundLife } from '../life/BackgroundLife';
+import { biarritzDressing } from '../life/dressings';
 import type { Area } from '../Area';
 
 const PLATEAU_Y = 2.6;
@@ -35,7 +37,7 @@ interface FoamStrip {
  *   slope (-12..0)  : grassy coastal bank climbed by gravel paths
  *   plateau (z < -12): walled Basque-style villa with clipped gardens, paths, hedges, terrace, and inland station
  */
-export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
+export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx, mobile = false): Area {
   const batch = new StaticBatch();
   const props = new Props(ctx, scene);
 
@@ -448,6 +450,8 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     },
   };
 
+  const life = new BackgroundLife(scene, ctx, stops, biarritzDressing(), 1891, mobile);
+
   return {
     id: 'biarritz-1891',
     name: 'Biarritz, 1891',
@@ -473,10 +477,17 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
       hemiGround: 0x9a8a6c,
       hemiIntensity: 1.15,
     },
-    update(_dt, time) {
+    setLifeContext(lifeCtx) {
+      life.setContext(lifeCtx);
+    },
+    setLifeVisible(visible) {
+      life.group.visible = visible;
+    },
+    update(dt, time) {
       water.update(time);
       syncFoam(time);
       props.update();
+      life.update(dt, time);
     },
     dispose() {
       disposeObject(staticGroup);
@@ -487,6 +498,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
       foamGeo.dispose();
       water.dispose();
       props.dispose();
+      life.dispose();
       for (const s of stops) s.dispose();
       disposePhysics(ctx);
     },
