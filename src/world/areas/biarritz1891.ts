@@ -3,7 +3,7 @@ import { StaticBatch, disposeObject, mat, seeded } from '../kit';
 import { palette } from '../palette';
 import { boundary, disposePhysics, staticBox, type PhysicsCtx } from '../physics';
 import { gasLamp, parkBench, planeTree } from '../builders';
-import { fishingBoat } from '../vessels';
+import { buildTrain, fishingBoat } from '../vessels';
 import { Props } from '../Props';
 import { Water } from '../Water';
 import { StopMarker } from '../StopMarker';
@@ -365,6 +365,9 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
   syncFoam(0);
   scene.add(foamMesh);
 
+  const train = buildTrain(28, PLATEAU_Y, -40.2, 1);
+  scene.add(train.group);
+
   const [villa, manuscript, station] = storiesFor('biarritz-1891');
   const stops = [
     new StopMarker(
@@ -394,6 +397,9 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     spawnHeading: Math.PI * 0.15,
     stops,
     staticDrawCalls: staticGroup.children.length,
+    setTrainOffset(offsetX: number, doorClose = 1) {
+      train.setState(offsetX, doorClose);
+    },
     look: {
       sky: 0xa7d0e4,
       fog: 0xbfdde8,
@@ -413,6 +419,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     },
     dispose() {
       disposeObject(staticGroup);
+      train.dispose();
       foamMesh.removeFromParent();
       foamMesh.dispose();
       foamGeo.dispose();
@@ -1268,27 +1275,6 @@ function biarritzStation(
   staticBox(ctx, x, y + h / 2, z, w, h, 6.5);
 
   const lz = z - 5.2;
-  batch.add(palette.railSteel, new THREE.BoxGeometry(24, 0.2, 2.0), { x, y: y + 0.1, z: lz });
-  batch.add(palette.hull, new THREE.CylinderGeometry(0.85, 0.85, 4.4, 10), {
-    x: x - 0.5,
-    y: y + 1.7,
-    z: lz,
-    rz: Math.PI / 2,
-  });
-  batch.add(palette.hull, new THREE.BoxGeometry(2.0, 2.3, 2.1), {
-    x: x + 2.6,
-    y: y + 2.1,
-    z: lz,
-  });
-  batch.add(palette.iron, new THREE.BoxGeometry(2.2, 0.22, 2.3), {
-    x: x + 2.6,
-    y: y + 3.3,
-    z: lz,
-  });
-  batch.add(palette.hull, new THREE.CylinderGeometry(0.25, 0.35, 1.1, 8), {
-    x: x - 2.1,
-    y: y + 2.9,
-    z: lz,
-  });
+  batch.add(palette.railSteel, new THREE.BoxGeometry(28, 0.2, 2.0), { x, y: y + 0.1, z: lz });
   staticBox(ctx, x, y + 1.5, lz, 8, 3.0, 2.4);
 }

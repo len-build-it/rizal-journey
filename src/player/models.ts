@@ -258,6 +258,11 @@ export function buildHorseAndRider(): HorseRig {
   return buildHorseModel(1, true);
 }
 
+/** Riderless bay horse rig whose legs, neck, head and tail can be animated in scenes. */
+export function buildRiderlessHorse(): HorseRig {
+  return buildHorseModel(0.85, false);
+}
+
 /**
  * Riderless bay horse at full size with a 15% shorter neck and an idle pose
  * (grazing with muzzle near the ground, or resting with a relaxed ~45 deg neck).

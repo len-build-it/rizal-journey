@@ -26,5 +26,8 @@ export interface Area {
   dispose(): void;
   setTowerProgress?(p: number): void;
   towerCenter?: THREE.Vector3;
+  setTrainOffset?(offsetX: number, doorClose?: number): void;
+  setShipOffset?(offsetX: number, offsetZ?: number, yaw?: number): void;
+  setArenaSceneActive?(active: boolean): void;
   staticDrawCalls?: number;
 }

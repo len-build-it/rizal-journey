@@ -44,6 +44,7 @@ export class SceneDirector {
     actors: PersonActor[];
     crowds: ReturnType<typeof buildCrowd>[];
     props: THREE.Object3D[];
+    cleanups: (() => void)[];
     lastTarget: THREE.Vector3;
     snapCamNext: boolean;
   } | null = null;
@@ -93,10 +94,12 @@ export class SceneDirector {
 
     this.hud.showPrompt(null);
     this.player.setRiderMounted(false);
+    for (const s of area.stops) s.group.visible = false;
 
     const actors: PersonActor[] = [];
     const crowds: ReturnType<typeof buildCrowd>[] = [];
     const props: THREE.Object3D[] = [];
+    const cleanups: (() => void)[] = [];
     const lastTarget = (stop.focus ?? stop.position).clone();
     let lookOverridden = false;
 
@@ -164,6 +167,9 @@ export class SceneDirector {
         lastTarget.lerp(target, k);
         this.engine.camera.lookAt(lastTarget);
       },
+      onDispose: (fn: () => void) => {
+        cleanups.push(fn);
+      },
     };
 
     this.active = {
@@ -181,6 +187,7 @@ export class SceneDirector {
       actors,
       crowds,
       props,
+      cleanups,
       lastTarget,
       snapCamNext: true,
     };
@@ -317,6 +324,8 @@ export class SceneDirector {
     for (const actor of a.actors) actor.rig.dispose();
     for (const c of a.crowds) c.dispose();
     for (const p of a.props) disposeObject(p);
+    for (const fn of a.cleanups) fn();
+    for (const s of a.area.stops) s.group.visible = true;
     this.cam.seedFocus(a.lastTarget);
     this.player.setRiderMounted(true);
   }

@@ -19,6 +19,7 @@ import { Props } from '../Props';
 import { Water } from '../Water';
 import { StopMarker } from '../StopMarker';
 import { EiffelTower } from '../tower';
+import { buildTrain } from '../vessels';
 import { storiesFor, type ParisEra } from '../../content/stories';
 import type { Area, AreaLook } from '../Area';
 
@@ -240,7 +241,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     floors: [5],
     sideWindows: true,
   });
-  lunaStudio(batch, ctx, 36, 36);
+  const skylight = lunaStudio(batch, ctx, 36, 36, scene);
   haussmannRow(batch, ctx, 41, 47, 36, 62, {
     flip: true,
     depth: 8,
@@ -397,6 +398,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   ] as const) {
     parkedCarriage(batch, ctx, cx, cz, cry);
   }
+  let arenaHorsesGroup: THREE.Group | undefined;
 
   // Loose street life props on sidewalks & cafe terraces.
   props.cafeTable(13.2, -20.2);
@@ -445,7 +447,10 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     staticBox(ctx, -36.5, 0.5, 28.5, 32, 1.2, 0.5);
 
     // Wild West show open-air arena outside the fair at the south edge.
-    wildWestArena(batch, ctx, -36, 41.5);
+    const arenaHorsesBatch = new StaticBatch();
+    wildWestArena(batch, ctx, -36, 41.5, arenaHorsesBatch);
+    arenaHorsesGroup = arenaHorsesBatch.build('paris-arena-horses');
+    scene.add(arenaHorsesGroup);
   } else {
     for (const bz of [-8, 8]) {
       parkBench(batch, ctx, -24, bz, 0);
@@ -478,6 +483,9 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   const water = new Water(26, 176, 3.5, new THREE.Vector3(-72.5, -1.2, 0), 0.3);
   scene.add(water.mesh);
 
+  const train = buildTrain(1.5, 0, -59.5, -1);
+  scene.add(train.group);
+
   const stops = buildParisStops(era);
   for (const s of stops) scene.add(s.group);
 
@@ -491,12 +499,23 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     towerCenter: TOWER_CENTER,
     staticDrawCalls: staticGroup.children.length,
     setTowerProgress: tower ? (p: number) => tower.setProgress(p) : undefined,
+    setTrainOffset(offsetX: number, doorClose = 1) {
+      train.setState(offsetX, doorClose);
+    },
+    setArenaSceneActive: arenaHorsesGroup
+      ? (active: boolean) => {
+          arenaHorsesGroup!.visible = !active;
+        }
+      : undefined,
     update(_dt, time) {
       water.update(time);
       props.update();
     },
     dispose() {
       disposeObject(staticGroup);
+      disposeObject(skylight);
+      if (arenaHorsesGroup) disposeObject(arenaHorsesGroup);
+      train.dispose();
       signsGroup.removeFromParent();
       signsGroup.traverse((o) => {
         if (o instanceof THREE.Mesh) {
@@ -877,33 +896,10 @@ function parisTerminus(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number
   }
   staticBox(ctx, x, h / 2, z, d, h, w);
 
-  // Locomotive waiting on the platform track along the north side of the station square.
+  // Rail bed on the north side of the station square (movable train built in buildParis).
   const lx = x + 12;
   const lz = z - 9.5;
-  batch.add(palette.railSteel, new THREE.BoxGeometry(18, 0.2, 2.2), { x: lx, y: 0.1, z: lz });
-  batch.add(palette.hull, new THREE.CylinderGeometry(0.95, 0.95, 5, 10), {
-    x: lx - 1,
-    y: 1.9,
-    z: lz,
-    rz: Math.PI / 2,
-  });
-  batch.add(palette.hull, new THREE.BoxGeometry(2.2, 2.6, 2.3), { x: lx + 2.6, y: 2.3, z: lz });
-  batch.add(palette.iron, new THREE.BoxGeometry(2.4, 0.25, 2.5), { x: lx + 2.6, y: 3.7, z: lz });
-  batch.add(palette.hull, new THREE.CylinderGeometry(0.28, 0.4, 1.3, 7), {
-    x: lx - 2.8,
-    y: 3.2,
-    z: lz,
-  });
-  for (const wx of [-3.0, -1.2, 0.6, 2.4]) {
-    for (const s of [-1, 1]) {
-      batch.add(palette.iron, new THREE.CylinderGeometry(0.6, 0.6, 0.15, 10), {
-        x: lx + wx,
-        y: 0.75,
-        z: lz + s * 1.05,
-        rx: Math.PI / 2,
-      });
-    }
-  }
+  batch.add(palette.railSteel, new THREE.BoxGeometry(28, 0.2, 2.2), { x: lx, y: 0.1, z: lz });
   staticBox(ctx, lx, 1.8, lz, 9, 3.6, 2.6);
 }
 
@@ -1002,7 +998,13 @@ function deWeckerClinic(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: numbe
 }
 
 /** Juan Luna's studio: tall north-facing (-Z) glass studio window on the top floor, easels inside. */
-function lunaStudio(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
+function lunaStudio(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  z: number,
+  scene: THREE.Scene,
+): THREE.Mesh {
   const w = 10;
   const d = 8.5;
   const baseH = 9.5;
@@ -1038,12 +1040,20 @@ function lunaStudio(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): 
     y: baseH + studioH + 0.15,
     z: z + d * 0.2,
   });
-  batch.add(palette.parisGlass, new THREE.BoxGeometry(w - 1.2, studioH - 0.5, 0.12), {
-    x,
-    y: baseH + studioH / 2 - 0.1,
-    z: z - d * 0.45,
-    rx: 0.22,
+  // Translucent north skylight pane so the interior painting studio is visible from outside.
+  const skylightGeo = new THREE.BoxGeometry(w - 1.2, studioH - 0.5, 0.12);
+  const skylightMat = new THREE.MeshStandardMaterial({
+    color: palette.parisGlass,
+    roughness: 0.35,
+    flatShading: true,
+    transparent: true,
+    opacity: 0.34,
+    depthWrite: false,
   });
+  const skylight = new THREE.Mesh(skylightGeo, skylightMat);
+  skylight.position.set(x, baseH + studioH / 2 - 0.1, z - d * 0.45);
+  skylight.rotation.x = 0.22;
+  scene.add(skylight);
 
   for (const ex of [-2.0, 2.0]) {
     batch.add(palette.deckWood, new THREE.BoxGeometry(0.12, 2.2, 0.12), {
@@ -1060,6 +1070,7 @@ function lunaStudio(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): 
     });
   }
   staticBox(ctx, x, baseH / 2, z, w, baseH, d);
+  return skylight;
 }
 
 /** Bookshop on Rue des Saints-Peres facing -Z with books displayed in the ground-floor window. */
@@ -1237,7 +1248,13 @@ function arenaGrandstand(
 }
 
 /** Open-air Wild West show arena outside the fair with oval track, grandstands, arch and horses. */
-function wildWestArena(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
+function wildWestArena(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  z: number,
+  horsesBatch: StaticBatch,
+): void {
   const rx = 13.8;
   const rz = 6.9;
 
@@ -1355,9 +1372,9 @@ function wildWestArena(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number
   });
 
   // Standing riderless horses inside the ring in calm grazing and resting poses.
-  stampIdleHorse(batch, x + 5.2, z - 1.1, 0.95, 'grazing');
-  stampIdleHorse(batch, x - 0.6, z + 1.0, -2.05, 'resting');
-  stampIdleHorse(batch, x - 5.4, z - 1.5, 0.35, 'resting');
-  stampIdleHorse(batch, x - 3.4, z + 2.1, 2.35, 'grazing');
-  stampIdleHorse(batch, x + 1.8, z - 2.4, -0.75, 'grazing');
+  stampIdleHorse(horsesBatch, x + 5.2, z - 1.1, 0.95, 'grazing');
+  stampIdleHorse(horsesBatch, x - 0.6, z + 1.0, -2.05, 'resting');
+  stampIdleHorse(horsesBatch, x - 5.4, z - 1.5, 0.35, 'resting');
+  stampIdleHorse(horsesBatch, x - 3.4, z + 2.1, 2.35, 'grazing');
+  stampIdleHorse(horsesBatch, x + 1.8, z - 2.4, -0.75, 'grazing');
 }
