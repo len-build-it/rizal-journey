@@ -1,92 +1,139 @@
 import * as THREE from 'three';
 import { palette } from '../world/palette';
-import { PAPER_HEX } from '../world/paperShader';
+import { routeMapSvg } from './brochure/routeMap';
 
 const PW = 0.92;
 const PD = 1.5;
 
-const PAPER_CSS = `#${PAPER_HEX.toString(16).padStart(6, '0')}`;
-const NIGHT_CSS = `#${palette.night.toString(16).padStart(6, '0')}`;
-const IRON_CSS = `#${palette.iron.toString(16).padStart(6, '0')}`;
+const COVER_CARD_CSS = '#efe6d1';
+const COVER_CARD_HEX = 0xefe6d1;
+const INK_CSS = '#20324a';
+const INK_SOFT_CSS = '#4b5a6e';
+const VERMILION_CSS = '#c2452d';
 
-function drawCoverCanvas(canvas: HTMLCanvasElement): void {
+function resolvedRouteMapSvg(): string {
+  return routeMapSvg()
+    .replaceAll('var(--k-vermilion)', VERMILION_CSS)
+    .replaceAll('var(--k-card-sunk)', '#e2d3b3')
+    .replaceAll('var(--k-ink)', INK_CSS)
+    .replaceAll('var(--k-display)', "'Fraunces Variable', Georgia, serif")
+    .replaceAll('var(--k-text)', "'Literata Variable', Georgia, serif")
+    .replaceAll('var(--k-display-axes)', "'SOFT' 100, 'WONK' 0");
+}
+
+function loadRouteMapImage(): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    if (typeof Image === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const svg = resolvedRouteMapSvg();
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  });
+}
+
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+): number {
+  const words = text.split(' ');
+  let line = '';
+  let cy = y;
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, cy);
+      line = word;
+      cy += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  if (line) {
+    ctx.fillText(line, x, cy);
+    cy += lineHeight;
+  }
+  return cy;
+}
+
+function drawCoverCanvas(canvas: HTMLCanvasElement, mapImg: HTMLImageElement | null): void {
   const ctx = canvas.getContext('2d')!;
+  const w = canvas.width;
+  const h = canvas.height;
 
-  ctx.fillStyle = PAPER_CSS;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = COVER_CARD_CSS;
+  ctx.fillRect(0, 0, w, h);
 
-  // Warm iron-red top header bar and double ink hairline border.
-  ctx.fillStyle = IRON_CSS;
-  ctx.fillRect(0, 0, canvas.width, 18);
-  ctx.strokeStyle = 'rgba(28, 35, 64, 0.25)';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(24, 34, canvas.width - 48, canvas.height - 68);
+  const glow = ctx.createRadialGradient(w * 0.5, h * 0.38, 20, w * 0.5, h * 0.38, w * 0.6);
+  glow.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+  glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
 
-  // Kicker.
-  ctx.fillStyle = IRON_CSS;
-  ctx.font = 'italic 20px "Literata Variable", Georgia, serif';
-  ctx.fillText('Travel brochure', 44, 92);
+  const pad = 38;
 
-  // Title.
-  ctx.fillStyle = NIGHT_CSS;
-  ctx.font = '600 64px "Fraunces Variable", Georgia, serif';
-  ctx.fillText('Through', 44, 178);
-  ctx.fillText("Rizal's Eyes", 44, 248);
+  // Title in Fraunces.
+  ctx.fillStyle = INK_CSS;
+  ctx.font = '600 60px "Fraunces Variable", Georgia, serif';
+  ctx.fillText("Through Rizal's", pad, 92);
+  ctx.fillText('Eyes', pad, 152);
 
-  // Subtitle.
-  ctx.fillStyle = IRON_CSS;
-  ctx.font = 'italic 30px "Literata Variable", Georgia, serif';
-  ctx.fillText('France, 1882 to 1891', 44, 306);
+  // Subtitle in Literata italic vermilion.
+  ctx.fillStyle = VERMILION_CSS;
+  ctx.font = 'italic 22px "Literata Variable", Georgia, serif';
+  ctx.fillText('France, 1882 to 1891', pad, 188);
 
-  ctx.strokeStyle = 'rgba(28, 35, 64, 0.22)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(44, 336);
-  ctx.lineTo(canvas.width - 44, 336);
-  ctx.stroke();
+  // Route map SVG rendered into Image.
+  if (mapImg) {
+    const mapW = 360;
+    const mapH = Math.round((mapW * 212) / 200);
+    ctx.drawImage(mapImg, (w - mapW) / 2, 212, mapW, mapH);
+  }
 
-  // Simple ink vignette ornament (coastline & tower silhouette).
-  ctx.strokeStyle = NIGHT_CSS;
-  ctx.lineWidth = 2.4;
-  ctx.beginPath();
-  ctx.moveTo(64, 520);
-  ctx.quadraticCurveTo(160, 488, 256, 514);
-  ctx.quadraticCurveTo(352, 540, 448, 504);
-  ctx.stroke();
-
-  ctx.strokeStyle = IRON_CSS;
-  ctx.lineWidth = 2.6;
-  ctx.beginPath();
-  ctx.moveTo(232, 498);
-  ctx.quadraticCurveTo(252, 430, 256, 372);
-  ctx.quadraticCurveTo(260, 430, 280, 498);
-  ctx.moveTo(240, 452);
-  ctx.lineTo(272, 452);
-  ctx.stroke();
-
-  // Short cover copy.
-  ctx.fillStyle = NIGHT_CSS;
-  ctx.font = '400 22px "Literata Variable", Georgia, serif';
-  const lines = [
-    'France was the first place',
-    'Jose Rizal set foot in Europe,',
-    'and the last place he left it.',
-  ];
-  lines.forEach((line, i) => ctx.fillText(line, 44, 588 + i * 32));
-
-  // Student credit at footer.
-  ctx.fillStyle = 'rgba(28, 35, 64, 0.68)';
+  // Cover intro copy.
+  ctx.fillStyle = INK_CSS;
   ctx.font = '400 17px "Literata Variable", Georgia, serif';
-  ctx.fillText('Lenard, Software Engineering', 44, 728);
-  ctx.fillText('Aklan State University', 44, 752);
-  ctx.fillText("Chapter 9: Rizal's Travels", 44, 776);
+  wrapText(
+    ctx,
+    'France was the first place Jose Rizal set foot in Europe, and the last place he left it. Follow him from a 20-year-old student on his way to Spain to a published novelist leaving Europe.',
+    pad,
+    622,
+    w - pad * 2,
+    25,
+  );
+
+  // Rule and student credit at footer in small Literata.
+  ctx.strokeStyle = 'rgba(32, 50, 74, 0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad, 744);
+  ctx.lineTo(w - pad, 744);
+  ctx.stroke();
+
+  ctx.fillStyle = INK_SOFT_CSS;
+  ctx.font = '400 14px "Literata Variable", Georgia, serif';
+  wrapText(
+    ctx,
+    "Lenard. Software Engineering, Aklan State University. Chapter 9 Activity: A Journey Through Rizal's Travels.",
+    pad,
+    768,
+    w - pad * 2,
+    20,
+  );
 }
 
 function createCoverTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 832;
-  drawCoverCanvas(canvas);
+  drawCoverCanvas(canvas, null);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -97,26 +144,28 @@ function createCoverTexture(): THREE.CanvasTexture {
 function drawInnerPanelCanvas(canvas: HTMLCanvasElement, title: string, sub: string): void {
   const ctx = canvas.getContext('2d')!;
 
-  ctx.fillStyle = PAPER_CSS;
+  ctx.fillStyle = COVER_CARD_CSS;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = IRON_CSS;
-  ctx.fillRect(0, 0, canvas.width, 12);
-
-  ctx.fillStyle = 'rgba(28, 35, 64, 0.55)';
+  ctx.fillStyle = VERMILION_CSS;
   ctx.font = 'italic 16px "Literata Variable", Georgia, serif';
-  ctx.fillText(sub, 28, 56);
+  ctx.fillText(sub, 28, 52);
 
-  ctx.fillStyle = NIGHT_CSS;
-  ctx.font = '560 32px "Fraunces Variable", Georgia, serif';
-  ctx.fillText(title, 28, 100);
+  ctx.fillStyle = INK_CSS;
+  ctx.font = '580 32px "Fraunces Variable", Georgia, serif';
+  ctx.fillText(title, 28, 92);
 
-  ctx.strokeStyle = 'rgba(28, 35, 64, 0.16)';
+  ctx.strokeStyle = VERMILION_CSS;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(28, 124);
-  ctx.lineTo(canvas.width - 28, 124);
-  for (let y = 160; y <= 520; y += 36) {
+  ctx.moveTo(28, 114);
+  ctx.lineTo(canvas.width - 28, 114);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(32, 50, 74, 0.16)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let y = 152; y <= 520; y += 36) {
     ctx.moveTo(28, y);
     ctx.lineTo(canvas.width - 36 - ((y * 17) % 64), y);
   }
@@ -256,10 +305,10 @@ export class DeskScene {
     this.disposables.push(panelGeo);
 
     const coverTex = (this.coverTex = createCoverTexture());
-    const p2Tex = (this.p2Tex = createInnerPanelTexture('Marseille', 'Panel 2 of 6'));
+    const p2Tex = (this.p2Tex = createInnerPanelTexture('First steps', 'Panel two'));
     const innerTex = (this.innerTex = createInnerPanelTexture('1882 to 1891', 'Journey log'));
     const paperMat = new THREE.MeshStandardMaterial({
-      color: PAPER_HEX,
+      color: COVER_CARD_HEX,
       roughness: 0.9,
     });
     const coverTopMat = new THREE.MeshStandardMaterial({
@@ -330,17 +379,18 @@ export class DeskScene {
     this.setCameraClosed();
   }
 
-  /** Waits for Fraunces and Literata fonts before redrawing the cover and panel textures. */
+  /** Waits for Fraunces and Literata fonts and route map SVG before redrawing textures. */
   async ready(): Promise<void> {
     if (typeof document !== 'undefined' && 'fonts' in document) {
-      await Promise.all([
+      const [, , , mapImg] = await Promise.all([
         document.fonts.load('600 48px "Fraunces Variable"'),
         document.fonts.load('400 22px "Literata Variable"'),
         document.fonts.load('italic 22px "Literata Variable"'),
+        loadRouteMapImage(),
       ]);
-      drawCoverCanvas(this.coverTex.image as HTMLCanvasElement);
+      drawCoverCanvas(this.coverTex.image as HTMLCanvasElement, mapImg);
       this.coverTex.needsUpdate = true;
-      drawInnerPanelCanvas(this.p2Tex.image as HTMLCanvasElement, 'Marseille', 'Panel 2 of 6');
+      drawInnerPanelCanvas(this.p2Tex.image as HTMLCanvasElement, 'First steps', 'Panel two');
       this.p2Tex.needsUpdate = true;
       drawInnerPanelCanvas(this.innerTex.image as HTMLCanvasElement, '1882 to 1891', 'Journey log');
       this.innerTex.needsUpdate = true;
