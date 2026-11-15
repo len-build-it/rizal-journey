@@ -245,6 +245,7 @@ export function buildMarseille(
     spawnHeading: year === 1891 ? 0 : Math.PI,
     stops,
     look,
+    staticDrawCalls: staticGroup.children.length,
     update(_dt, time) {
       water.update(time);
       props.update();

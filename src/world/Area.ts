@@ -26,4 +26,5 @@ export interface Area {
   dispose(): void;
   setTowerProgress?(p: number): void;
   towerCenter?: THREE.Vector3;
+  staticDrawCalls?: number;
 }

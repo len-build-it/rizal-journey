@@ -227,6 +227,7 @@ async function main(): Promise<void> {
         closeCard: () => card.hide(),
         renderStats: () => ({
           calls: engine.renderer.info.render.calls,
+          staticCalls: areaManager.current?.staticDrawCalls ?? 0,
           triangles: engine.renderer.info.render.triangles,
         }),
       },

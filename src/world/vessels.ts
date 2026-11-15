@@ -130,6 +130,8 @@ export function fishingBoat(
   z: number,
   ry: number,
   color: number,
+  yOffset = 0,
+  rx = 0,
 ): void {
   const shape = new THREE.Shape();
   shape.moveTo(-2.2, 0);
@@ -143,13 +145,18 @@ export function fishingBoat(
     curveSegments: 5,
   });
   hull.rotateX(-Math.PI / 2);
-  batch.add(color, hull, { x, y: -1.45, z, ry });
+  batch.add(color, hull, { x, y: -1.45 + yOffset, z, ry, rx });
   const inner = new THREE.ExtrudeGeometry(shape, {
     depth: 0.05,
     bevelEnabled: false,
     curveSegments: 5,
   });
   inner.rotateX(-Math.PI / 2);
-  batch.add(palette.deckWood, inner, { x, y: -0.75, z, ry, sx: 0.85, sz: 0.8 });
-  batch.add(palette.deckWood, new THREE.CylinderGeometry(0.05, 0.07, 3.2, 4), { x, y: 0.8, z });
+  batch.add(palette.deckWood, inner, { x, y: -0.75 + yOffset, z, ry, rx, sx: 0.85, sz: 0.8 });
+  batch.add(palette.deckWood, new THREE.CylinderGeometry(0.05, 0.07, 3.2, 4), {
+    x,
+    y: 0.8 + yOffset,
+    z,
+    rx,
+  });
 }
