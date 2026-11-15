@@ -59,4 +59,17 @@ export const palette = {
   awningRed: 0xb24a3a,
   awningCream: 0xf0e6d2,
   lampIron: 0x2b2f36,
+
+  // Paris and Biarritz additions.
+  parisLimestone: 0xebe3d3,
+  zincRoof: 0x5d6975,
+  zincRoofDark: 0x46505a,
+  morrisGreen: 0x32523d,
+  streetSignBlue: 0x223e6b,
+  seineWater: 0x4b747a,
+  basqueWhite: 0xf2ede2,
+  basqueRed: 0x8c3328,
+  sand: 0xe3cfa6,
+  sandWet: 0xc9b082,
+  brass: 0xcfa44e,
 } as const;

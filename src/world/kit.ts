@@ -98,6 +98,14 @@ export class StaticBatch {
   }
 }
 
+/** Removes an Object3D from its parent and disposes its geometries (cached materials are kept). */
+export function disposeObject(obj: THREE.Object3D): void {
+  obj.removeFromParent();
+  obj.traverse((child) => {
+    if (child instanceof THREE.Mesh) child.geometry.dispose();
+  });
+}
+
 /** Small deterministic random generator so the world looks the same on every visit. */
 export function seeded(seed: number): () => number {
   let s = seed >>> 0;

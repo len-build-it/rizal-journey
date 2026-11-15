@@ -121,6 +121,63 @@ export class Props {
     );
   }
 
+  flowerCart(x: number, z: number, ry = 0): void {
+    const g = new THREE.Group();
+    const cart = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 0.9), mat(palette.crate));
+    cart.position.y = 0.22;
+    g.add(cart);
+    for (const s of [-1, 1]) {
+      const wheel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.32, 0.32, 0.08, 10),
+        mat(palette.doorBrown),
+      );
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(0.1, -0.05, s * 0.5);
+      g.add(wheel);
+    }
+    const flowerColors = [palette.iron, palette.gaslight, palette.awningCream, palette.shutterBlue];
+    for (let i = 0; i < 4; i++) {
+      const pot = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.24, 0),
+        mat(flowerColors[i % flowerColors.length]!),
+      );
+      pot.position.set(-0.45 + i * 0.3, 0.5, (i % 2 === 0 ? -1 : 1) * 0.18);
+      g.add(pot);
+    }
+    this.add(
+      g,
+      x,
+      0.38,
+      z,
+      ry,
+      this.ctx.rapier.ColliderDesc.cuboid(0.75, 0.38, 0.52),
+      0.8,
+    );
+  }
+
+  beachChair(x: number, z: number, ry = 0, stripe = palette.awningRed): void {
+    const g = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.06, 1.15), mat(palette.crate));
+    frame.position.y = 0.12;
+    g.add(frame);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.72), mat(stripe));
+    back.position.set(0, 0.35, -0.22);
+    back.rotation.x = 0.55;
+    g.add(back);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.04, 0.52), mat(palette.awningCream));
+    seat.position.set(0, 0.16, 0.25);
+    g.add(seat);
+    this.add(
+      g,
+      x,
+      0.22,
+      z,
+      ry,
+      this.ctx.rapier.ColliderDesc.cuboid(0.35, 0.22, 0.6),
+      0.3,
+    );
+  }
+
   private add(
     g: THREE.Object3D,
     x: number,
@@ -148,6 +205,7 @@ export class Props {
     );
     this.ctx.world.createCollider(desc.setMass(mass).setFriction(0.8).setRestitution(0.15), body);
     body.sleep();
+    this.ctx.bodies?.push(body);
     this.scene.add(g);
     this.items.push({ mesh: g, body });
     this.sync(g, body);
@@ -158,6 +216,16 @@ export class Props {
       if (body.isSleeping()) continue;
       this.sync(mesh, body);
     }
+  }
+
+  dispose(): void {
+    for (const { mesh } of this.items) {
+      mesh.removeFromParent();
+      mesh.traverse((o) => {
+        if (o instanceof THREE.Mesh) o.geometry.dispose();
+      });
+    }
+    this.items.length = 0;
   }
 
   private sync(mesh: THREE.Object3D, body: RAPIER.RigidBody): void {

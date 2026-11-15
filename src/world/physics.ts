@@ -4,6 +4,27 @@ import * as THREE from 'three';
 export interface PhysicsCtx {
   rapier: typeof RAPIER;
   world: RAPIER.World;
+  colliders?: RAPIER.Collider[];
+  bodies?: RAPIER.RigidBody[];
+}
+
+export function createPhysicsCtx(rapier: typeof RAPIER, world: RAPIER.World): PhysicsCtx {
+  return { rapier, world, colliders: [], bodies: [] };
+}
+
+export function disposePhysics(ctx: PhysicsCtx): void {
+  if (ctx.bodies) {
+    for (const body of ctx.bodies) {
+      if (ctx.world.getRigidBody(body.handle)) ctx.world.removeRigidBody(body);
+    }
+    ctx.bodies.length = 0;
+  }
+  if (ctx.colliders) {
+    for (const collider of ctx.colliders) {
+      if (ctx.world.getCollider(collider.handle)) ctx.world.removeCollider(collider, false);
+    }
+    ctx.colliders.length = 0;
+  }
 }
 
 /** A fixed box collider; position is the box center, sizes are full sizes. */
@@ -16,13 +37,16 @@ export function staticBox(
   h: number,
   d: number,
   ry = 0,
+  rx = 0,
+  rz = 0,
 ): void {
-  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0));
-  ctx.world.createCollider(
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz));
+  const c = ctx.world.createCollider(
     ctx.rapier.ColliderDesc.cuboid(w / 2, h / 2, d / 2)
       .setTranslation(x, y, z)
       .setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }),
   );
+  ctx.colliders?.push(c);
 }
 
 export function staticCylinder(
@@ -33,9 +57,10 @@ export function staticCylinder(
   height: number,
   y = height / 2,
 ): void {
-  ctx.world.createCollider(
+  const c = ctx.world.createCollider(
     ctx.rapier.ColliderDesc.cylinder(height / 2, radius).setTranslation(x, y, z),
   );
+  ctx.colliders?.push(c);
 }
 
 /** Invisible walls around a rectangular play area. */

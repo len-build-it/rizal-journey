@@ -23,4 +23,7 @@ export interface Area {
   stops: StopMarker[];
   look: AreaLook;
   update(dt: number, time: number): void;
+  dispose(): void;
+  setTowerProgress?(p: number): void;
+  towerCenter?: THREE.Vector3;
 }

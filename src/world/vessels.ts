@@ -14,6 +14,7 @@ export function steamer(
   cx: number,
   cz: number,
   length = 26,
+  funnelColor: number = palette.hull,
 ): number {
   const beam = 4.6;
   const half = length / 2;
@@ -74,7 +75,7 @@ export function steamer(
   });
 
   // Funnel with a slight rake.
-  batch.add(palette.hull, new THREE.CylinderGeometry(0.75, 0.8, 4.2, 10), {
+  batch.add(funnelColor, new THREE.CylinderGeometry(0.75, 0.8, 4.2, 10), {
     x: cx - 0.5,
     y: deckY + 3.4,
     z: cz,

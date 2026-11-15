@@ -25,6 +25,8 @@ export class StopMarker {
     readonly position: THREE.Vector3,
     /** Optional point the camera should look at while the story is open. */
     readonly focus?: THREE.Vector3,
+    /** Optional zoom multiplier when `focus` is set (default 1.9 desktop / 2.3 narrow). */
+    readonly focusZoom?: number,
   ) {
     this.group.position.copy(position);
 
@@ -111,5 +113,16 @@ export class StopMarker {
     const pulse = 1 + Math.sin(time * 3) * 0.03 * (1 - this.proximity);
     this.ring.scale.setScalar(pulse);
     return inside;
+  }
+
+  dispose(): void {
+    this.group.removeFromParent();
+    this.group.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
+        else child.material.dispose();
+      }
+    });
   }
 }

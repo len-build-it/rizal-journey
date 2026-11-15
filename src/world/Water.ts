@@ -9,8 +9,16 @@ export class Water {
   readonly mesh: THREE.Mesh;
   private readonly base: Float32Array;
   private readonly geo: THREE.BufferGeometry;
+  private readonly amplitude: number;
 
-  constructor(width: number, depth: number, cell: number, center: THREE.Vector3) {
+  constructor(
+    width: number,
+    depth: number,
+    cell: number,
+    center: THREE.Vector3,
+    amplitude = 1,
+  ) {
+    this.amplitude = amplitude;
     const plane = new THREE.PlaneGeometry(
       width,
       depth,
@@ -63,10 +71,17 @@ export class Water {
       const x = b[i]!;
       const z = b[i + 2]!;
       arr[i + 1] =
-        Math.sin(x * 0.35 + time * 1.1) * 0.12 +
-        Math.sin(z * 0.42 - time * 0.9) * 0.1 +
-        Math.sin((x + z) * 0.8 + time * 1.7) * 0.04;
+        (Math.sin(x * 0.35 + time * 1.1) * 0.12 +
+          Math.sin(z * 0.42 - time * 0.9) * 0.1 +
+          Math.sin((x + z) * 0.8 + time * 1.7) * 0.04) *
+        this.amplitude;
     }
     (this.geo.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+  }
+
+  dispose(): void {
+    this.mesh.removeFromParent();
+    this.geo.dispose();
+    (this.mesh.material as THREE.Material).dispose();
   }
 }

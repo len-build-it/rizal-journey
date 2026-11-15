@@ -142,7 +142,13 @@ export function planeTree(
 }
 
 /** A cast-iron gas lamp. Returns the lamp head position so lights can be added later. */
-export function gasLamp(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): THREE.Vector3 {
+export function gasLamp(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  z: number,
+  lit = false,
+): THREE.Vector3 {
   batch.add(palette.lampIron, new THREE.CylinderGeometry(0.16, 0.2, 0.4, 6), { x, y: 0.2, z });
   batch.add(palette.lampIron, new THREE.CylinderGeometry(0.06, 0.08, 3.2, 5), { x, y: 1.8, z });
   batch.add(palette.lampIron, new THREE.ConeGeometry(0.32, 0.3, 4), {
@@ -152,10 +158,10 @@ export function gasLamp(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: numbe
     ry: Math.PI / 4,
   });
   batch.add(
-    0xf6e2a6,
+    lit ? 0xffe396 : 0xf6e2a6,
     new THREE.BoxGeometry(0.34, 0.42, 0.34),
     { x, y: 3.5, z },
-    { emissive: 0x6b5220 },
+    lit ? { emissive: palette.gaslight, roughness: 0.3 } : { emissive: 0x6b5220 },
   );
   staticCylinder(ctx, x, z, 0.18, 3.5);
   return new THREE.Vector3(x, 3.5, z);
@@ -166,4 +172,212 @@ export function bollard(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: numbe
   batch.add(palette.lampIron, new THREE.CylinderGeometry(0.22, 0.26, 0.6, 7), { x, y: 0.3, z });
   batch.add(palette.lampIron, new THREE.CylinderGeometry(0.3, 0.3, 0.1, 7), { x, y: 0.65, z });
   staticCylinder(ctx, x, z, 0.3, 0.7);
+}
+
+export interface HaussmannOpts {
+  x: number;
+  z: number;
+  width: number;
+  depth: number;
+  /** Number of limestone stories below the zinc mansard (typically 5). */
+  floors?: number;
+  ry?: number;
+  seed: number;
+  shop?: boolean;
+  /** Omit ground-floor entrance/shop windows if a custom facade sits in front. */
+  plainGround?: boolean;
+}
+
+/**
+ * A Parisian Haussmann apartment block: cream limestone facade, ground-floor shop awnings,
+ * wrought-iron balconies on the 2nd and 5th floors, and a grey-blue zinc mansard with dormers.
+ */
+export function haussmannBlock(batch: StaticBatch, ctx: PhysicsCtx, o: HaussmannOpts): void {
+  const rnd = seeded(o.seed);
+  const floors = o.floors ?? 5;
+  const floorH = 2.75;
+  const wallH = floors * floorH + 0.5;
+  const ry = o.ry ?? 0;
+  const m = new THREE.Matrix4().compose(
+    new THREE.Vector3(o.x, 0, o.z),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)),
+    new THREE.Vector3(1, 1, 1),
+  );
+  const add = (color: number, geo: THREE.BufferGeometry, x: number, y: number, z: number): void => {
+    geo.translate(x, y, z);
+    batch.addTransformed(color, geo, m);
+  };
+
+  // Cream limestone body, stone plinth and stringcourses.
+  add(palette.parisLimestone, new THREE.BoxGeometry(o.width, wallH, o.depth), 0, wallH / 2, 0);
+  add(palette.quayStoneDark, new THREE.BoxGeometry(o.width + 0.08, 0.55, o.depth + 0.08), 0, 0.275, 0);
+  add(
+    palette.limestone,
+    new THREE.BoxGeometry(o.width + 0.32, 0.24, o.depth + 0.32),
+    0,
+    wallH + 0.05,
+    0,
+  );
+
+  // Sloped grey-blue zinc mansard roof (truncated 4-sided pyramid + flat roof crown).
+  const mansardH = 2.4;
+  const inset = 1.4;
+  const topW = Math.max(2, o.width - inset * 2);
+  const topD = Math.max(2, o.depth - inset * 2);
+  const mansard = new THREE.CylinderGeometry(
+    Math.SQRT1_2,
+    Math.SQRT1_2,
+    1,
+    4,
+    1,
+    false,
+    Math.PI / 4,
+  );
+  // Build a clean frustum using scaled Box/Cylinder: scale bottom vs top via a custom tapered box.
+  mansard.dispose();
+  const roofGeo = new THREE.BoxGeometry(o.width + 0.2, mansardH, o.depth + 0.2);
+  const pos = roofGeo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) {
+    if (pos.getY(i) > 0) {
+      pos.setX(i, (pos.getX(i) / (o.width + 0.2)) * topW);
+      pos.setZ(i, (pos.getZ(i) / (o.depth + 0.2)) * topD);
+    }
+  }
+  roofGeo.computeVertexNormals();
+  add(rnd() > 0.45 ? palette.zincRoof : palette.zincRoofDark, roofGeo, 0, wallH + mansardH / 2, 0);
+
+  // Chimneys along the roof ridge.
+  for (const cx of [-o.width * 0.25, o.width * 0.25]) {
+    add(palette.parisLimestone, new THREE.BoxGeometry(0.7, 1.3, 0.7), cx, wallH + mansardH + 0.4, 0);
+    add(palette.roofTile, new THREE.CylinderGeometry(0.11, 0.13, 0.45, 5), cx, wallH + mansardH + 1.25, 0);
+  }
+
+  const cols = Math.max(3, Math.floor(o.width / 2.0));
+  const spacing = o.width / cols;
+  const front = o.depth / 2 + 0.03;
+  const doorCol = Math.floor(cols / 2);
+
+  // Continuous wrought-iron balconies on the 2nd (f=1) and 5th (f=4) floors.
+  for (const bf of [1, 4]) {
+    if (bf >= floors) continue;
+    const by = bf * floorH + 0.55;
+    add(palette.lampIron, new THREE.BoxGeometry(o.width - 0.3, 0.1, 0.72), 0, by, front + 0.34);
+    add(palette.lampIron, new THREE.BoxGeometry(o.width - 0.3, 0.58, 0.05), 0, by + 0.32, front + 0.68);
+  }
+
+  for (let f = 0; f < floors; f++) {
+    if (f === 0 && o.plainGround) continue;
+    const y = f * floorH + (f === 0 ? 0.45 : 0.75);
+    for (let c = 0; c < cols; c++) {
+      const wx = -o.width / 2 + spacing * (c + 0.5);
+      if (f === 0 && c === doorCol) {
+        add(palette.doorBrown, new THREE.BoxGeometry(1.15, 2.35, 0.12), wx, 1.18, front);
+        continue;
+      }
+      const winH = f === 0 ? 1.85 : 1.55;
+      const winW = f === 0 ? 1.15 : 0.8;
+      add(0x2c3138, new THREE.BoxGeometry(winW, winH, 0.08), wx, y + winH / 2, front);
+      add(palette.parisLimestone, new THREE.BoxGeometry(winW + 0.18, 0.12, 0.14), wx, y - 0.04, front + 0.03);
+    }
+  }
+
+  // Ground-floor shop awning when enabled.
+  if (o.shop !== false && !o.plainGround) {
+    const awningColor = rnd() > 0.5 ? palette.awningRed : palette.shutterBlue;
+    const awning = new THREE.BoxGeometry(o.width * 0.78, 0.12, 1.35);
+    awning.rotateX(0.28);
+    add(awningColor, awning, 0, 2.65, front + 0.58);
+  }
+
+  // Dormer windows set into the zinc mansard.
+  for (let c = 0; c < cols; c += 2) {
+    const dx = -o.width / 2 + spacing * (c + 0.5);
+    add(palette.parisLimestone, new THREE.BoxGeometry(0.95, 1.15, 0.8), dx, wallH + 0.9, front - 0.35);
+    add(palette.zincRoofDark, new THREE.BoxGeometry(1.05, 0.18, 0.95), dx, wallH + 1.52, front - 0.32);
+    add(0x2c3138, new THREE.BoxGeometry(0.55, 0.8, 0.1), dx, wallH + 0.85, front + 0.05);
+  }
+
+  staticBox(ctx, o.x, wallH / 2, o.z, o.width, wallH, o.depth, ry);
+}
+
+/** A continuous row of Haussmann blocks along X. */
+export function haussmannRow(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  fromX: number,
+  toX: number,
+  z: number,
+  seed: number,
+  flip = false,
+  depth = 9,
+): void {
+  const rnd = seeded(seed);
+  let x = fromX;
+  let i = 0;
+  while (x < toX - 4) {
+    const width = Math.min(toX - x, 8 + Math.floor(rnd() * 5));
+    haussmannBlock(batch, ctx, {
+      x: x + width / 2,
+      z,
+      width,
+      depth,
+      floors: rnd() > 0.35 ? 5 : 4,
+      ry: flip ? Math.PI : 0,
+      seed: seed * 37 + i++,
+      shop: rnd() > 0.25,
+    });
+    x += width;
+  }
+}
+
+/** A Parisian green cast-iron Morris advertising column. */
+export function morrisColumn(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
+  batch.add(palette.quayStoneDark, new THREE.CylinderGeometry(0.58, 0.64, 0.45, 8), { x, y: 0.225, z });
+  batch.add(palette.morrisGreen, new THREE.CylinderGeometry(0.52, 0.54, 2.3, 10), { x, y: 1.6, z });
+  // Poster band around the middle.
+  batch.add(palette.awningCream, new THREE.CylinderGeometry(0.54, 0.54, 1.3, 10), { x, y: 1.65, z });
+  batch.add(palette.ochre, new THREE.CylinderGeometry(0.545, 0.545, 0.4, 10), { x, y: 1.8, z });
+  // Canopy and finial.
+  batch.add(palette.morrisGreen, new THREE.CylinderGeometry(0.75, 0.78, 0.22, 10), { x, y: 2.86, z });
+  batch.add(palette.morrisGreen, new THREE.ConeGeometry(0.68, 0.7, 10), { x, y: 3.32, z });
+  batch.add(palette.gaslight, new THREE.CylinderGeometry(0.05, 0.08, 0.35, 6), { x, y: 3.8, z });
+  staticCylinder(ctx, x, z, 0.62, 3.0);
+}
+
+/** A small blue-and-white Paris street sign mounted on a post. Returns the mesh to dispose with the area. */
+export function streetSign(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  parent: THREE.Group,
+  x: number,
+  z: number,
+  ry: number,
+  label: string,
+): void {
+  batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.07, 2.5, 6), { x, y: 1.25, z });
+  staticCylinder(ctx, x, z, 0.14, 2.5);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 96;
+  const g = canvas.getContext('2d');
+  if (g) {
+    g.fillStyle = '#223e6b';
+    g.fillRect(0, 0, 256, 96);
+    g.strokeStyle = '#eef0ec';
+    g.lineWidth = 6;
+    g.strokeRect(8, 8, 240, 80);
+    g.fillStyle = '#eef0ec';
+    g.font = '600 26px system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(label, 128, 49);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const signMat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.56), signMat);
+  plate.position.set(x, 2.45, z);
+  plate.rotation.y = ry;
+  parent.add(plate);
 }
