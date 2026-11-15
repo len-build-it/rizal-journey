@@ -15,8 +15,12 @@ const PROM_Y = 0.4;
 const WATER_Y = -0.95;
 
 interface FoamStrip {
-  mesh: THREE.Mesh;
+  x: number;
   baseZ: number;
+  ry: number;
+  len: number;
+  depth: number;
+  y: number;
   phase: number;
   amp: number;
 }
@@ -321,30 +325,45 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
   const water = new Water(240, 100, 3, new THREE.Vector3(0, WATER_Y, 60), 2.1);
   scene.add(water.mesh);
 
-  // Animated breaking wave foam strips washing along the curving shore.
-  const foamGroup = new THREE.Group();
+  // Animated breaking wave foam strips washing along the curving shore (1 InstancedMesh draw call).
   const foamStrips: FoamStrip[] = [];
-  const foamMat = mat(palette.foam);
   for (let row = 0; row < 2; row++) {
     for (let x = -28; x <= 34; x += 5.2) {
-      const len = 4.4 + (Math.abs(x) % 2);
-      const zMid = shoreZ(x) + (row === 0 ? 10.1 : 13.4);
-      const slope = 2 * 0.0038 * x;
-      const geo = new THREE.BoxGeometry(len, 0.09, row === 0 ? 0.85 : 0.65);
-      const m = new THREE.Mesh(geo, foamMat);
-      m.position.set(x, WATER_Y + 0.14 - row * 0.03, zMid);
-      m.rotation.y = -Math.atan(slope);
-      m.receiveShadow = true;
-      foamGroup.add(m);
       foamStrips.push({
-        mesh: m,
-        baseZ: zMid,
+        x,
+        baseZ: shoreZ(x) + (row === 0 ? 10.1 : 13.4),
+        ry: -Math.atan(2 * 0.0038 * x),
+        len: 4.4 + (Math.abs(x) % 2),
+        depth: row === 0 ? 0.85 : 0.65,
+        y: WATER_Y + 0.14 - row * 0.03,
         phase: row * 1.9 + x * 0.14,
         amp: row === 0 ? 0.55 : 0.75,
       });
     }
   }
-  scene.add(foamGroup);
+  const foamGeo = new THREE.BoxGeometry(1, 0.09, 1);
+  const foamMesh = new THREE.InstancedMesh(foamGeo, mat(palette.foam), foamStrips.length);
+  foamMesh.receiveShadow = true;
+  foamMesh.frustumCulled = false;
+  const foamPos = new THREE.Vector3();
+  const foamQuat = new THREE.Quaternion();
+  const foamEuler = new THREE.Euler();
+  const foamScale = new THREE.Vector3();
+  const foamMat = new THREE.Matrix4();
+  const syncFoam = (time: number): void => {
+    for (let i = 0; i < foamStrips.length; i++) {
+      const f = foamStrips[i]!;
+      const w = Math.sin(time * 1.35 + f.phase);
+      foamPos.set(f.x, f.y, f.baseZ - w * f.amp);
+      foamEuler.set(0, f.ry, 0);
+      foamQuat.setFromEuler(foamEuler);
+      foamScale.set(f.len, 1, f.depth * (0.85 + 0.28 * (w * 0.5 + 0.5)));
+      foamMesh.setMatrixAt(i, foamMat.compose(foamPos, foamQuat, foamScale));
+    }
+    foamMesh.instanceMatrix.needsUpdate = true;
+  };
+  syncFoam(0);
+  scene.add(foamMesh);
 
   const [villa, manuscript, station] = storiesFor('biarritz-1891');
   const stops = [
@@ -389,16 +408,14 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     },
     update(_dt, time) {
       water.update(time);
-      for (const f of foamStrips) {
-        const w = Math.sin(time * 1.35 + f.phase);
-        f.mesh.position.z = f.baseZ - w * f.amp;
-        f.mesh.scale.z = 0.85 + 0.28 * (w * 0.5 + 0.5);
-      }
+      syncFoam(time);
       props.update();
     },
     dispose() {
       disposeObject(staticGroup);
-      disposeObject(foamGroup);
+      foamMesh.removeFromParent();
+      foamMesh.dispose();
+      foamGeo.dispose();
       water.dispose();
       props.dispose();
       for (const s of stops) s.dispose();

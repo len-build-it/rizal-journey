@@ -2,13 +2,14 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const materialCache = new Map<string, THREE.MeshStandardMaterial>();
+const tmpColor = new THREE.Color();
 
 /** Shared flat-shaded material per color, so the toy look stays consistent and draw calls stay low. */
 export function mat(
   color: number,
-  opts: { roughness?: number; metalness?: number; emissive?: number } = {},
+  opts: { roughness?: number; metalness?: number; emissive?: number; vertexColors?: boolean } = {},
 ): THREE.MeshStandardMaterial {
-  const key = `${color}-${opts.roughness ?? 0.85}-${opts.metalness ?? 0}-${opts.emissive ?? 0}`;
+  const key = `${color}-${opts.roughness ?? 0.85}-${opts.metalness ?? 0}-${opts.emissive ?? 0}-${opts.vertexColors ? 1 : 0}`;
   let m = materialCache.get(key);
   if (!m) {
     m = new THREE.MeshStandardMaterial({
@@ -16,6 +17,7 @@ export function mat(
       roughness: opts.roughness ?? 0.85,
       metalness: opts.metalness ?? 0,
       flatShading: true,
+      vertexColors: opts.vertexColors ?? false,
     });
     if (opts.emissive) {
       m.emissive = new THREE.Color(opts.emissive);
@@ -48,13 +50,35 @@ export function place<T extends THREE.BufferGeometry>(geo: T, p: Placement = {})
   return geo;
 }
 
+/** Prepares a geometry part with linear vertex colors for merging. */
+export function paintPart(
+  geo: THREE.BufferGeometry,
+  color: number,
+  p?: Placement,
+): THREE.BufferGeometry {
+  const raw = geo.index ? geo.toNonIndexed() : geo;
+  const g = p ? place(raw, p) : raw;
+  for (const name of Object.keys(g.attributes)) {
+    if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
+  }
+  const pos = g.getAttribute('position');
+  const colors = new Float32Array(pos.count * 3);
+  tmpColor.setHex(color);
+  for (let i = 0; i < pos.count; i++) {
+    colors[i * 3] = tmpColor.r;
+    colors[i * 3 + 1] = tmpColor.g;
+    colors[i * 3 + 2] = tmpColor.b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return g;
+}
+
 /**
- * Collects static geometry by color and merges it into one mesh per color.
- * A whole area ends up as a few dozen draw calls, which keeps mid-range phones smooth.
+ * Collects static geometry by material properties with vertex colors and merges into minimal draw calls.
  */
 export class StaticBatch {
-  private readonly groups = new Map<number, THREE.BufferGeometry[]>();
-  private readonly options = new Map<number, Parameters<typeof mat>[1]>();
+  private readonly groups = new Map<string, THREE.BufferGeometry[]>();
+  private readonly options = new Map<string, Parameters<typeof mat>[1]>();
 
   add(
     color: number,
@@ -62,15 +86,12 @@ export class StaticBatch {
     p: Placement = {},
     opts?: Parameters<typeof mat>[1],
   ): void {
-    const g = place(geo.index ? geo.toNonIndexed() : geo, p);
-    // Strip attributes that differ between primitive types so merging always succeeds.
-    for (const name of Object.keys(g.attributes)) {
-      if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
-    }
-    const list = this.groups.get(color) ?? [];
+    const key = `${opts?.roughness ?? 0.85}-${opts?.metalness ?? 0}-${opts?.emissive ?? 0}`;
+    const g = paintPart(geo, color, p);
+    const list = this.groups.get(key) ?? [];
     list.push(g);
-    this.groups.set(color, list);
-    if (opts) this.options.set(color, opts);
+    this.groups.set(key, list);
+    if (opts && !this.options.has(key)) this.options.set(key, opts);
   }
 
   /** Adds a geometry already transformed by an Object3D matrix (used for composed parts). */
@@ -82,11 +103,13 @@ export class StaticBatch {
   build(name: string, castShadow = true, receiveShadow = true): THREE.Group {
     const group = new THREE.Group();
     group.name = name;
-    for (const [color, geos] of this.groups) {
+    for (const [key, geos] of this.groups) {
       const merged = mergeGeometries(geos, false);
+      for (const g of geos) g.dispose();
       if (!merged) continue;
       merged.computeVertexNormals();
-      const mesh = new THREE.Mesh(merged, mat(color, this.options.get(color)));
+      const opts = { ...this.options.get(key), vertexColors: true };
+      const mesh = new THREE.Mesh(merged, mat(0xffffff, opts));
       mesh.castShadow = castShadow;
       mesh.receiveShadow = receiveShadow;
       mesh.matrixAutoUpdate = false;
@@ -94,6 +117,7 @@ export class StaticBatch {
       group.add(mesh);
     }
     this.groups.clear();
+    this.options.clear();
     return group;
   }
 }
