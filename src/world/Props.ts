@@ -43,7 +43,7 @@ export class Props {
     );
   }
 
-  barrel(x: number, z: number, ry = 0, upright = true): void {
+  barrel(x: number, z: number, ry = 0, upright = true, baseY = 0): void {
     const g = new THREE.Group();
     const r = 0.36;
     const h = 0.95;
@@ -61,8 +61,8 @@ export class Props {
       g.add(hoop);
     }
     const desc = this.ctx.rapier.ColliderDesc.cylinder(h / 2, r);
-    if (upright) this.add(g, x, h / 2, z, ry, desc, 0.9);
-    else this.add(g, x, r, z, ry, desc, 0.9, Math.PI / 2);
+    if (upright) this.add(g, x, baseY + h / 2, z, ry, desc, 0.9);
+    else this.add(g, x, baseY + r, z, ry, desc, 0.9, Math.PI / 2);
   }
 
   cafeTable(x: number, z: number): void {
@@ -155,7 +155,13 @@ export class Props {
     );
   }
 
-  beachChair(x: number, z: number, ry = 0, stripe = palette.awningRed): void {
+  beachChair(
+    x: number,
+    z: number,
+    ry = 0,
+    stripe: number = palette.awningRed,
+    baseY = 0,
+  ): void {
     const g = new THREE.Group();
     const frame = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.06, 1.15), mat(palette.crate));
     frame.position.y = 0.12;
@@ -170,7 +176,7 @@ export class Props {
     this.add(
       g,
       x,
-      0.22,
+      baseY + 0.22,
       z,
       ry,
       this.ctx.rapier.ColliderDesc.cuboid(0.35, 0.22, 0.6),
