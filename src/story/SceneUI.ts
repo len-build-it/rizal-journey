@@ -17,14 +17,14 @@ export class SceneUI {
   private onContinue: (() => void) | null = null;
 
   constructor(parent: HTMLElement) {
-    this.captionText = el('p', { class: 'scene-caption-text' });
-    const hint = el('p', { class: 'scene-caption-hint' }, [
-      'Click, Space, or Enter to continue \u00b7 Esc to skip',
+    this.captionText = el('span', { class: 'scene-caption-text' });
+    const hint = el('span', { class: 'k-band__hint' }, [
+      'Click, Space or Enter to continue. Esc to skip.',
     ]);
     this.captionBand = el(
       'button',
       {
-        class: 'scene-caption-band',
+        class: 'scene-caption-band k-band',
         type: 'button',
         'aria-live': 'polite',
         'aria-label': 'Scene caption, click to advance',
@@ -36,14 +36,14 @@ export class SceneUI {
 
     this.readMoreBtn = el(
       'button',
-      { class: 'scene-btn', type: 'button' },
+      { class: 'scene-btn k-btn', type: 'button' },
       ['Read more'],
     ) as HTMLButtonElement;
     this.readMoreBtn.addEventListener('click', () => this.onReadMore?.());
 
     this.continueBtn = el(
       'button',
-      { class: 'scene-btn is-primary', type: 'button' },
+      { class: 'scene-btn k-btn k-btn--primary', type: 'button' },
       ['Continue riding'],
     ) as HTMLButtonElement;
     this.continueBtn.addEventListener('click', () => this.onContinue?.());

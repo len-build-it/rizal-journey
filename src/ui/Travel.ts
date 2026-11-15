@@ -181,13 +181,13 @@ export async function playTowerTimelapse(
     area.setTowerProgress?.(1);
     camera.position.set(center.x + 48, 24, center.z - 16);
     camera.lookAt(center.x, 19, center.z);
-    const caption = el('section', { class: 'timelapse-hud is-reduced' }, [
+    const caption = el('section', { class: 'timelapse-hud k-band is-reduced' }, [
       el(
         'div',
         { class: 'timelapse-lines' },
         journey.lines.map((l) => el('p', {}, [l])),
       ),
-      el('button', { class: 'travel-skip', type: 'button' }, ['Continue']),
+      el('button', { class: 'travel-skip k-btn k-btn--small', type: 'button' }, ['Continue']),
     ]);
     parent.append(caption);
     await new Promise<void>((resolve) => {
@@ -205,8 +205,8 @@ export async function playTowerTimelapse(
 
   area.setTowerProgress?.(0);
   const lineEl = el('p', { class: 'timelapse-line' }, [journey.lines[0] ?? '']);
-  const skipBtn = el('button', { class: 'timelapse-skip', type: 'button' }, ['Skip']);
-  const hud = el('section', { class: 'timelapse-hud', 'aria-live': 'polite' }, [lineEl, skipBtn]);
+  const skipBtn = el('button', { class: 'timelapse-skip k-btn k-btn--small', type: 'button' }, ['Skip']);
+  const hud = el('section', { class: 'timelapse-hud k-band', 'aria-live': 'polite' }, [lineEl, skipBtn]);
   parent.append(hud);
 
   const thresholds = [0, 0.05, 0.55, 0.96];
