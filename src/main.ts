@@ -39,6 +39,18 @@ import { playInkWipe, playTowerTimelapse, playTrainJourney } from './ui/Travel';
 import { showBrochureView } from './ui/BrochureView';
 import { SceneDirector } from './story/SceneDirector';
 import { captureStorySnapshot } from './story/snapshot';
+import { PersonActor, rolePreset, type PersonAction, type PersonRole } from './story/figures';
+import {
+  buildCatGeometry,
+  buildDogGeometry,
+  buildDuckGeometry,
+  buildFishGeometry,
+  buildHarnessHorseGeometry,
+  buildPigeonGeometry,
+  buildSeagullGeometry,
+  buildSheepGeometry,
+  previewAnimalMesh,
+} from './world/life/animals';
 
 async function main(): Promise<void> {
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
@@ -462,6 +474,57 @@ async function main(): Promise<void> {
         travelSample: (fromId: string, to: AreaDestination) => travelTo(fromId, to),
         setDeskFold: (u: number) => openingDesk?.setFold(u),
         snapshots,
+        showLifeShowcase: () => {
+          cinematic = true;
+          chapterCard.hide();
+          hud.showPrompt(null);
+          const group = new THREE.Group();
+          const roles: [PersonRole, PersonAction][] = [
+            ['dockWorker', 'carry'],
+            ['fisherman', 'fish'],
+            ['marketWoman', 'stroll'],
+            ['gentleman', 'readNewspaper'],
+            ['lady', 'stroll'],
+            ['child', 'hurry'],
+            ['nurse', 'walk'],
+            ['coachman', 'sit'],
+            ['gendarme', 'idle'],
+            ['vendor', 'sweep'],
+          ];
+          const center = areaManager.current?.spawn.clone() ?? new THREE.Vector3();
+          const actors: PersonActor[] = [];
+          roles.forEach(([role, action], i) => {
+            const x = center.x - 9 + (i % 5) * 3.6;
+            const z = center.z - 5 + Math.floor(i / 5) * 3.8;
+            const actor = new PersonActor(rolePreset(role, role === 'lady' && i % 2 === 1, i), x, center.y, z, 0.35);
+            actor.setAction(action);
+            actor.update(0, 1.2);
+            group.add(actor.root);
+            actors.push(actor);
+          });
+          const animalGeos = [
+            buildPigeonGeometry(false),
+            buildPigeonGeometry(true),
+            buildSeagullGeometry(false),
+            buildSeagullGeometry(true),
+            buildDogGeometry(),
+            buildCatGeometry(),
+            buildSheepGeometry(),
+            buildDuckGeometry(),
+            buildFishGeometry(),
+            buildHarnessHorseGeometry(),
+          ];
+          animalGeos.forEach((geo, i) => {
+            const m = previewAnimalMesh(geo);
+            m.position.set(center.x - 9 + i * 2.1, center.y + (i === 1 || i === 3 || i === 8 ? 0.5 : 0), center.z + 3.2);
+            m.rotation.y = 0.45;
+            group.add(m);
+          });
+          engine.scene.add(group);
+          engine.camera.position.set(center.x + 14, center.y + 11, center.z - 12);
+          engine.camera.lookAt(center.x - 1, center.y + 0.8, center.z - 0.5);
+          return { count: actors.length + animalGeos.length };
+        },
         renderStats: () => ({
           calls: engine.renderer.info.render.calls,
           staticCalls: areaManager.current?.staticDrawCalls ?? 0,

@@ -3,9 +3,60 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { mat, paintPart } from '../world/kit';
 import { palette } from '../world/palette';
 
-export type CoatStyle = 'frock' | 'work' | 'smock' | 'dress';
-export type HatStyle = 'top' | 'bowler' | 'small' | 'none';
-export type PersonAction = 'idle' | 'walk' | 'gesture' | 'sit' | 'paint' | 'wave' | 'hold' | 'pull';
+export type CoatStyle = 'frock' | 'work' | 'smock' | 'dress' | 'waistcoat';
+export type HatStyle =
+  | 'top'
+  | 'bowler'
+  | 'small'
+  | 'flatcap'
+  | 'bonnet'
+  | 'kepi'
+  | 'cornette'
+  | 'none';
+export type PersonAction =
+  | 'idle'
+  | 'walk'
+  | 'stroll'
+  | 'hurry'
+  | 'carry'
+  | 'chat'
+  | 'sit'
+  | 'lean'
+  | 'sweep'
+  | 'fish'
+  | 'mendNet'
+  | 'readNewspaper'
+  | 'lookUp'
+  | 'stepAside'
+  | 'gesture'
+  | 'paint'
+  | 'wave'
+  | 'hold'
+  | 'pull';
+export type PersonRole =
+  | 'dockWorker'
+  | 'fisherman'
+  | 'marketWoman'
+  | 'gentleman'
+  | 'lady'
+  | 'child'
+  | 'nurse'
+  | 'coachman'
+  | 'gendarme'
+  | 'vendor';
+export type PersonProp =
+  | 'sack'
+  | 'crate'
+  | 'basketArm'
+  | 'basketHead'
+  | 'cane'
+  | 'parasol'
+  | 'umbrella'
+  | 'hoop'
+  | 'broom'
+  | 'fishingRod'
+  | 'newspaper'
+  | 'net';
 
 export interface PersonOptions {
   coat?: CoatStyle;
@@ -15,9 +66,19 @@ export interface PersonOptions {
   baby?: boolean;
   eyeBandage?: boolean;
   bag?: boolean;
+  apron?: boolean;
+  shawl?: boolean;
+  bustle?: boolean;
+  rolledTrousers?: boolean;
+  prop?: PersonProp;
+  scale?: number;
   coatColor?: number;
   skirtColor?: number;
   trouserColor?: number;
+  armColor?: number;
+  apronColor?: number;
+  shawlColor?: number;
+  hatColor?: number;
   hairColor?: number;
 }
 
@@ -51,8 +112,11 @@ function mergedMesh(parts: THREE.BufferGeometry[], name: string): THREE.Mesh {
 
 function resolveColors(opts: PersonOptions): {
   coat: number;
+  arm: number;
   skirt: number;
   trouser: number;
+  apron: number;
+  shawl: number;
   hat: number;
   hair: number;
   isDress: boolean;
@@ -64,15 +128,124 @@ function resolveColors(opts: PersonOptions): {
     if (style === 'work') coat = palette.crateDark;
     else if (style === 'smock') coat = palette.basqueWhite;
     else if (style === 'dress') coat = palette.shutterBlue;
+    else if (style === 'waistcoat') coat = palette.doorBrown;
   }
+  const defaultHat =
+    style === 'work' || style === 'waistcoat'
+      ? palette.doorBrown
+      : opts.hat === 'kepi'
+        ? palette.night
+        : opts.hat === 'cornette'
+          ? palette.shirt
+          : palette.hat;
   return {
     coat,
+    arm: opts.armColor ?? (style === 'waistcoat' ? palette.shirt : coat),
     skirt: opts.skirtColor ?? (isDress ? palette.railSteel : coat),
-    trouser: opts.trouserColor ?? (style === 'work' ? palette.coat : palette.lampIron),
-    hat: style === 'work' ? palette.doorBrown : palette.hat,
+    trouser: opts.trouserColor ?? (style === 'work' || style === 'waistcoat' ? palette.coat : palette.lampIron),
+    apron: opts.apronColor ?? palette.shirt,
+    shawl: opts.shawlColor ?? palette.awningRed,
+    hat: opts.hatColor ?? defaultHat,
     hair: opts.hairColor ?? palette.hair,
     isDress,
   };
+}
+
+/** Returns varied 1880s French archetype options for background life and vignettes. */
+export function rolePreset(role: PersonRole, winter = false, seedOffset = 0): PersonOptions {
+  const pick = <T>(arr: readonly T[]): T => arr[Math.abs(seedOffset) % arr.length]!;
+  switch (role) {
+    case 'dockWorker':
+      return {
+        coat: 'waistcoat',
+        hat: 'flatcap',
+        coatColor: pick([palette.crateDark, palette.doorBrown, palette.coat]),
+        trouserColor: pick([palette.coat, palette.lampIron, palette.hull]),
+        prop: seedOffset % 2 === 0 ? 'sack' : 'crate',
+      };
+    case 'fisherman':
+      return {
+        coat: 'smock',
+        hat: 'flatcap',
+        rolledTrousers: true,
+        coatColor: pick([palette.shutterBlue, palette.iron, palette.crate]),
+        trouserColor: palette.coat,
+        hatColor: palette.crateDark,
+      };
+    case 'marketWoman':
+      return {
+        coat: 'dress',
+        skirt: true,
+        apron: true,
+        shawl: true,
+        hat: 'bonnet',
+        coatColor: pick([palette.shutterGreen, palette.doorBrown, palette.shutterBlue]),
+        skirtColor: pick([palette.railSteel, palette.coat, palette.crateDark]),
+        shawlColor: pick([palette.awningRed, palette.awningOchre, palette.roofTile]),
+        prop: seedOffset % 3 === 0 ? 'basketHead' : 'basketArm',
+      };
+    case 'gentleman':
+      return {
+        coat: 'frock',
+        hat: seedOffset % 2 === 0 ? 'top' : 'bowler',
+        coatColor: pick([palette.coat, palette.night, palette.hull]),
+        prop: seedOffset % 3 === 0 ? 'newspaper' : 'cane',
+      };
+    case 'lady':
+      return {
+        coat: 'dress',
+        skirt: true,
+        bustle: true,
+        hat: 'small',
+        coatColor: pick([palette.shutterBlue, palette.awningRed, palette.shutterGreen, palette.coat]),
+        skirtColor: pick([palette.railSteel, palette.night, palette.shutterBlue, palette.doorBrown]),
+        prop: winter ? 'umbrella' : 'parasol',
+      };
+    case 'child':
+      return {
+        coat: 'smock',
+        hat: seedOffset % 2 === 0 ? 'flatcap' : 'bonnet',
+        scale: 0.72,
+        coatColor: pick([palette.shutterBlue, palette.ochre, palette.shutterGreen]),
+        hatColor: pick([palette.crateDark, palette.shirt]),
+        prop: seedOffset % 2 === 0 ? 'hoop' : undefined,
+      };
+    case 'nurse':
+      return {
+        coat: 'dress',
+        skirt: true,
+        apron: true,
+        hat: 'cornette',
+        coatColor: palette.night,
+        skirtColor: palette.night,
+        apronColor: palette.shirt,
+        hatColor: palette.shirt,
+      };
+    case 'coachman':
+      return {
+        coat: 'frock',
+        hat: 'top',
+        coatColor: palette.coat,
+        trouserColor: palette.hull,
+        hatColor: palette.hat,
+      };
+    case 'gendarme':
+      return {
+        coat: 'frock',
+        hat: 'kepi',
+        coatColor: palette.night,
+        trouserColor: palette.night,
+        hatColor: palette.night,
+      };
+    case 'vendor':
+      return {
+        coat: 'work',
+        apron: true,
+        hat: 'flatcap',
+        coatColor: pick([palette.crateDark, palette.shutterBlue, palette.doorBrown]),
+        apronColor: palette.awningCream,
+      };
+  }
 }
 
 /**
@@ -84,6 +257,7 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
   const hatStyle: HatStyle = opts.hat ?? (colors.isDress ? 'small' : 'bowler');
 
   const root = new THREE.Group();
+  if (opts.scale && opts.scale !== 1) root.scale.setScalar(opts.scale);
   const hips = new THREE.Group();
   hips.position.y = 0.76;
   root.add(hips);
@@ -91,7 +265,7 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
   const torso = new THREE.Group();
   hips.add(torso);
 
-  // Torso, coat tails or long skirt, collar, and optional baby bundle.
+  // Torso, coat tails or long skirt, collar, optional apron/shawl/bustle/bundle.
   const bodyParts: THREE.BufferGeometry[] = [
     paintPart(new THREE.CylinderGeometry(0.145, 0.175, 0.56, 7), colors.coat, { y: 0.28 }),
     paintPart(new THREE.CylinderGeometry(0.075, 0.095, 0.07, 6), palette.shirt, { y: 0.57 }),
@@ -100,9 +274,64 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
     bodyParts.push(
       paintPart(new THREE.CylinderGeometry(0.16, 0.34, 0.72, 8), colors.skirt, { y: -0.34 }),
     );
+    if (opts.bustle) {
+      bodyParts.push(
+        paintPart(new THREE.IcosahedronGeometry(0.17, 0), colors.skirt, {
+          y: -0.1,
+          z: -0.17,
+          sx: 1.05,
+          sy: 0.95,
+          sz: 1.15,
+        }),
+      );
+    }
   } else if (opts.smock || (opts.coat ?? 'frock') === 'frock') {
     bodyParts.push(
       paintPart(new THREE.CylinderGeometry(0.175, 0.22, 0.22, 7), colors.coat, { y: -0.09 }),
+    );
+  }
+  if (opts.apron) {
+    bodyParts.push(
+      paintPart(new THREE.BoxGeometry(0.24, 0.62, 0.06), colors.apron, {
+        y: colors.isDress ? -0.02 : 0.05,
+        z: 0.17,
+      }),
+    );
+  }
+  if (opts.shawl) {
+    bodyParts.push(
+      paintPart(new THREE.CylinderGeometry(0.17, 0.23, 0.22, 7), colors.shawl, { y: 0.44 }),
+    );
+  }
+  if (opts.prop === 'sack') {
+    bodyParts.push(
+      paintPart(new THREE.CapsuleGeometry(0.14, 0.28, 3, 6), palette.crate, {
+        x: 0.18,
+        y: 0.56,
+        z: -0.02,
+        rx: 1.32,
+        rz: -0.25,
+      }),
+    );
+  } else if (opts.prop === 'crate') {
+    bodyParts.push(
+      paintPart(new THREE.BoxGeometry(0.32, 0.24, 0.26), palette.crateDark, {
+        x: 0.2,
+        y: 0.56,
+        z: 0.02,
+        rz: -0.14,
+      }),
+    );
+  } else if (opts.prop === 'net') {
+    bodyParts.push(
+      paintPart(new THREE.IcosahedronGeometry(0.18, 0), palette.sail, {
+        x: 0.0,
+        y: 0.02,
+        z: 0.34,
+        sx: 1.3,
+        sy: 0.45,
+        sz: 1.0,
+      }),
     );
   }
   if (opts.baby) {
@@ -158,6 +387,55 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
         rx: -0.1,
       }),
     );
+  } else if (hatStyle === 'flatcap') {
+    headParts.push(
+      paintPart(new THREE.CylinderGeometry(0.135, 0.135, 0.055, 8), colors.hat, {
+        y: 0.095,
+        z: 0.015,
+        rx: 0.06,
+      }),
+      paintPart(new THREE.BoxGeometry(0.14, 0.016, 0.11), colors.hat, {
+        y: 0.072,
+        z: 0.12,
+      }),
+    );
+  } else if (hatStyle === 'bonnet') {
+    headParts.push(
+      paintPart(new THREE.CylinderGeometry(0.145, 0.155, 0.13, 8, 1, false, -0.7, Math.PI + 1.4), colors.hat, {
+        y: 0.05,
+        z: -0.02,
+        rx: -0.25,
+      }),
+    );
+  } else if (hatStyle === 'kepi') {
+    headParts.push(
+      paintPart(new THREE.CylinderGeometry(0.115, 0.128, 0.1, 8), colors.hat, {
+        y: 0.11,
+        z: 0.01,
+        rx: 0.08,
+      }),
+      paintPart(new THREE.BoxGeometry(0.13, 0.016, 0.1), palette.hat, {
+        y: 0.068,
+        z: 0.115,
+      }),
+    );
+  } else if (hatStyle === 'cornette') {
+    headParts.push(
+      paintPart(new THREE.BoxGeometry(0.28, 0.18, 0.24), palette.shirt, {
+        y: 0.08,
+        z: -0.04,
+      }),
+      paintPart(new THREE.BoxGeometry(0.46, 0.12, 0.08), palette.shirt, {
+        y: 0.14,
+        z: 0.02,
+        rx: 0.22,
+      }),
+    );
+  }
+  if (opts.prop === 'basketHead') {
+    headParts.push(
+      paintPart(new THREE.CylinderGeometry(0.19, 0.13, 0.16, 8), palette.crate, { y: 0.22 }),
+    );
   }
   if (opts.eyeBandage) {
     headParts.push(
@@ -171,40 +449,120 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
   }
   head.add(mergedMesh(headParts, 'person-head'));
 
-  // Left & right arms.
-  const buildArm = (side: -1 | 1, withBag: boolean): THREE.Group => {
+  // Left & right arms with optional carried props.
+  const buildArm = (side: -1 | 1): THREE.Group => {
     const arm = new THREE.Group();
     arm.position.set(side * 0.185, 0.5, 0);
     const parts: THREE.BufferGeometry[] = [
-      paintPart(new THREE.CylinderGeometry(0.055, 0.044, 0.48, 6), colors.coat, { y: -0.24 }),
+      paintPart(new THREE.CylinderGeometry(0.055, 0.044, 0.48, 6), colors.arm, { y: -0.24 }),
       paintPart(new THREE.IcosahedronGeometry(0.043, 0), palette.skin, { y: -0.5 }),
     ];
-    if (withBag) {
-      parts.push(
-        paintPart(new THREE.BoxGeometry(0.13, 0.24, 0.34), palette.crateDark, {
-          x: side * 0.06,
-          y: -0.62,
-          z: 0.02,
-        }),
-      );
+    if (side === 1) {
+      if (opts.bag) {
+        parts.push(
+          paintPart(new THREE.BoxGeometry(0.13, 0.24, 0.34), palette.crateDark, {
+            x: 0.06,
+            y: -0.62,
+            z: 0.02,
+          }),
+        );
+      } else if (opts.prop === 'cane') {
+        parts.push(
+          paintPart(new THREE.CylinderGeometry(0.015, 0.012, 0.78, 5), palette.doorBrown, {
+            y: -0.82,
+            z: 0.04,
+          }),
+        );
+      } else if (opts.prop === 'parasol' || opts.prop === 'umbrella') {
+        const isUmbrella = opts.prop === 'umbrella';
+        parts.push(
+          paintPart(new THREE.CylinderGeometry(0.014, 0.014, 0.75, 5), palette.doorBrown, {
+            y: isUmbrella ? -0.18 : 0.12,
+            z: 0.06,
+            rx: isUmbrella ? 0.35 : 0.1,
+          }),
+          paintPart(
+            new THREE.ConeGeometry(isUmbrella ? 0.44 : 0.42, 0.2, 8),
+            isUmbrella ? palette.coat : palette.awningCream,
+            {
+              y: isUmbrella ? 0.14 : 0.48,
+              z: isUmbrella ? 0.18 : 0.09,
+              rx: isUmbrella ? 0.35 : 0.1,
+            },
+          ),
+        );
+      } else if (opts.prop === 'basketArm') {
+        parts.push(
+          paintPart(new THREE.CylinderGeometry(0.14, 0.11, 0.16, 7), palette.crate, {
+            x: 0.06,
+            y: -0.56,
+            z: 0.05,
+          }),
+        );
+      } else if (opts.prop === 'hoop') {
+        parts.push(
+          paintPart(new THREE.TorusGeometry(0.24, 0.018, 5, 14), palette.doorBrown, {
+            x: 0.08,
+            y: -0.7,
+            z: 0.24,
+            ry: Math.PI / 2,
+          }),
+        );
+      } else if (opts.prop === 'broom') {
+        parts.push(
+          paintPart(new THREE.CylinderGeometry(0.016, 0.016, 1.05, 5), palette.doorBrown, {
+            y: -0.45,
+            z: 0.16,
+            rx: 0.35,
+          }),
+          paintPart(new THREE.BoxGeometry(0.18, 0.16, 0.08), palette.crate, {
+            y: -0.92,
+            z: 0.32,
+            rx: 0.35,
+          }),
+        );
+      } else if (opts.prop === 'fishingRod') {
+        parts.push(
+          paintPart(new THREE.CylinderGeometry(0.008, 0.02, 1.8, 5), palette.doorBrown, {
+            y: -0.3,
+            z: 0.85,
+            rx: 1.25,
+          }),
+        );
+      } else if (opts.prop === 'newspaper') {
+        parts.push(
+          paintPart(new THREE.BoxGeometry(0.28, 0.22, 0.02), palette.shirt, {
+            x: -0.1,
+            y: -0.48,
+            z: 0.18,
+            rx: -0.65,
+          }),
+        );
+      }
     }
     arm.add(mergedMesh(parts, side < 0 ? 'person-armL' : 'person-armR'));
     torso.add(arm);
     return arm;
   };
-  const armL = buildArm(-1, false);
-  const armR = buildArm(1, Boolean(opts.bag));
+  const armL = buildArm(-1);
+  const armR = buildArm(1);
 
-  // Left & right legs (shorter shoes only if wearing long skirt).
+  // Left & right legs (shorter shoes only if wearing long skirt; rolled calves if fisherman).
   const buildLeg = (side: -1 | 1): THREE.Group => {
     const leg = new THREE.Group();
     leg.position.set(side * 0.085, 0, 0);
     const parts: THREE.BufferGeometry[] = colors.isDress
       ? [paintPart(new THREE.BoxGeometry(0.095, 0.09, 0.2), palette.hat, { y: -0.71, z: 0.04 })]
-      : [
-          paintPart(new THREE.CylinderGeometry(0.072, 0.056, 0.7, 6), colors.trouser, { y: -0.35 }),
-          paintPart(new THREE.BoxGeometry(0.095, 0.085, 0.2), palette.hat, { y: -0.71, z: 0.035 }),
-        ];
+      : opts.rolledTrousers
+        ? [
+            paintPart(new THREE.CylinderGeometry(0.072, 0.064, 0.46, 6), colors.trouser, { y: -0.23 }),
+            paintPart(new THREE.CylinderGeometry(0.052, 0.046, 0.24, 6), palette.skin, { y: -0.57 }),
+            paintPart(new THREE.BoxGeometry(0.095, 0.085, 0.2), palette.hat, { y: -0.71, z: 0.035 }),
+          ]
+        : [
+            paintPart(new THREE.CylinderGeometry(0.072, 0.056, 0.7, 6), colors.trouser, { y: -0.35 }),
+            paintPart(new THREE.BoxGeometry(0.095, 0.085, 0.2), palette.hat, { y: -0.71, z: 0.035 }),
+          ];
     leg.add(mergedMesh(parts, side < 0 ? 'person-legL' : 'person-legR'));
     hips.add(leg);
     return leg;
@@ -309,14 +667,89 @@ export class PersonActor {
         head.rotation.y = Math.sin(t * 0.85) * 0.1;
         break;
       }
-      case 'walk': {
-        const s = t * 6.4;
-        const swing = Math.sin(s) * 0.45;
+      case 'walk':
+      case 'stroll':
+      case 'hurry': {
+        const rate = this.action === 'hurry' ? 8.6 : this.action === 'stroll' ? 4.8 : 6.4;
+        const amp = this.action === 'stroll' ? 0.32 : 0.45;
+        const s = t * rate;
+        const swing = Math.sin(s) * amp;
         legL.rotation.x = swing;
         legR.rotation.x = -swing;
         armL.rotation.x = -swing * 0.7;
         armR.rotation.x = swing * 0.7;
         hips.position.y = 0.76 + Math.abs(Math.cos(s)) * 0.03;
+        break;
+      }
+      case 'carry': {
+        const s = t * 5.6;
+        const swing = Math.sin(s) * 0.34;
+        legL.rotation.x = swing;
+        legR.rotation.x = -swing;
+        armL.rotation.x = -0.35;
+        armR.rotation.set(-0.95, 0, -0.35);
+        torso.rotation.z = 0.06;
+        hips.position.y = 0.75 + Math.abs(Math.cos(s)) * 0.02;
+        break;
+      }
+      case 'chat': {
+        torso.rotation.y = Math.sin(t * 1.4) * 0.07;
+        armR.rotation.set(-0.8 + Math.sin(t * 3.4) * 0.22, 0, 0.24);
+        armL.rotation.set(-0.35 + Math.cos(t * 2.1) * 0.1, 0, -0.12);
+        head.rotation.y = Math.sin(t * 1.6) * 0.14;
+        head.rotation.x = Math.sin(t * 2.4) * 0.06;
+        break;
+      }
+      case 'lean': {
+        torso.rotation.x = -0.14;
+        armL.rotation.set(-0.25, 0, -0.2);
+        armR.rotation.set(-0.25, 0, 0.2);
+        head.rotation.y = Math.sin(t * 0.7) * 0.18;
+        break;
+      }
+      case 'sweep': {
+        const s = Math.sin(t * 3.6);
+        torso.rotation.x = 0.18;
+        torso.rotation.y = s * 0.24;
+        armR.rotation.set(-0.7 + s * 0.25, 0, 0.15);
+        armL.rotation.set(-0.65 - s * 0.18, 0, -0.15);
+        break;
+      }
+      case 'fish': {
+        torso.rotation.x = 0.06;
+        armR.rotation.set(-0.72 + Math.sin(t * 1.8) * 0.05, 0, 0.1);
+        head.rotation.x = 0.12;
+        break;
+      }
+      case 'mendNet': {
+        hips.position.y = 0.44;
+        legL.rotation.x = -1.42;
+        legR.rotation.x = -1.42;
+        torso.rotation.x = 0.22;
+        armL.rotation.set(-0.95 + Math.sin(t * 4.5) * 0.16, 0, -0.22);
+        armR.rotation.set(-0.95 - Math.sin(t * 4.5) * 0.16, 0, 0.22);
+        head.rotation.x = 0.3;
+        break;
+      }
+      case 'readNewspaper': {
+        torso.rotation.x = 0.04;
+        armL.rotation.set(-1.15, 0.25, -0.18);
+        armR.rotation.set(-1.15, -0.25, 0.18);
+        head.rotation.x = 0.28 + Math.sin(t * 1.1) * 0.04;
+        break;
+      }
+      case 'lookUp': {
+        torso.rotation.x = -0.12;
+        head.rotation.x = -0.52 + Math.sin(t * 0.9) * 0.05;
+        head.rotation.y = Math.sin(t * 0.6) * 0.14;
+        break;
+      }
+      case 'stepAside': {
+        hips.position.y = 0.78;
+        torso.rotation.x = -0.05;
+        armL.rotation.set(-0.3, 0, -0.28);
+        armR.rotation.set(-0.3, 0, 0.28);
+        head.rotation.y = Math.sin(t * 2.0) * 0.2;
         break;
       }
       case 'gesture': {
