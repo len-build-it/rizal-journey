@@ -26,6 +26,7 @@ import { Joystick } from './ui/Joystick';
 import { showIntro } from './ui/Intro';
 import { playTowerTimelapse, playTrainJourney } from './ui/Travel';
 import { showBrochureView } from './ui/BrochureView';
+import { SceneDirector } from './story/SceneDirector';
 
 async function main(): Promise<void> {
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
@@ -57,6 +58,7 @@ async function main(): Promise<void> {
     0,
   );
   const areaManager = new AreaManager(engine, player, cam, hud);
+  const director = new SceneDirector(engine, player, cam, hud, card, uiRoot);
   await areaManager.load(state.destination, visited);
 
   let current: StopMarker | null = null;
@@ -75,7 +77,7 @@ async function main(): Promise<void> {
     saveProgress(state);
   };
 
-  const openStory = (stop: StopMarker): void => {
+  const openStoryCard = (stop: StopMarker): void => {
     const area = areaManager.current;
     if (!area || traveling) return;
     input.enabled = false;
@@ -108,6 +110,40 @@ async function main(): Promise<void> {
       onAction: (story) => {
         card.hide();
         if (story.action) void travelTo(story.id, story.action.to);
+      },
+    });
+  };
+
+  const playStopScene = (stop: StopMarker): void => {
+    const area = areaManager.current;
+    if (!area || traveling || director.isPlaying) return;
+    const ready = allOtherStopsVisited(area, stop.story.id, visited);
+    if (stop.story.action && !ready) {
+      openStoryCard(stop);
+      return;
+    }
+
+    input.enabled = false;
+    hud.showPrompt(null);
+    stop.visited = true;
+    visited.add(stop.story.id);
+    if (!filled.has(stop.story.panel)) {
+      filled.add(stop.story.panel);
+      hud.setPanels(filled);
+    }
+    persist();
+
+    cinematic = true;
+    director.play(stop, area, {
+      actionReady: ready,
+      onEnd: () => {
+        cinematic = false;
+        if (!traveling) input.enabled = true;
+        canvas.focus({ preventScroll: true });
+      },
+      onTravel: (id, to) => {
+        cinematic = false;
+        void travelTo(id, to);
       },
     });
   };
@@ -163,7 +199,7 @@ async function main(): Promise<void> {
     canvas.focus({ preventScroll: true });
   };
 
-  hud.onPrompt = () => current && !card.open && !traveling && openStory(current);
+  hud.onPrompt = () => current && !card.open && !traveling && playStopScene(current);
 
   engine.onUpdate((dt, time) => {
     const area = areaManager.current;
@@ -173,14 +209,33 @@ async function main(): Promise<void> {
     player.update(dt, input, cam.yaw);
     area.update(dt, time);
 
+    if (director.isPlaying) {
+      director.update(dt, time);
+      for (const s of area.stops) s.update(dt, time, player.position);
+      return;
+    }
+
     if (!cinematic && !traveling) {
       let inside: StopMarker | null = null;
       for (const s of area.stops) if (s.update(dt, time, player.position)) inside = s;
       if (inside !== current) {
         current = inside;
-        hud.showPrompt(current && !card.open ? `Read: ${current.story.title}` : null);
+        if (!current) {
+          hud.showPrompt(null);
+        } else {
+          const lockedStation =
+            Boolean(current.story.action) &&
+            !allOtherStopsVisited(area, current.story.id, visited);
+          if (lockedStation) {
+            hud.showPrompt('Visit the other stops first');
+          } else if (!current.visited && input.enabled && !card.open) {
+            playStopScene(current);
+          } else if (!card.open) {
+            hud.showPrompt(`Replay: ${current.story.title}`);
+          }
+        }
       }
-      if (current && input.interactPressed && !card.open) openStory(current);
+      if (current && input.interactPressed && !card.open) playStopScene(current);
 
       camTarget.copy(focusOverride ?? player.position);
       cam.update(
@@ -209,10 +264,13 @@ async function main(): Promise<void> {
       __rizal: {
         player,
         cam,
+        director,
         get area() {
           return areaManager.current;
         },
         loadArea: async (dest: AreaDestination) => {
+          director.cleanup();
+          cinematic = false;
           card.hide();
           current = null;
           await areaManager.load(dest, visited);
@@ -221,7 +279,14 @@ async function main(): Promise<void> {
           const stop = areaManager.current?.stops.find((s) => s.story.id === id);
           if (stop) {
             player.teleport(stop.position, 0);
-            openStory(stop);
+            openStoryCard(stop);
+          }
+        },
+        playScene: (id: string) => {
+          const stop = areaManager.current?.stops.find((s) => s.story.id === id);
+          if (stop) {
+            player.teleport(stop.position, 0);
+            playStopScene(stop);
           }
         },
         closeCard: () => card.hide(),

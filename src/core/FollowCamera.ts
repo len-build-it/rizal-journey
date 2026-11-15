@@ -86,4 +86,10 @@ export class FollowCamera {
     this.initialized = false;
     this.update(0, target, 0, 0);
   }
+
+  /** Seeds follow-focus without jumping, so camera glides back to rider after a scene. */
+  seedFocus(target: THREE.Vector3): void {
+    this.focus.copy(target);
+    this.initialized = true;
+  }
 }

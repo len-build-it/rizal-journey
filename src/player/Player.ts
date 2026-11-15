@@ -87,6 +87,17 @@ export class Player {
     this.syncVisual(0);
   }
 
+  /** Shows or hides the seated rider (when Rizal dismounts during a scene, the horse stands alone). */
+  setRiderMounted(mounted: boolean): void {
+    this.rig.rider.root.visible = mounted;
+    if (!mounted) {
+      this.speed = 0;
+      this.lean = 0;
+      this.gaitMix = { walk: 1, trot: 0, gallop: 0 };
+      this.syncVisual(0);
+    }
+  }
+
   update(dt: number, input: Input, cameraYaw: number): void {
     // Requested direction in world space, relative to the fixed camera angle.
     const cos = Math.cos(cameraYaw);
