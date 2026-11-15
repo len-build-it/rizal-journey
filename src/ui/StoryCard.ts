@@ -40,11 +40,27 @@ export class StoryCard {
     });
   }
 
-  show(story: Story, handlers: { onClose: () => void; onAction?: (s: Story) => void }): void {
+  show(
+    story: Story,
+    handlers: {
+      onClose: () => void;
+      onAction?: (s: Story) => void;
+      actionDisabled?: boolean;
+      actionLabel?: string;
+      hideAction?: boolean;
+    },
+  ): void {
     this.onClose = handlers.onClose;
     this.onAction = handlers.onAction ?? null;
     this.lastFocus = document.activeElement as HTMLElement | null;
-    this.body.replaceChildren(...this.render(story));
+    this.body.replaceChildren(
+      ...this.render(
+        story,
+        handlers.actionDisabled ?? false,
+        handlers.actionLabel,
+        handlers.hideAction ?? false,
+      ),
+    );
     this.root.hidden = false;
     // Next frame so the transition runs from the hidden state.
     requestAnimationFrame(() => this.root.classList.add('is-open'));
@@ -65,7 +81,12 @@ export class StoryCard {
     cb?.();
   }
 
-  private render(story: Story): Node[] {
+  private render(
+    story: Story,
+    actionDisabled: boolean,
+    actionLabel?: string,
+    hideAction = false,
+  ): Node[] {
     const sourceKeys = [...new Set(story.factIds.flatMap((id) => factById(id)?.sources ?? []))];
     const nodes: Node[] = [
       el('p', { class: 'card-panel' }, [`Brochure panel ${story.panel} of 6`]),
@@ -74,9 +95,13 @@ export class StoryCard {
       ...story.paragraphs.map((p) => el('p', { class: 'card-text' }, [p])),
     ];
     if (story.note) nodes.push(el('p', { class: 'card-note' }, [story.note]));
-    if (story.action) {
-      const btn = el('button', { class: 'card-action', type: 'button' }, [story.action.label]);
-      btn.addEventListener('click', () => this.onAction?.(story));
+    if (story.action && !hideAction) {
+      const label = actionDisabled
+        ? (actionLabel ?? 'Visit the other stops first')
+        : story.action.label;
+      const btn = el('button', { class: 'card-action', type: 'button' }, [label]);
+      if (actionDisabled) btn.disabled = true;
+      else btn.addEventListener('click', () => this.onAction?.(story));
       nodes.push(btn);
     }
     const sources = el('details', { class: 'card-sources' }, [

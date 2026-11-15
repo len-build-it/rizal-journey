@@ -266,13 +266,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
 }
 
 /** Generic Basque-style villa: white walls, red timbers and shutters, low red tile roof and garden gate. */
-function basqueVilla(
-  batch: StaticBatch,
-  ctx: PhysicsCtx,
-  x: number,
-  y: number,
-  z: number,
-): void {
+function basqueVilla(batch: StaticBatch, ctx: PhysicsCtx, x: number, y: number, z: number): void {
   const w = 14;
   const h = 6.2;
   const d = 10;

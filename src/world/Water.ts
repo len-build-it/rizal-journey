@@ -11,13 +11,7 @@ export class Water {
   private readonly geo: THREE.BufferGeometry;
   private readonly amplitude: number;
 
-  constructor(
-    width: number,
-    depth: number,
-    cell: number,
-    center: THREE.Vector3,
-    amplitude = 1,
-  ) {
+  constructor(width: number, depth: number, cell: number, center: THREE.Vector3, amplitude = 1) {
     this.amplitude = amplitude;
     const plane = new THREE.PlaneGeometry(
       width,

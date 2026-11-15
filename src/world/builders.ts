@@ -210,7 +210,13 @@ export function haussmannBlock(batch: StaticBatch, ctx: PhysicsCtx, o: Haussmann
 
   // Cream limestone body, stone plinth and stringcourses.
   add(palette.parisLimestone, new THREE.BoxGeometry(o.width, wallH, o.depth), 0, wallH / 2, 0);
-  add(palette.quayStoneDark, new THREE.BoxGeometry(o.width + 0.08, 0.55, o.depth + 0.08), 0, 0.275, 0);
+  add(
+    palette.quayStoneDark,
+    new THREE.BoxGeometry(o.width + 0.08, 0.55, o.depth + 0.08),
+    0,
+    0.275,
+    0,
+  );
   add(
     palette.limestone,
     new THREE.BoxGeometry(o.width + 0.32, 0.24, o.depth + 0.32),
@@ -248,8 +254,20 @@ export function haussmannBlock(batch: StaticBatch, ctx: PhysicsCtx, o: Haussmann
 
   // Chimneys along the roof ridge.
   for (const cx of [-o.width * 0.25, o.width * 0.25]) {
-    add(palette.parisLimestone, new THREE.BoxGeometry(0.7, 1.3, 0.7), cx, wallH + mansardH + 0.4, 0);
-    add(palette.roofTile, new THREE.CylinderGeometry(0.11, 0.13, 0.45, 5), cx, wallH + mansardH + 1.25, 0);
+    add(
+      palette.parisLimestone,
+      new THREE.BoxGeometry(0.7, 1.3, 0.7),
+      cx,
+      wallH + mansardH + 0.4,
+      0,
+    );
+    add(
+      palette.roofTile,
+      new THREE.CylinderGeometry(0.11, 0.13, 0.45, 5),
+      cx,
+      wallH + mansardH + 1.25,
+      0,
+    );
   }
 
   const cols = Math.max(3, Math.floor(o.width / 2.0));
@@ -262,7 +280,13 @@ export function haussmannBlock(batch: StaticBatch, ctx: PhysicsCtx, o: Haussmann
     if (bf >= floors) continue;
     const by = bf * floorH + 0.55;
     add(palette.lampIron, new THREE.BoxGeometry(o.width - 0.3, 0.1, 0.72), 0, by, front + 0.34);
-    add(palette.lampIron, new THREE.BoxGeometry(o.width - 0.3, 0.58, 0.05), 0, by + 0.32, front + 0.68);
+    add(
+      palette.lampIron,
+      new THREE.BoxGeometry(o.width - 0.3, 0.58, 0.05),
+      0,
+      by + 0.32,
+      front + 0.68,
+    );
   }
 
   for (let f = 0; f < floors; f++) {
@@ -277,7 +301,13 @@ export function haussmannBlock(batch: StaticBatch, ctx: PhysicsCtx, o: Haussmann
       const winH = f === 0 ? 1.85 : 1.55;
       const winW = f === 0 ? 1.15 : 0.8;
       add(0x2c3138, new THREE.BoxGeometry(winW, winH, 0.08), wx, y + winH / 2, front);
-      add(palette.parisLimestone, new THREE.BoxGeometry(winW + 0.18, 0.12, 0.14), wx, y - 0.04, front + 0.03);
+      add(
+        palette.parisLimestone,
+        new THREE.BoxGeometry(winW + 0.18, 0.12, 0.14),
+        wx,
+        y - 0.04,
+        front + 0.03,
+      );
     }
   }
 
@@ -292,8 +322,20 @@ export function haussmannBlock(batch: StaticBatch, ctx: PhysicsCtx, o: Haussmann
   // Dormer windows set into the zinc mansard.
   for (let c = 0; c < cols; c += 2) {
     const dx = -o.width / 2 + spacing * (c + 0.5);
-    add(palette.parisLimestone, new THREE.BoxGeometry(0.95, 1.15, 0.8), dx, wallH + 0.9, front - 0.35);
-    add(palette.zincRoofDark, new THREE.BoxGeometry(1.05, 0.18, 0.95), dx, wallH + 1.52, front - 0.32);
+    add(
+      palette.parisLimestone,
+      new THREE.BoxGeometry(0.95, 1.15, 0.8),
+      dx,
+      wallH + 0.9,
+      front - 0.35,
+    );
+    add(
+      palette.zincRoofDark,
+      new THREE.BoxGeometry(1.05, 0.18, 0.95),
+      dx,
+      wallH + 1.52,
+      front - 0.32,
+    );
     add(0x2c3138, new THREE.BoxGeometry(0.55, 0.8, 0.1), dx, wallH + 0.85, front + 0.05);
   }
 
@@ -332,13 +374,25 @@ export function haussmannRow(
 
 /** A Parisian green cast-iron Morris advertising column. */
 export function morrisColumn(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
-  batch.add(palette.quayStoneDark, new THREE.CylinderGeometry(0.58, 0.64, 0.45, 8), { x, y: 0.225, z });
+  batch.add(palette.quayStoneDark, new THREE.CylinderGeometry(0.58, 0.64, 0.45, 8), {
+    x,
+    y: 0.225,
+    z,
+  });
   batch.add(palette.morrisGreen, new THREE.CylinderGeometry(0.52, 0.54, 2.3, 10), { x, y: 1.6, z });
   // Poster band around the middle.
-  batch.add(palette.awningCream, new THREE.CylinderGeometry(0.54, 0.54, 1.3, 10), { x, y: 1.65, z });
+  batch.add(palette.awningCream, new THREE.CylinderGeometry(0.54, 0.54, 1.3, 10), {
+    x,
+    y: 1.65,
+    z,
+  });
   batch.add(palette.ochre, new THREE.CylinderGeometry(0.545, 0.545, 0.4, 10), { x, y: 1.8, z });
   // Canopy and finial.
-  batch.add(palette.morrisGreen, new THREE.CylinderGeometry(0.75, 0.78, 0.22, 10), { x, y: 2.86, z });
+  batch.add(palette.morrisGreen, new THREE.CylinderGeometry(0.75, 0.78, 0.22, 10), {
+    x,
+    y: 2.86,
+    z,
+  });
   batch.add(palette.morrisGreen, new THREE.ConeGeometry(0.68, 0.7, 10), { x, y: 3.32, z });
   batch.add(palette.gaslight, new THREE.CylinderGeometry(0.05, 0.08, 0.35, 6), { x, y: 3.8, z });
   staticCylinder(ctx, x, z, 0.62, 3.0);

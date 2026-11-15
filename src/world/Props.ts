@@ -144,24 +144,10 @@ export class Props {
       pot.position.set(-0.45 + i * 0.3, 0.5, (i % 2 === 0 ? -1 : 1) * 0.18);
       g.add(pot);
     }
-    this.add(
-      g,
-      x,
-      0.38,
-      z,
-      ry,
-      this.ctx.rapier.ColliderDesc.cuboid(0.75, 0.38, 0.52),
-      0.8,
-    );
+    this.add(g, x, 0.38, z, ry, this.ctx.rapier.ColliderDesc.cuboid(0.75, 0.38, 0.52), 0.8);
   }
 
-  beachChair(
-    x: number,
-    z: number,
-    ry = 0,
-    stripe: number = palette.awningRed,
-    baseY = 0,
-  ): void {
+  beachChair(x: number, z: number, ry = 0, stripe: number = palette.awningRed, baseY = 0): void {
     const g = new THREE.Group();
     const frame = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.06, 1.15), mat(palette.crate));
     frame.position.y = 0.12;
@@ -173,15 +159,7 @@ export class Props {
     const seat = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.04, 0.52), mat(palette.awningCream));
     seat.position.set(0, 0.16, 0.25);
     g.add(seat);
-    this.add(
-      g,
-      x,
-      baseY + 0.22,
-      z,
-      ry,
-      this.ctx.rapier.ColliderDesc.cuboid(0.35, 0.22, 0.6),
-      0.3,
-    );
+    this.add(g, x, baseY + 0.22, z, ry, this.ctx.rapier.ColliderDesc.cuboid(0.35, 0.22, 0.6), 0.3);
   }
 
   private add(

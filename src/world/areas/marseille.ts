@@ -198,22 +198,14 @@ export function buildMarseille(
           const [melbourne, lessons] = storiesFor('marseille-1891');
           return [
             new StopMarker(melbourne!, new THREE.Vector3(10.5, 0, 7.5)),
-            new StopMarker(
-              lessons!,
-              new THREE.Vector3(-27, 0, 8.2),
-              new THREE.Vector3(-30, 1, 40),
-            ),
+            new StopMarker(lessons!, new THREE.Vector3(-27, 0, 8.2), new THREE.Vector3(-30, 1, 40)),
           ];
         })()
       : (() => {
           const [landing, chateau, train] = storiesFor('marseille-1882');
           return [
             new StopMarker(landing!, new THREE.Vector3(10.5, 0, 7.5)),
-            new StopMarker(
-              chateau!,
-              new THREE.Vector3(-27, 0, 8.2),
-              new THREE.Vector3(-30, 1, 40),
-            ),
+            new StopMarker(chateau!, new THREE.Vector3(-27, 0, 8.2), new THREE.Vector3(-30, 1, 40)),
             new StopMarker(train!, new THREE.Vector3(10, 0, -43)),
           ];
         })();

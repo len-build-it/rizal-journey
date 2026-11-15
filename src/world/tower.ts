@@ -213,7 +213,8 @@ export class EiffelTower {
 
     // Upper tapering shaft from 38% to 92% (order 0.55..0.93).
     const shaftTiers = 14;
-    const shaftHalf = (u: number): number => THREE.MathUtils.lerp(H * 0.058, 0.88, Math.pow(u, 0.75));
+    const shaftHalf = (u: number): number =>
+      THREE.MathUtils.lerp(H * 0.058, 0.88, Math.pow(u, 0.75));
     const shaftCorners = (u: number): THREE.Vector3[] => {
       const r = shaftHalf(u);
       const y = THREE.MathUtils.lerp(0.38, 0.92, u) * H;
