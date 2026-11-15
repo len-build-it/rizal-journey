@@ -46,16 +46,16 @@ const biarritzManuscript: SceneScript = {
   storyId: 'biarritz-manuscript',
   duration: 11.0,
   setup(ctx) {
-    // Late evening / dusk golden light so the table lamp glows over the finished pages.
+    // Late evening / dusk twilight balanced with a gentle lamp over the finished pages.
     ctx.setLook({
-      sky: 0x3b354f,
-      fog: 0x5c4f63,
-      sunColor: 0xffb36c,
-      sunIntensity: 1.35,
-      sunDirection: new THREE.Vector3(-0.6, 0.25, 0.7).normalize(),
-      hemiSky: 0x6f6885,
+      sky: 0x3b3d5a,
+      fog: 0x5c586e,
+      sunColor: 0xffd9b0,
+      sunIntensity: 0.78,
+      sunDirection: new THREE.Vector3(-0.6, 0.32, 0.7).normalize(),
+      hemiSky: 0x8998c2,
       hemiGround: 0x453b31,
-      hemiIntensity: 0.85,
+      hemiIntensity: 1.05,
     });
 
     const terraceY = PLATEAU_Y + 0.25;
@@ -63,25 +63,29 @@ const biarritzManuscript: SceneScript = {
     const tz = -19.6;
     const tableTopY = PLATEAU_Y + 1.0;
 
-    // Rizal seated at the terrace chair facing +Z across the writing table.
-    ctx.rizal.setPose(tx, terraceY, tz - 0.85, 0, 'sit');
+    // Rizal seated bareheaded at the writing table, his bowler hat resting beside him on the table.
+    ctx.rizal.root.visible = false;
+    const writer = ctx.actor({ coat: 'frock', hat: 'none' }, tx, terraceY, tz - 0.85, 0);
+    writer.setAction('sit');
 
-    // Warm glowing table lamp, stack of finished manuscript sheets, and final sheet settling on top.
+    // Table lamp, stack of manuscript sheets, final sheet settling, and Rizal's set-aside bowler hat.
     const lampGroup = new THREE.Group();
     const stemGeo = new THREE.CylinderGeometry(0.03, 0.05, 0.34, 8);
     const shadeGeo = new THREE.ConeGeometry(0.18, 0.16, 10);
     const pageGeo = new THREE.BoxGeometry(0.32, 0.045, 0.42);
     const sheetGeo = new THREE.BoxGeometry(0.3, 0.012, 0.4);
+    const hatCrownGeo = new THREE.SphereGeometry(0.13, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.55);
+    const hatBrimGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.02, 10);
 
     const lampStem = new THREE.Mesh(stemGeo, mat(palette.brass));
     lampStem.position.set(tx - 0.42, tableTopY + 0.17, tz - 0.12);
     const lampShade = new THREE.Mesh(
       shadeGeo,
-      mat(palette.gaslight, { emissive: palette.gaslight, roughness: 0.4 }),
+      mat(palette.gaslight, { emissive: palette.gaslight, roughness: 0.45 }),
     );
     lampShade.position.set(tx - 0.42, tableTopY + 0.36, tz - 0.12);
-    const deskLight = new THREE.PointLight(0xffcb78, 2.4, 5.5, 1.5);
-    deskLight.position.set(tx - 0.38, tableTopY + 0.38, tz - 0.1);
+    const deskLight = new THREE.PointLight(0xffebb8, 1.15, 3.2, 1.8);
+    deskLight.position.set(tx - 0.32, tableTopY + 0.22, tz - 0.06);
 
     const stack = new THREE.Mesh(pageGeo, mat(palette.shirt));
     stack.position.set(tx + 0.05, tableTopY + 0.045, tz);
@@ -91,16 +95,27 @@ const biarritzManuscript: SceneScript = {
     finalSheet.position.set(tx + 0.04, tableTopY + 0.32, tz);
     finalSheet.rotation.set(0.06, -0.05, 0.08);
 
-    lampGroup.add(lampStem, lampShade, deskLight, stack, finalSheet);
+    const hatMat = mat(palette.hat);
+    const hatBrim = new THREE.Mesh(hatBrimGeo, hatMat);
+    hatBrim.position.set(tx + 0.42, tableTopY + 0.025, tz - 0.18);
+    const hatCrown = new THREE.Mesh(hatCrownGeo, hatMat);
+    hatCrown.scale.y = 1.05;
+    hatCrown.position.set(tx + 0.42, tableTopY + 0.025, tz - 0.18);
+
+    lampGroup.add(lampStem, lampShade, deskLight, stack, finalSheet, hatBrim, hatCrown);
     ctx.prop(lampGroup);
     (ctx as { finalSheet?: THREE.Mesh }).finalSheet = finalSheet;
 
     ctx.cutCamera(new THREE.Vector3(-1.3, PLATEAU_Y + 2.05, -17.1), new THREE.Vector3(tx, tableTopY + 0.15, tz));
     ctx.onDispose(() => {
+      ctx.rizal.root.visible = true;
       stemGeo.dispose();
       shadeGeo.dispose();
       pageGeo.dispose();
       sheetGeo.dispose();
+      hatCrownGeo.dispose();
+      hatBrimGeo.dispose();
+      hatMat.dispose();
       delete (ctx as { finalSheet?: THREE.Mesh }).finalSheet;
     });
   },
