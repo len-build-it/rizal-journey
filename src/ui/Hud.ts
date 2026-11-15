@@ -105,7 +105,9 @@ export class Hud {
     const limitY = Math.max(40, h * 0.5 - 30);
     const scale = Math.max(Math.abs(dx) / limitX, Math.abs(dy) / limitY) || 1;
     const px = w * 0.5 + dx / scale;
-    const py = h * 0.5 + dy / scale;
+    let py = h * 0.5 + dy / scale;
+    if (px < 260 && py < 108) py = 108;
+    else if (px > w - 260 && py < 80) py = 80;
     const angle = Math.atan2(dy, dx);
 
     this.arrow.hidden = false;

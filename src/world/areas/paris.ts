@@ -117,7 +117,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   }
 
   // Grand Paris railway terminus on the west side of the station square, facing +X toward the boulevard.
-  parisTerminus(batch, ctx, -10.5, -50);
+  batch.withAnchor(-10.5, 0, -50, () => parisTerminus(batch, ctx, -10.5, -50));
   // Backdrop Haussmann row behind the northern station tracks so the horizon is enclosed.
   haussmannRow(batch, ctx, -24, 56, -68, 39, { depth: 8, floors: [5] });
 
@@ -171,7 +171,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   });
 
   // Rue de Maubeuge south side (z = -15, facing -Z): Hotel de Paris sits at x = 19, z = -15.
-  hotelDeParis(batch, ctx, 19.25, -15);
+  batch.withAnchor(19.25, 0, -15, () => hotelDeParis(batch, ctx, 19.25, -15));
   haussmannRow(batch, ctx, 24, 37, -15, 51, {
     flip: true,
     depth: 8,
@@ -195,7 +195,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     startCorner: 'cut',
     endCorner: 'cut',
   });
-  laennecHospital(batch, ctx, 26, -4);
+  batch.withAnchor(26, 0, -4, () => laennecHospital(batch, ctx, 26, -4));
   haussmannCol(batch, ctx, 58.5, -10.5, 5.5, 54, {
     faceEast: false,
     depth: 9,
@@ -216,7 +216,7 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     shop: false,
     plainGround: true,
   });
-  deWeckerClinic(batch, ctx, 18.7, 18);
+  batch.withAnchor(18.7, 0, 18, () => deWeckerClinic(batch, ctx, 18.7, 18));
   haussmannRow(batch, ctx, 21.8, 42, 18, 55, {
     flip: true,
     depth: 7.5,
@@ -235,14 +235,14 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
   streetSign(batch, ctx, signsGroup, 11.2, 5.8, Math.PI * 0.25, 'Rue du Cherche-Midi');
 
   // Rue des Saints-Peres (z = 26, south side z = 36 facing -Z): bookshop at x = 18.5, Luna's studio at x = 36.
-  bookshop(batch, ctx, 18.5, 36);
+  batch.withAnchor(18.5, 0, 36, () => bookshop(batch, ctx, 18.5, 36));
   haussmannRow(batch, ctx, 22.5, 31, 36, 61, {
     flip: true,
     depth: 8,
     floors: [5],
     sideWindows: true,
   });
-  const skylight = lunaStudio(batch, ctx, 36, 36, scene);
+  const skylight = batch.withAnchor(36, 0, 36, () => lunaStudio(batch, ctx, 36, 36, scene));
   haussmannRow(batch, ctx, 41, 47, 36, 62, {
     flip: true,
     depth: 8,
@@ -423,8 +423,8 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     tower = new EiffelTower(TOWER_CENTER, ctx);
     scene.add(tower.group);
 
-    fairPavilion(batch, ctx, -34, -18, 0);
-    fairPavilion(batch, ctx, -34, 18, 0);
+    batch.withAnchor(-34, 0, -18, () => fairPavilion(batch, ctx, -34, -18, 0));
+    batch.withAnchor(-34, 0, 18, () => fairPavilion(batch, ctx, -34, 18, 0));
     for (const [lx, lz] of [
       [-22, -11],
       [-22, 11],
@@ -434,22 +434,26 @@ export function buildParis(scene: THREE.Scene, ctx: PhysicsCtx, era: ParisEra): 
     ] as const) {
       gasLamp(batch, ctx, lx, lz, true);
     }
-    fairStall(batch, ctx, -19, -7, Math.PI / 2);
-    fairStall(batch, ctx, -19, 10, Math.PI / 2);
+    batch.withAnchor(-19, 0, -7, () => fairStall(batch, ctx, -19, -7, Math.PI / 2));
+    batch.withAnchor(-19, 0, 10, () => fairStall(batch, ctx, -19, 10, Math.PI / 2));
 
     // Fence separating the fair from the Wild West show arena outside.
     for (let x = -52; x <= -21; x += 4) {
-      batch.add(palette.lampIron, new THREE.BoxGeometry(3.8, 0.9, 0.12), {
-        x,
-        y: 0.45,
-        z: 28.5,
-      });
+      batch.withAnchor(x, 0, 28.5, () =>
+        batch.add(palette.lampIron, new THREE.BoxGeometry(3.8, 0.9, 0.12), {
+          x,
+          y: 0.45,
+          z: 28.5,
+        }),
+      );
     }
     staticBox(ctx, -36.5, 0.5, 28.5, 32, 1.2, 0.5);
 
     // Wild West show open-air arena outside the fair at the south edge.
     const arenaHorsesBatch = new StaticBatch();
-    wildWestArena(batch, ctx, -36, 41.5, arenaHorsesBatch);
+    batch.withAnchor(-36, 0, 41.5, () =>
+      wildWestArena(batch, ctx, -36, 41.5, arenaHorsesBatch),
+    );
     arenaHorsesGroup = arenaHorsesBatch.build('paris-arena-horses');
     scene.add(arenaHorsesGroup);
   } else {

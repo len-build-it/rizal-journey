@@ -32,7 +32,7 @@ export function townHouse(batch: StaticBatch, ctx: PhysicsCtx, o: TownHouseOpts)
   );
   const add = (color: number, geo: THREE.BufferGeometry, x: number, y: number, z: number): void => {
     geo.translate(x, y, z);
-    batch.addTransformed(color, geo, m);
+    batch.withAnchor(o.x, 0, o.z, () => batch.addTransformed(color, geo, m));
   };
 
   // Walls and a slightly darker plinth.
@@ -129,22 +129,24 @@ export function planeTree(
   const rnd = seeded(seed);
   const s = opts.scale ?? 1;
   const trunkH = (3.2 + rnd() * 0.8) * s;
-  batch.add(
-    palette.treeTrunk,
-    new THREE.CylinderGeometry(0.18 * s, 0.28 * s, trunkH, 6),
-    { x, y: trunkH / 2, z },
-  );
-  const greens = [palette.grass, palette.grassDark, palette.treeLeaf];
-  const clusters = s < 0.9 ? 4 : 5;
-  for (let i = 0; i < clusters; i++) {
-    const r = (1.1 + rnd() * 0.55) * s;
-    batch.add(greens[i % greens.length]!, new THREE.IcosahedronGeometry(r, 0), {
-      x: x + (rnd() - 0.5) * 1.9 * s,
-      y: trunkH + (0.55 + rnd() * 1.05) * s,
-      z: z + (rnd() - 0.5) * 1.9 * s,
-      ry: rnd() * 3,
-    });
-  }
+  batch.withAnchor(x, 0, z, () => {
+    batch.add(
+      palette.treeTrunk,
+      new THREE.CylinderGeometry(0.18 * s, 0.28 * s, trunkH, 6),
+      { x, y: trunkH / 2, z },
+    );
+    const greens = [palette.grass, palette.grassDark, palette.treeLeaf];
+    const clusters = s < 0.9 ? 4 : 5;
+    for (let i = 0; i < clusters; i++) {
+      const r = (1.1 + rnd() * 0.55) * s;
+      batch.add(greens[i % greens.length]!, new THREE.IcosahedronGeometry(r, 0), {
+        x: x + (rnd() - 0.5) * 1.9 * s,
+        y: trunkH + (0.55 + rnd() * 1.05) * s,
+        z: z + (rnd() - 0.5) * 1.9 * s,
+        ry: rnd() * 3,
+      });
+    }
+  });
   if (opts.grate) {
     batch.add(palette.lampIron, new THREE.BoxGeometry(1.35, 0.05, 1.35), { x, y: 0.17, z });
     batch.add(palette.doorBrown, new THREE.BoxGeometry(0.7, 0.06, 0.7), { x, y: 0.175, z });
@@ -160,28 +162,32 @@ export function gasLamp(
   z: number,
   lit = false,
 ): THREE.Vector3 {
-  batch.add(palette.lampIron, new THREE.CylinderGeometry(0.16, 0.2, 0.4, 6), { x, y: 0.2, z });
-  batch.add(palette.lampIron, new THREE.CylinderGeometry(0.06, 0.08, 3.2, 5), { x, y: 1.8, z });
-  batch.add(palette.lampIron, new THREE.ConeGeometry(0.32, 0.3, 4), {
-    x,
-    y: 3.85,
-    z,
-    ry: Math.PI / 4,
+  batch.withAnchor(x, 0, z, () => {
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.16, 0.2, 0.4, 6), { x, y: 0.2, z });
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.06, 0.08, 3.2, 5), { x, y: 1.8, z });
+    batch.add(palette.lampIron, new THREE.ConeGeometry(0.32, 0.3, 4), {
+      x,
+      y: 3.85,
+      z,
+      ry: Math.PI / 4,
+    });
+    batch.add(
+      lit ? 0xffe396 : 0xf6e2a6,
+      new THREE.BoxGeometry(0.34, 0.42, 0.34),
+      { x, y: 3.5, z },
+      lit ? { emissive: palette.gaslight, roughness: 0.3 } : { emissive: 0x6b5220 },
+    );
   });
-  batch.add(
-    lit ? 0xffe396 : 0xf6e2a6,
-    new THREE.BoxGeometry(0.34, 0.42, 0.34),
-    { x, y: 3.5, z },
-    lit ? { emissive: palette.gaslight, roughness: 0.3 } : { emissive: 0x6b5220 },
-  );
   staticCylinder(ctx, x, z, 0.18, 3.5);
   return new THREE.Vector3(x, 3.5, z);
 }
 
 /** A cast-iron mooring bollard on the quay edge. */
 export function bollard(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
-  batch.add(palette.lampIron, new THREE.CylinderGeometry(0.22, 0.26, 0.6, 7), { x, y: 0.3, z });
-  batch.add(palette.lampIron, new THREE.CylinderGeometry(0.3, 0.3, 0.1, 7), { x, y: 0.65, z });
+  batch.withAnchor(x, 0, z, () => {
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.22, 0.26, 0.6, 7), { x, y: 0.3, z });
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.3, 0.3, 0.1, 7), { x, y: 0.65, z });
+  });
   staticCylinder(ctx, x, z, 0.3, 0.7);
 }
 
@@ -275,7 +281,7 @@ export function haussmannBlock(batch: StaticBatch, ctx: PhysicsCtx, o: Haussmann
   );
   const add = (color: number, geo: THREE.BufferGeometry, x: number, y: number, z: number): void => {
     geo.translate(x, y, z);
-    batch.addTransformed(color, geo, m);
+    batch.withAnchor(o.x, 0, o.z, () => batch.addTransformed(color, geo, m));
   };
 
   const hw = o.width / 2;
@@ -713,7 +719,7 @@ export function parkBench(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: num
   );
   const part = (color: number, geo: THREE.BufferGeometry, px: number, py: number, pz: number): void => {
     geo.translate(px, py, pz);
-    batch.addTransformed(color, geo, m);
+    batch.withAnchor(x, 0, z, () => batch.addTransformed(color, geo, m));
   };
   part(palette.deckWood, new THREE.BoxGeometry(2.1, 0.1, 0.52), 0, 0.46, 0.04);
   part(palette.deckWood, new THREE.BoxGeometry(2.1, 0.36, 0.08), 0, 0.78, -0.2);
@@ -726,46 +732,48 @@ export function parkBench(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: num
 
 /** A green cast-iron Parisian newspaper kiosk. */
 export function parisKiosk(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number, ry = 0): void {
-  batch.add(palette.quayStoneDark, new THREE.CylinderGeometry(1.15, 1.22, 0.25, 6), {
-    x,
-    y: 0.125,
-    z,
-    ry,
-  });
-  batch.add(palette.morrisGreen, new THREE.CylinderGeometry(1.02, 1.05, 1.05, 6), {
-    x,
-    y: 0.78,
-    z,
-    ry,
-  });
-  batch.add(palette.parisWindow, new THREE.CylinderGeometry(0.98, 0.98, 1.0, 6), {
-    x,
-    y: 1.8,
-    z,
-    ry,
-  });
-  batch.add(palette.awningCream, new THREE.CylinderGeometry(1.08, 1.08, 0.24, 6), {
-    x,
-    y: 2.42,
-    z,
-    ry,
-  });
-  batch.add(palette.morrisGreen, new THREE.CylinderGeometry(1.38, 1.42, 0.18, 6), {
-    x,
-    y: 2.62,
-    z,
-    ry,
-  });
-  batch.add(palette.zincRoofDark, new THREE.ConeGeometry(1.3, 0.95, 6), {
-    x,
-    y: 3.18,
-    z,
-    ry,
-  });
-  batch.add(palette.gaslight, new THREE.CylinderGeometry(0.06, 0.1, 0.35, 6), {
-    x,
-    y: 3.8,
-    z,
+  batch.withAnchor(x, 0, z, () => {
+    batch.add(palette.quayStoneDark, new THREE.CylinderGeometry(1.15, 1.22, 0.25, 6), {
+      x,
+      y: 0.125,
+      z,
+      ry,
+    });
+    batch.add(palette.morrisGreen, new THREE.CylinderGeometry(1.02, 1.05, 1.05, 6), {
+      x,
+      y: 0.78,
+      z,
+      ry,
+    });
+    batch.add(palette.parisWindow, new THREE.CylinderGeometry(0.98, 0.98, 1.0, 6), {
+      x,
+      y: 1.8,
+      z,
+      ry,
+    });
+    batch.add(palette.awningCream, new THREE.CylinderGeometry(1.08, 1.08, 0.24, 6), {
+      x,
+      y: 2.42,
+      z,
+      ry,
+    });
+    batch.add(palette.morrisGreen, new THREE.CylinderGeometry(1.38, 1.42, 0.18, 6), {
+      x,
+      y: 2.62,
+      z,
+      ry,
+    });
+    batch.add(palette.zincRoofDark, new THREE.ConeGeometry(1.3, 0.95, 6), {
+      x,
+      y: 3.18,
+      z,
+      ry,
+    });
+    batch.add(palette.gaslight, new THREE.CylinderGeometry(0.06, 0.1, 0.35, 6), {
+      x,
+      y: 3.8,
+      z,
+    });
   });
   staticCylinder(ctx, x, z, 1.2, 3.2);
 }
@@ -793,7 +801,7 @@ export function parkedCarriage(
   ): void => {
     if (rx) geo.rotateX(rx);
     geo.translate(px, py, pz);
-    batch.addTransformed(color, geo, m);
+    batch.withAnchor(x, 0, z, () => batch.addTransformed(color, geo, m));
   };
   // Carriage cabin + roof + driver box.
   part(palette.hull, new THREE.BoxGeometry(1.32, 0.9, 1.75), 0, 1.05, -0.2);
@@ -823,27 +831,29 @@ export function parkedCarriage(
 
 /** A Parisian green cast-iron Morris advertising column. */
 export function morrisColumn(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
-  batch.add(palette.quayStoneDark, new THREE.CylinderGeometry(0.58, 0.64, 0.45, 7), {
-    x,
-    y: 0.225,
-    z,
+  batch.withAnchor(x, 0, z, () => {
+    batch.add(palette.quayStoneDark, new THREE.CylinderGeometry(0.58, 0.64, 0.45, 7), {
+      x,
+      y: 0.225,
+      z,
+    });
+    batch.add(palette.morrisGreen, new THREE.CylinderGeometry(0.52, 0.54, 2.3, 8), { x, y: 1.6, z });
+    // Poster band around the middle.
+    batch.add(palette.awningCream, new THREE.CylinderGeometry(0.54, 0.54, 1.3, 8), {
+      x,
+      y: 1.65,
+      z,
+    });
+    batch.add(palette.ochre, new THREE.CylinderGeometry(0.545, 0.545, 0.4, 8), { x, y: 1.8, z });
+    // Canopy and finial.
+    batch.add(palette.morrisGreen, new THREE.CylinderGeometry(0.75, 0.78, 0.22, 8), {
+      x,
+      y: 2.86,
+      z,
+    });
+    batch.add(palette.morrisGreen, new THREE.ConeGeometry(0.68, 0.7, 8), { x, y: 3.32, z });
+    batch.add(palette.gaslight, new THREE.CylinderGeometry(0.05, 0.08, 0.35, 5), { x, y: 3.8, z });
   });
-  batch.add(palette.morrisGreen, new THREE.CylinderGeometry(0.52, 0.54, 2.3, 8), { x, y: 1.6, z });
-  // Poster band around the middle.
-  batch.add(palette.awningCream, new THREE.CylinderGeometry(0.54, 0.54, 1.3, 8), {
-    x,
-    y: 1.65,
-    z,
-  });
-  batch.add(palette.ochre, new THREE.CylinderGeometry(0.545, 0.545, 0.4, 8), { x, y: 1.8, z });
-  // Canopy and finial.
-  batch.add(palette.morrisGreen, new THREE.CylinderGeometry(0.75, 0.78, 0.22, 8), {
-    x,
-    y: 2.86,
-    z,
-  });
-  batch.add(palette.morrisGreen, new THREE.ConeGeometry(0.68, 0.7, 8), { x, y: 3.32, z });
-  batch.add(palette.gaslight, new THREE.CylinderGeometry(0.05, 0.08, 0.35, 5), { x, y: 3.8, z });
   staticCylinder(ctx, x, z, 0.62, 3.0);
 }
 
@@ -857,7 +867,9 @@ export function streetSign(
   ry: number,
   label: string,
 ): void {
-  batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.07, 2.5, 6), { x, y: 1.25, z });
+  batch.withAnchor(x, 0, z, () =>
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.07, 2.5, 6), { x, y: 1.25, z }),
+  );
   staticCylinder(ctx, x, z, 0.14, 2.5);
 
   const canvas = document.createElement('canvas');

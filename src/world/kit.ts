@@ -81,6 +81,16 @@ export function paintPart(
 export class StaticBatch {
   private readonly groups = new Map<string, THREE.BufferGeometry[]>();
   private readonly options = new Map<string, Parameters<typeof mat>[1]>();
+  private readonly anchors: { x: number; y: number; z: number; enabled: number }[] = [];
+
+  withAnchor<T>(x: number, y: number, z: number, fn: () => T, enabled = 1): T {
+    this.anchors.push({ x, y, z, enabled });
+    try {
+      return fn();
+    } finally {
+      this.anchors.pop();
+    }
+  }
 
   add(
     color: number,
@@ -90,6 +100,18 @@ export class StaticBatch {
   ): void {
     const key = `${opts?.roughness ?? 0.85}-${opts?.metalness ?? 0}-${opts?.emissive ?? 0}`;
     const g = paintPart(geo, color, p);
+    const anchor = this.anchors[this.anchors.length - 1];
+    const pos = g.getAttribute('position');
+    const attr = new Float32Array(pos.count * 4);
+    if (anchor) {
+      for (let i = 0; i < pos.count; i++) {
+        attr[i * 4] = anchor.x;
+        attr[i * 4 + 1] = anchor.y;
+        attr[i * 4 + 2] = anchor.z;
+        attr[i * 4 + 3] = anchor.enabled;
+      }
+    }
+    g.setAttribute('aPopupAnchor', new THREE.BufferAttribute(attr, 4));
     const list = this.groups.get(key) ?? [];
     list.push(g);
     this.groups.set(key, list);

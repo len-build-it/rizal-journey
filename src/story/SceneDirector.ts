@@ -85,6 +85,10 @@ export class SceneDirector {
     return this.active ? this.active.phase : 'idle';
   }
 
+  get focusTarget(): THREE.Vector3 | null {
+    return this.active ? this.active.lastTarget : null;
+  }
+
   play(stop: StopMarker, area: Area, callbacks: ScenePlayCallbacks): void {
     if (this.active) this.cleanup();
 

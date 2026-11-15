@@ -26,6 +26,10 @@ export class FollowCamera {
   private readonly lookAhead = new THREE.Vector3();
   private initialized = false;
 
+  get focusPosition(): THREE.Vector3 {
+    return this.focus;
+  }
+
   constructor(private readonly camera: THREE.PerspectiveCamera) {
     this.fitToViewport();
     addEventListener('resize', () => this.fitToViewport());

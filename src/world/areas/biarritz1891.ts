@@ -259,13 +259,13 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
   fishingBoat(batch, -2.5, 13.2, -0.35, palette.shutterBlue, 1.0, 0.08);
 
   // Basque-style Boustead villa: two connected volumes, red timbering, shutters, overhang, walled garden, shrubs, 2 tamarisks.
-  basqueVilla(batch, ctx, -14, PLATEAU_Y, -26);
+  batch.withAnchor(-14, PLATEAU_Y, -26, () => basqueVilla(batch, ctx, -14, PLATEAU_Y, -26));
 
   // Sea-facing terrace beside the villa, with small writing table and chair for the manuscript stop.
-  terraceAndTable(batch, ctx, -3.5, PLATEAU_Y, -19);
+  batch.withAnchor(-3.5, PLATEAU_Y, -19, () => terraceAndTable(batch, ctx, -3.5, PLATEAU_Y, -19));
 
   // Small inland railway station at the northeast edge.
-  biarritzStation(batch, ctx, 28, PLATEAU_Y, -35);
+  batch.withAnchor(28, PLATEAU_Y, -35, () => biarritzStation(batch, ctx, 28, PLATEAU_Y, -35));
 
   // Framing pines along outer slopes away from the manicured villa garden.
   for (const [tx, tz] of [
@@ -274,15 +274,17 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx): Area {
     [39, -22],
     [40, -34],
   ] as const) {
-    batch.add(palette.treeTrunk, new THREE.CylinderGeometry(0.18, 0.28, 3.2, 6), {
-      x: tx,
-      y: PLATEAU_Y + 1.6,
-      z: tz,
-    });
-    batch.add(palette.pine, new THREE.IcosahedronGeometry(1.7, 0), {
-      x: tx,
-      y: PLATEAU_Y + 3.8,
-      z: tz,
+    batch.withAnchor(tx, PLATEAU_Y, tz, () => {
+      batch.add(palette.treeTrunk, new THREE.CylinderGeometry(0.18, 0.28, 3.2, 6), {
+        x: tx,
+        y: PLATEAU_Y + 1.6,
+        z: tz,
+      });
+      batch.add(palette.pine, new THREE.IcosahedronGeometry(1.7, 0), {
+        x: tx,
+        y: PLATEAU_Y + 3.8,
+        z: tz,
+      });
     });
   }
 
@@ -634,6 +636,7 @@ function seasidePromenadeHotels(batch: StaticBatch, ctx: PhysicsCtx): void {
   for (const b of buildings) {
     const h = b.floors * 2.35;
     const baseY = PROM_Y;
+    batch.withAnchor(b.x, PROM_Y, b.z, () => {
     batch.add(b.wall, new THREE.BoxGeometry(b.w, h, b.d), {
       x: b.x,
       y: baseY + h / 2,
@@ -711,6 +714,7 @@ function seasidePromenadeHotels(batch: StaticBatch, ctx: PhysicsCtx): void {
         });
       }
     }
+    });
     staticBox(ctx, b.x, baseY + h / 2, b.z, b.w, h, b.d);
   }
 }
@@ -731,7 +735,8 @@ function bathingCabins(batch: StaticBatch, ctx: PhysicsCtx, shoreZ: (x: number) 
     const h = 2.05;
     const d = 1.65;
     const col = stripes[i % stripes.length]!;
-    batch.add(palette.basqueWhite, new THREE.BoxGeometry(w, h, d), {
+    batch.withAnchor(cx, baseY, cz, () => {
+      batch.add(palette.basqueWhite, new THREE.BoxGeometry(w, h, d), {
       x: cx,
       y: baseY + h / 2,
       z: cz,
@@ -753,6 +758,7 @@ function bathingCabins(batch: StaticBatch, ctx: PhysicsCtx, shoreZ: (x: number) 
       x: cx,
       y: baseY + 0.68,
       z: cz + d / 2 + 0.05,
+    });
     });
     staticBox(ctx, cx, baseY + h / 2, cz, w, h, d);
   });

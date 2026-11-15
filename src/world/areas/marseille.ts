@@ -90,7 +90,7 @@ export function buildMarseille(
   }
 
   // The railway station closes the plaza to the north.
-  station(batch, ctx, 10, -51);
+  batch.withAnchor(10, 0, -51, () => station(batch, ctx, 10, -51));
 
   // Plaza: plane trees, a fountain and cafe tables under awnings.
   const rnd = seeded(7);
@@ -102,7 +102,7 @@ export function buildMarseille(
   ] as const) {
     planeTree(batch, ctx, x, z, Math.floor(rnd() * 1000));
   }
-  fountain(batch, ctx, 10, -34);
+  batch.withAnchor(10, 0, -34, () => fountain(batch, ctx, 10, -34));
   for (const [x, z] of [
     [24.5, -31],
     [25.5, -35.5],
@@ -110,7 +110,7 @@ export function buildMarseille(
   ] as const) {
     props.cafeTable(x, z);
   }
-  awning(batch, 28.2, -33, -Math.PI / 2);
+  batch.withAnchor(28.2, 0, -33, () => awning(batch, 28.2, -33, -Math.PI / 2));
 
   // Quay furniture.
   for (let x = -34; x <= 46; x += 9) gasLamp(batch, ctx, x, 1.2, year === 1891);

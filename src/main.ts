@@ -18,7 +18,13 @@ import {
 import { Player } from './player/Player';
 import { AreaManager } from './world/AreaManager';
 import { PathTrail } from './world/PathTrail';
-import { outsidePlayDistance, setEdgeShadingEnabled } from './world/paperShader';
+import {
+  outsidePlayDistance,
+  setEdgeShadingEnabled,
+  setPopupEnabled,
+  setPopupFocus,
+  setPopupRange,
+} from './world/paperShader';
 import type { StopMarker } from './world/StopMarker';
 import { journeyFrom } from './content/journeys';
 import { chapterFor } from './content/narrative';
@@ -39,8 +45,10 @@ async function main(): Promise<void> {
   const engine = new Engine(canvas);
   await engine.initPhysics();
   const touch = engine.quality.mobile;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.documentElement.classList.toggle('is-touch', touch);
   setEdgeShadingEnabled(!touch);
+  setPopupEnabled(!touch && !reducedMotion);
 
   const input = new Input();
   input.enabled = false;
@@ -252,6 +260,8 @@ async function main(): Promise<void> {
       for (const s of area.stops) s.update(dt, time, player.position);
       pathTrail.update(area, player.position, visited, true, time);
       hud.updateArrow(null, engine.camera, true);
+      setPopupFocus(director.focusTarget ?? cam.focusPosition);
+      setPopupRange(48, 62);
       return;
     }
 
@@ -320,6 +330,8 @@ async function main(): Promise<void> {
     const nextTarget = pathTrail.update(area, player.position, visited, hideGuides, time);
     engine.camera.updateMatrixWorld();
     hud.updateArrow(nextTarget?.position ?? null, engine.camera, hideGuides);
+    setPopupFocus(cam.focusPosition);
+    setPopupRange(26, 36);
 
     engine.followSun(
       cinematic && area.towerCenter ? area.towerCenter : player.position,

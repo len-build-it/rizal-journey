@@ -10,6 +10,10 @@ export const worldShaderUniforms = {
   uEdgeEnabled: { value: 1 },
   uEdgeBand: { value: 25 },
   uPaperColor: { value: new THREE.Color(PAPER_HEX) },
+  uPopEnabled: { value: 1 },
+  uPopFocus: { value: new THREE.Vector3() },
+  uPopMin: { value: 26 },
+  uPopMax: { value: 36 },
 };
 
 export function setPlayBounds(bounds?: PlayBounds): void {
@@ -29,6 +33,19 @@ export function setEdgeShadingEnabled(enabled: boolean): void {
   worldShaderUniforms.uEdgeEnabled.value = enabled ? 1 : 0;
 }
 
+export function setPopupEnabled(enabled: boolean): void {
+  worldShaderUniforms.uPopEnabled.value = enabled ? 1 : 0;
+}
+
+export function setPopupFocus(pos: { x: number; y: number; z: number }): void {
+  worldShaderUniforms.uPopFocus.value.set(pos.x, pos.y, pos.z);
+}
+
+export function setPopupRange(minDist: number, maxDist: number): void {
+  worldShaderUniforms.uPopMin.value = minDist;
+  worldShaderUniforms.uPopMax.value = maxDist;
+}
+
 export function outsidePlayDistance(
   pos: { x: number; z: number },
   bounds: PlayBounds,
@@ -45,7 +62,7 @@ export function outsidePlayDistance(
 export function injectWorldShader(material: THREE.MeshStandardMaterial): void {
   if (material.userData.worldShaderInjected) return;
   material.userData.worldShaderInjected = true;
-  material.customProgramCacheKey = () => 'world-paper-v1';
+  material.customProgramCacheKey = () => 'world-paper-v2';
 
   const prevCompile = material.onBeforeCompile;
   material.onBeforeCompile = (shader, renderer) => {
@@ -54,11 +71,35 @@ export function injectWorldShader(material: THREE.MeshStandardMaterial): void {
     shader.uniforms.uEdgeEnabled = worldShaderUniforms.uEdgeEnabled;
     shader.uniforms.uEdgeBand = worldShaderUniforms.uEdgeBand;
     shader.uniforms.uPaperColor = worldShaderUniforms.uPaperColor;
+    shader.uniforms.uPopEnabled = worldShaderUniforms.uPopEnabled;
+    shader.uniforms.uPopFocus = worldShaderUniforms.uPopFocus;
+    shader.uniforms.uPopMin = worldShaderUniforms.uPopMin;
+    shader.uniforms.uPopMax = worldShaderUniforms.uPopMax;
 
     shader.vertexShader = shader.vertexShader
       .replace(
         'void main() {',
-        'varying vec3 vWorldPosPaper;\nvoid main() {',
+        `attribute vec4 aPopupAnchor;
+        uniform float uPopEnabled;
+        uniform vec3 uPopFocus;
+        uniform float uPopMin;
+        uniform float uPopMax;
+        varying vec3 vWorldPosPaper;
+        void main() {`,
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        if (uPopEnabled > 0.5 && aPopupAnchor.w > 0.5) {
+          vec3 worldAnchor = (modelMatrix * vec4(aPopupAnchor.xyz, 1.0)).xyz;
+          float dPop = length(worldAnchor.xz - uPopFocus.xz);
+          float uPop = clamp((uPopMax - dPop) / max(0.001, uPopMax - uPopMin), 0.0, 1.0);
+          float rise = smoothstep(0.0, 0.72, uPop);
+          float over = smoothstep(0.32, 1.0, uPop);
+          float popScale = rise * (1.0 + 0.11 * sin(over * 3.14159265));
+          float minY = aPopupAnchor.y + 0.015;
+          transformed.y = mix(minY, transformed.y, popScale);
+        }`,
       )
       .replace(
         '#include <project_vertex>',
