@@ -79,13 +79,36 @@ button {
   top: max(20px, env(safe-area-inset-top));
   left: max(20px, env(safe-area-inset-left));
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 8px 18px 10px 16px;
+  flex-direction: column;
+  max-width: min(370px, calc(100vw - 260px));
+  padding: 10px 18px 11px 16px;
   border-radius: 16px;
   background: rgb(238 240 236 / 0.92);
   box-shadow: 0 6px 20px rgb(18 23 41 / 0.18);
   color: var(--ink);
+}
+
+.hud-where-top {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.hud-goal {
+  margin: 5px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.32;
+  color: var(--ink-soft);
+}
+
+.hud-goal[hidden] {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .hud-where {
+    max-width: calc(100vw - 40px);
+  }
 }
 
 .hud-year {
@@ -226,6 +249,99 @@ button {
   transform: translate(-50%, 0);
 }
 
+/* Chapter title card */
+
+.chapter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(18 23 41 / 0.88);
+}
+
+.chapter-overlay[hidden] {
+  display: none;
+}
+
+.chapter-panel {
+  width: min(460px, calc(100vw - 36px));
+  padding: 36px 40px 30px;
+  border-radius: 6px;
+  border: 1px solid rgb(28 35 64 / 0.22);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow:
+    0 24px 64px rgb(0 0 0 / 0.45),
+    inset 0 0 0 1px rgb(255 255 255 / 0.55);
+  text-align: center;
+}
+
+.chapter-kicker {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--iron);
+}
+
+.chapter-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(2rem, 4.4vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.06;
+  color: var(--ink);
+}
+
+.chapter-place {
+  margin: 10px 0 0;
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.chapter-rule {
+  width: 48px;
+  height: 2px;
+  margin: 20px auto 18px;
+  background: var(--gaslight);
+}
+
+.chapter-goal {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  line-height: 1.45;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s var(--ease-out);
+}
+
+.chapter-overlay.is-goal-visible .chapter-goal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chapter-hint {
+  margin: 24px 0 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter-goal {
+    transition: none;
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -362,6 +478,12 @@ button {
   flex-direction: column;
   align-items: center;
   pointer-events: none;
+}
+
+.scene-ui[hidden],
+.scene-caption-band[hidden],
+.scene-actions[hidden] {
+  display: none;
 }
 
 .scene-caption-band {

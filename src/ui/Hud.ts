@@ -8,6 +8,7 @@ export class Hud {
   readonly root: HTMLElement;
   private readonly place: HTMLElement;
   private readonly year: HTMLElement;
+  private readonly goalEl: HTMLElement;
   private readonly panels: HTMLElement[] = [];
   private readonly foldLabel: HTMLElement;
   private readonly prompt: HTMLElement;
@@ -19,7 +20,9 @@ export class Hud {
   constructor(parent: HTMLElement, touch: boolean) {
     this.place = el('p', { class: 'hud-place' });
     this.year = el('p', { class: 'hud-year' });
-    const where = el('div', { class: 'hud-where' }, [this.year, this.place]);
+    this.goalEl = el('p', { class: 'hud-goal', hidden: '' });
+    const whereTop = el('div', { class: 'hud-where-top' }, [this.year, this.place]);
+    const where = el('div', { class: 'hud-where' }, [whereTop, this.goalEl]);
 
     const strip = el('div', { class: 'fold', role: 'img' });
     for (let i = 1; i <= 6; i++) {
@@ -47,6 +50,11 @@ export class Hud {
   setPlace(year: string, place: string): void {
     this.year.textContent = year;
     this.place.textContent = place;
+  }
+
+  setGoal(goal: string | null): void {
+    this.goalEl.textContent = goal ?? '';
+    this.goalEl.hidden = !goal;
   }
 
   setPanels(filled: Set<number>): void {

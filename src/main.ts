@@ -19,7 +19,9 @@ import { Player } from './player/Player';
 import { AreaManager } from './world/AreaManager';
 import type { StopMarker } from './world/StopMarker';
 import { journeyFrom } from './content/journeys';
+import { chapterFor } from './content/narrative';
 import type { Destination } from './content/stories';
+import { ChapterCard } from './ui/ChapterCard';
 import { Hud } from './ui/Hud';
 import { StoryCard } from './ui/StoryCard';
 import { Joystick } from './ui/Joystick';
@@ -42,6 +44,7 @@ async function main(): Promise<void> {
   const cam = new FollowCamera(engine.camera);
   const hud = new Hud(uiRoot, touch);
   const card = new StoryCard(uiRoot);
+  const chapterCard = new ChapterCard(uiRoot);
   if (touch) new Joystick(uiRoot, input);
 
   const saved = loadProgress();
@@ -59,7 +62,30 @@ async function main(): Promise<void> {
   );
   const areaManager = new AreaManager(engine, player, cam, hud);
   const director = new SceneDirector(engine, player, cam, hud, card, uiRoot);
+
+  const currentChapter = () => {
+    const d = areaManager.destination;
+    if (!d) return undefined;
+    return chapterFor(d.area, d.area === 'paris' ? d.era : undefined);
+  };
+
+  const syncHudGoal = (): void => {
+    const area = areaManager.current;
+    const ch = currentChapter();
+    if (!area || !ch) {
+      hud.setGoal(null);
+      return;
+    }
+    const stationStop = area.stops.find((s) => Boolean(s.story.action));
+    if (stationStop && allOtherStopsVisited(area, stationStop.story.id, visited)) {
+      hud.setGoal(`Next: ${stationStop.story.title}`);
+    } else {
+      hud.setGoal(ch.goal);
+    }
+  };
+
   await areaManager.load(state.destination, visited);
+  syncHudGoal();
 
   let current: StopMarker | null = null;
   let focusOverride: THREE.Vector3 | null = null;
@@ -94,6 +120,7 @@ async function main(): Promise<void> {
       filled.add(stop.story.panel);
       hud.setPanels(filled);
     }
+    syncHudGoal();
     persist();
 
     const ready = allOtherStopsVisited(area, stop.story.id, visited);
@@ -131,6 +158,7 @@ async function main(): Promise<void> {
       filled.add(stop.story.panel);
       hud.setPanels(filled);
     }
+    syncHudGoal();
     persist();
 
     cinematic = true;
@@ -193,8 +221,13 @@ async function main(): Promise<void> {
       await areaManager.load(dest, visited);
     }
 
+    syncHudGoal();
     persist();
     traveling = false;
+    const nextChapter = currentChapter();
+    if (nextChapter) {
+      await chapterCard.show(nextChapter);
+    }
     input.enabled = true;
     canvas.focus({ preventScroll: true });
   };
@@ -270,14 +303,21 @@ async function main(): Promise<void> {
         },
         loadArea: async (dest: AreaDestination) => {
           director.cleanup();
+          chapterCard.hide();
           cinematic = false;
           card.hide();
           current = null;
           await areaManager.load(dest, visited);
+          syncHudGoal();
+        },
+        showChapterCard: () => {
+          const ch = currentChapter();
+          if (ch) void chapterCard.show(ch);
         },
         openStop: (id: string) => {
           const stop = areaManager.current?.stops.find((s) => s.story.id === id);
           if (stop) {
+            chapterCard.hide();
             player.teleport(stop.position, 0);
             openStoryCard(stop);
           }
@@ -285,6 +325,7 @@ async function main(): Promise<void> {
         playScene: (id: string) => {
           const stop = areaManager.current?.stops.find((s) => s.story.id === id);
           if (stop) {
+            chapterCard.hide();
             player.teleport(stop.position, 0);
             playStopScene(stop);
           }
@@ -302,8 +343,11 @@ async function main(): Promise<void> {
   engine.start();
   document.documentElement.classList.add('is-ready');
 
-  const beginPlaying = (): void => {
+  const beginPlaying = async (): Promise<void> => {
     document.documentElement.classList.remove('is-intro');
+    syncHudGoal();
+    const ch = currentChapter();
+    if (ch) await chapterCard.show(ch);
     input.enabled = true;
     canvas.focus({ preventScroll: true });
   };
@@ -313,7 +357,7 @@ async function main(): Promise<void> {
   const openIntro = (): void => {
     introEl = showIntro(uiRoot, touch, {
       hasContinue: hasSavedProgress(saved),
-      onContinue: beginPlaying,
+      onContinue: () => void beginPlaying(),
       onStart: async () => {
         visited.clear();
         filled.clear();
@@ -328,7 +372,7 @@ async function main(): Promise<void> {
           player.teleport(areaManager.current!.spawn, areaManager.current!.spawnHeading);
           cam.snap(player.position);
         }
-        beginPlaying();
+        await beginPlaying();
       },
       onBrochure: () => {
         if (introEl) introEl.hidden = true;
