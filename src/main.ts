@@ -368,7 +368,10 @@ async function main(): Promise<void> {
 
     if (director.isPlaying) {
       director.update(dt, time);
-      for (const s of area.stops) s.update(dt, time, player.position);
+      for (const s of area.stops) {
+        s.group.visible = false;
+        s.update(dt, time, player.position);
+      }
       pathTrail.update(area, player.position, visited, true, time);
       hud.updateArrow(null, engine.camera, true);
       setPopupFocus(director.focusTarget ?? cam.focusPosition);
@@ -377,6 +380,7 @@ async function main(): Promise<void> {
     }
 
     const hideGuides = chapterCard.open || card.open || cinematic || traveling;
+    for (const s of area.stops) s.group.visible = !hideGuides;
 
     if (!cinematic && !traveling) {
       let inside: StopMarker | null = null;

@@ -87,18 +87,26 @@ const marseilleLanding: SceneScript = {
   storyId: 'marseille-landing',
   duration: 11.5,
   setup(ctx) {
-    // Night / dusk arrival lighting for this scene only.
+    // Deep blue moonlit night arrival on the quay; warm ship lanterns light the gangway and figures.
     ctx.setLook({
-      sky: 0x161d36,
-      fog: 0x1e2744,
-      sunColor: 0xffc67d,
-      sunIntensity: 1.05,
-      hemiSky: 0x3b4e78,
-      hemiGround: 0x2c241d,
-      hemiIntensity: 0.72,
+      sky: 0x1b2b4a,
+      fog: 0x24375c,
+      sunColor: 0xaec8f5,
+      sunIntensity: 0.9,
+      hemiSky: 0x516ea6,
+      hemiGround: 0x3b3126,
+      hemiIntensity: 0.95,
     });
-    const portholes = createLitPortholes(14, 0.35, 14.02, 8);
+    const portholes = createLitPortholes(14, 0.42, 14.08, 7);
     ctx.prop(portholes);
+
+    const gangwayLight = new THREE.PointLight(0xffcd82, 4.2, 14, 1.4);
+    gangwayLight.position.set(10.6, 2.5, 11.6);
+    ctx.prop(gangwayLight);
+
+    const shipLight = new THREE.PointLight(0xffc878, 2.8, 14, 1.4);
+    shipLight.position.set(14.8, 2.9, 13.0);
+    ctx.prop(shipLight);
 
     // Porters carrying trunks down the gangway from Djemnah onto the quay.
     const porter1 = ctx.actor({ coat: 'work', hat: 'bowler' }, 10.2, 0.95, 13.8, Math.PI);

@@ -41,16 +41,26 @@ export function createSteamPlume(count = 10): {
   };
 }
 
-/** Adds warm emissive portholes along a steamer hull for dusk/night arrival scenes. */
-export function createLitPortholes(cx: number, y: number, zSide: number, count = 8): THREE.Group {
+/** Adds brass-rimmed lit cabin portholes flush against a steamer hull for night scenes. */
+export function createLitPortholes(cx: number, y: number, zSide: number, count = 7): THREE.Group {
   const group = new THREE.Group();
-  const geo = new THREE.CylinderGeometry(0.16, 0.16, 0.08, 8);
-  geo.rotateX(Math.PI / 2);
-  const m = mat(palette.gaslight, { emissive: palette.gaslight, roughness: 0.4 });
+  const rimGeo = new THREE.CylinderGeometry(0.17, 0.17, 0.04, 10);
+  rimGeo.rotateX(Math.PI / 2);
+  const glassGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.06, 10);
+  glassGeo.rotateX(Math.PI / 2);
+  const rimMat = mat(palette.brass, { roughness: 0.45 });
+  const glassMat = mat(0xf7d68a, {
+    emissive: 0xe6aa48,
+    roughness: 0.3,
+  });
+  glassMat.emissiveIntensity = 0.85;
   for (let i = 0; i < count; i++) {
-    const p = new THREE.Mesh(geo, m);
-    p.position.set(cx - (count - 1) * 0.9 + i * 1.8, y, zSide);
-    group.add(p);
+    const px = cx - (count - 1) * 1.05 + i * 2.1;
+    const rim = new THREE.Mesh(rimGeo, rimMat);
+    rim.position.set(px, y, zSide);
+    const glass = new THREE.Mesh(glassGeo, glassMat);
+    glass.position.set(px, y, zSide - 0.01);
+    group.add(rim, glass);
   }
   return group;
 }
