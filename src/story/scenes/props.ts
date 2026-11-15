@@ -102,9 +102,10 @@ export function createFrenchFlag(): {
   const stripeW = 0.95;
   const stripeH = 1.4;
   const stripeGeo = new THREE.BoxGeometry(stripeW, stripeH, 0.06);
-  const colors = [palette.streetSignBlue, palette.shirt, palette.awningRed];
+  // Unlit stripes keep blue, white, and red crisp against warm 1889 evening sunlight.
+  const colors = [0x244885, palette.shirt, palette.vermilion];
   colors.forEach((c, i) => {
-    const s = new THREE.Mesh(stripeGeo, mat(c));
+    const s = new THREE.Mesh(stripeGeo, new THREE.MeshBasicMaterial({ color: c }));
     s.position.set(stripeW * (i + 0.5), -stripeH / 2, 0);
     flagPivot.add(s);
   });
