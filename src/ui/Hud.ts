@@ -24,48 +24,53 @@ export class Hud {
   onPrompt: (() => void) | null = null;
 
   constructor(parent: HTMLElement, touch: boolean) {
-    this.place = el('p', { class: 'hud-place' });
-    this.year = el('p', { class: 'hud-year' });
-    this.goalEl = el('p', { class: 'hud-goal', hidden: '' });
-    const whereTop = el('div', { class: 'hud-where-top' }, [this.year, this.place]);
-    const where = el('div', { class: 'hud-where' }, [whereTop, this.goalEl]);
+    this.place = el('span', { class: 'k-chip__place' });
+    this.year = el('span', { class: 'k-chip__year' });
+    this.goalEl = el('span', { class: 'k-chip__goal', hidden: '' });
+    const whereTop = el('span', { class: 'hud-where-top' }, [this.year, this.place]);
+    const where = el('div', { class: 'hud-where k-chip' }, [whereTop, this.goalEl]);
 
-    const strip = el('div', { class: 'fold', role: 'img' });
+    const stampsWrap = el('div', { class: 'hud-stamps k-stamps', role: 'img' });
     for (let i = 1; i <= 6; i++) {
-      const p = el('span', { class: 'fold-panel' });
-      this.panels.push(p);
-      strip.append(p);
+      const s = el('span', { class: 'k-stamp' }, [String(i)]);
+      this.panels.push(s);
+      stampsWrap.append(s);
     }
-    this.foldLabel = el('p', { class: 'fold-label' });
-    const brochure = el('div', { class: 'hud-brochure' }, [strip, this.foldLabel]);
+    this.foldLabel = el('span', { class: 'k-stamps__count' });
+    stampsWrap.append(this.foldLabel);
 
-    this.promptLabel = el('span', {});
-    this.prompt = el('button', { class: 'prompt', type: 'button', hidden: '' }, [
+    this.promptLabel = el('span', { class: 'hud-prompt-label' });
+    this.prompt = el('button', { class: 'hud-prompt k-btn k-btn--small', type: 'button' }, [
       this.promptLabel,
-      el('kbd', { class: 'prompt-key' }, [touch ? 'Tap' : 'E']),
+      el('kbd', { class: 'k-key' }, [touch ? 'Tap' : 'E']),
     ]);
     this.prompt.addEventListener('click', () => this.onPrompt?.());
+    const promptWrap = el('div', { class: 'hud-prompt-wrap', hidden: '' }, [this.prompt]);
 
-    this.toastEl = el('p', { class: 'toast', role: 'status', 'aria-live': 'polite' });
+    this.toastEl = el('p', {
+      class: 'hud-toast k-card k-toast',
+      role: 'status',
+      'aria-live': 'polite',
+    });
 
     const svgNS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('width', '22');
-    svg.setAttribute('height', '22');
+    svg.setAttribute('width', '20');
+    svg.setAttribute('height', '20');
     const poly = document.createElementNS(svgNS, 'polygon');
-    poly.setAttribute('points', '4,5 21,12 4,19 8.5,12');
+    poly.setAttribute('points', '5,5 20,12 5,19 9,12');
     poly.setAttribute('fill', 'currentColor');
-    poly.setAttribute('stroke', '#1c2340');
-    poly.setAttribute('stroke-width', '1.6');
+    poly.setAttribute('stroke', 'var(--k-ink)');
+    poly.setAttribute('stroke-width', '1.4');
     poly.setAttribute('stroke-linejoin', 'round');
     svg.append(poly);
-    this.arrow = el('div', { class: 'hud-arrow', 'aria-hidden': 'true', hidden: '' }, [svg]);
+    this.arrow = el('div', { class: 'hud-arrow k-card', 'aria-hidden': 'true', hidden: '' }, [svg]);
 
     this.root = el('div', { class: 'hud' }, [
       where,
-      brochure,
-      this.prompt,
+      stampsWrap,
+      promptWrap,
       this.toastEl,
       this.arrow,
     ]);
@@ -125,19 +130,20 @@ export class Hud {
   }
 
   setPanels(filled: Set<number>): void {
-    this.panels.forEach((p, i) => p.classList.toggle('is-filled', filled.has(i + 1)));
-    this.foldLabel.textContent = `${filled.size} of 6 panels`;
-    const strip = this.panels[0]?.parentElement;
-    strip?.setAttribute('aria-label', `Brochure: ${filled.size} of 6 panels filled in`);
+    this.panels.forEach((p, i) => p.classList.toggle('is-stamped', filled.has(i + 1)));
+    this.foldLabel.textContent = `${filled.size} of 6`;
+    const stampsWrap = this.panels[0]?.parentElement;
+    stampsWrap?.setAttribute('aria-label', `Brochure: ${filled.size} of 6 panels`);
   }
 
   showPrompt(label: string | null): void {
+    const wrap = this.prompt.parentElement;
     if (label === null) {
-      this.prompt.hidden = true;
+      if (wrap) wrap.hidden = true;
       return;
     }
     this.promptLabel.textContent = label;
-    this.prompt.hidden = false;
+    if (wrap) wrap.hidden = false;
   }
 
   toast(text: string): void {

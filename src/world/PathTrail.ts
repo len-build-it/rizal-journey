@@ -36,7 +36,7 @@ export class PathTrail {
     const geo = new THREE.CircleGeometry(0.18, 12);
     geo.rotateX(-Math.PI / 2);
     this.mat = new THREE.MeshBasicMaterial({
-      color: palette.gaslight,
+      color: palette.vermilion,
       transparent: true,
       opacity: 0.9,
       depthWrite: false,

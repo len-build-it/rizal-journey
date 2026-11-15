@@ -7,6 +7,8 @@ export const palette = {
   night: 0x1c2340,
   iron: 0x9c3b2a, // Venetian red, the Eiffel Tower's 1889 color.
   gaslight: 0xe2b04a,
+  vermilion: 0xc2452d, // Soft cardstock kit vermilion for trails and stop markers.
+  ink: 0x20324a, // Soft cardstock kit ink.
 
   // Provencal town.
   limestone: 0xe6dccb,

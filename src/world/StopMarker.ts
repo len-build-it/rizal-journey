@@ -30,18 +30,18 @@ export class StopMarker {
   ) {
     this.group.position.copy(position);
 
-    // A dark outer edge keeps the gold ring readable on pale stone.
+    // A thin Prussian-ink outer edge keeps the vermilion ring readable on pale stone.
     const edge = new THREE.Mesh(
-      new THREE.RingGeometry(this.radius, this.radius + 0.14, 48, 1),
-      new THREE.MeshBasicMaterial({ color: palette.night, transparent: true, opacity: 0.7 }),
+      new THREE.RingGeometry(this.radius, this.radius + 0.11, 48, 1),
+      new THREE.MeshBasicMaterial({ color: palette.ink, transparent: true, opacity: 0.85 }),
     );
     edge.rotation.x = -Math.PI / 2;
     edge.position.y = 0.1;
     this.group.add(edge);
     this.ringMat = new THREE.MeshBasicMaterial({
-      color: palette.gaslight,
+      color: palette.vermilion,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.88,
     });
     this.ring = new THREE.Mesh(
       new THREE.RingGeometry(this.radius - 0.3, this.radius, 48, 1),
@@ -51,9 +51,9 @@ export class StopMarker {
     this.ring.position.y = 0.11;
     this.group.add(this.ring);
     this.discMat = new THREE.MeshBasicMaterial({
-      color: palette.gaslight,
+      color: palette.vermilion,
       transparent: true,
-      opacity: 0.18,
+      opacity: 0.14,
       depthWrite: false,
     });
     const disc = new THREE.Mesh(new THREE.CircleGeometry(this.radius - 0.3, 48), this.discMat);
@@ -62,9 +62,9 @@ export class StopMarker {
     this.group.add(disc);
 
     this.beamMat = new THREE.MeshBasicMaterial({
-      color: palette.gaslight,
+      color: palette.vermilion,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.1,
       depthWrite: false,
       side: THREE.DoubleSide,
     });
@@ -82,9 +82,9 @@ export class StopMarker {
     this.group.add(this.beam);
 
     this.gemMat = new THREE.MeshStandardMaterial({
-      color: palette.gaslight,
-      emissive: palette.gaslight,
-      emissiveIntensity: 0.6,
+      color: palette.vermilion,
+      emissive: palette.vermilion,
+      emissiveIntensity: 0.45,
       flatShading: true,
       roughness: 0.4,
     });
