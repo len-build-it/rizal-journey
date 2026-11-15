@@ -296,8 +296,8 @@ const paris1889Tower: SceneScript = {
     }
     // Tilt from the base crowd up to the summit tricolor (framed so the full flag fits cleanly).
     const ascendU = THREE.MathUtils.smoothstep(u, 0.14, 0.92);
-    tmpPos.lerpVectors(new THREE.Vector3(-17.5, 4.8, 12.0), new THREE.Vector3(-21.8, 46.8, 11.2), ascendU);
-    tmpTarget.lerpVectors(new THREE.Vector3(-33.5, 9.5, 0), new THREE.Vector3(-34.0, 45.2, 0), ascendU);
+    tmpPos.lerpVectors(new THREE.Vector3(-17.5, 4.8, 12.0), new THREE.Vector3(-21.2, 47.4, 12.4), ascendU);
+    tmpTarget.lerpVectors(new THREE.Vector3(-33.5, 9.5, 0), new THREE.Vector3(-34.0, 46.1, 0), ascendU);
     ctx.moveCamera(tmpPos, tmpTarget, dt, 2.3);
   },
 };

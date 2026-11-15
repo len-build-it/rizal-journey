@@ -1123,10 +1123,10 @@ function studioEasel(
     z: cz - lx * sin + lz * cos,
   });
 
-  // Two front legs, back strut leg, and ledge tray.
+  // Two front legs behind the canvas, back strut leg, and ledge tray supporting the canvas.
   for (const lx of [-cw * 0.3, cw * 0.3]) {
     batch.add(palette.crateDark, new THREE.BoxGeometry(0.07, 2.05, 0.07), {
-      ...place(lx, 1.0, 0.06),
+      ...place(lx, 1.0, 0.01),
       rx: -0.14,
       ry,
     });
@@ -1137,20 +1137,20 @@ function studioEasel(
     ry,
   });
   batch.add(palette.deckWood, new THREE.BoxGeometry(cw * 0.92, 0.08, 0.16), {
-    ...place(0, 0.78, 0.16),
+    ...place(0, 0.78, 0.14),
     ry,
   });
 
-  // Canvas frame + pale linen ground, angled back slightly with the easel.
+  // Canvas frame + pale linen ground resting on the front of the easel.
   const canvasCenterY = 0.84 + ch / 2;
   const tilt = -0.14;
-  batch.add(palette.crateDark, new THREE.BoxGeometry(cw + 0.12, ch + 0.12, 0.05), {
-    ...place(0, canvasCenterY, 0.08),
+  batch.add(palette.crateDark, new THREE.BoxGeometry(cw + 0.12, ch + 0.12, 0.045), {
+    ...place(0, canvasCenterY, 0.085),
     rx: tilt,
     ry,
   });
-  batch.add(palette.sail, new THREE.BoxGeometry(cw, ch, 0.06), {
-    ...place(0, canvasCenterY, 0.095),
+  batch.add(palette.sail, new THREE.BoxGeometry(cw, ch, 0.05), {
+    ...place(0, canvasCenterY, 0.115),
     rx: tilt,
     ry,
   });
@@ -1158,19 +1158,19 @@ function studioEasel(
   if (withParisianLife) {
     // Low-poly study suggestive of The Parisian Life: warm lamplit wall, table, silhouettes.
     const dabs: [number, number, number, number, number, number][] = [
-      [palette.awningOchre, -cw * 0.12, 0.18, cw * 0.7, ch * 0.56, 0.02],
-      [palette.gaslight, -cw * 0.2, 0.28, cw * 0.34, ch * 0.24, 0.026],
-      [palette.awningRed, cw * 0.24, 0.08, cw * 0.42, ch * 0.62, 0.02],
-      [palette.cafeTable, -cw * 0.02, -0.18, cw * 0.54, ch * 0.22, 0.028],
-      [palette.shirt, -cw * 0.18, -0.02, cw * 0.18, ch * 0.32, 0.032],
-      [palette.coat, cw * 0.14, 0.0, cw * 0.16, ch * 0.34, 0.032],
-      [palette.coat, cw * 0.31, -0.04, cw * 0.14, ch * 0.3, 0.032],
-      [palette.skin, -cw * 0.18, 0.2, cw * 0.08, ch * 0.11, 0.036],
-      [palette.hat, cw * 0.14, 0.22, cw * 0.09, ch * 0.12, 0.036],
+      [palette.awningOchre, -cw * 0.12, 0.18, cw * 0.7, ch * 0.56, 0.032],
+      [palette.gaslight, -cw * 0.2, 0.28, cw * 0.34, ch * 0.24, 0.038],
+      [palette.awningRed, cw * 0.24, 0.08, cw * 0.42, ch * 0.62, 0.032],
+      [palette.cafeTable, -cw * 0.02, -0.18, cw * 0.54, ch * 0.22, 0.04],
+      [palette.shirt, -cw * 0.18, -0.02, cw * 0.18, ch * 0.32, 0.045],
+      [palette.coat, cw * 0.14, 0.0, cw * 0.16, ch * 0.34, 0.045],
+      [palette.coat, cw * 0.31, -0.04, cw * 0.14, ch * 0.3, 0.045],
+      [palette.skin, -cw * 0.18, 0.2, cw * 0.08, ch * 0.11, 0.05],
+      [palette.hat, cw * 0.14, 0.22, cw * 0.09, ch * 0.12, 0.05],
     ];
     for (const [col, lx, lyOff, dw, dh, dz] of dabs) {
       batch.add(col, new THREE.BoxGeometry(dw, dh, 0.02), {
-        ...place(lx, canvasCenterY + lyOff, 0.1 + dz),
+        ...place(lx, canvasCenterY + lyOff, 0.115 + dz),
         rx: tilt,
         ry,
       });
@@ -1178,12 +1178,12 @@ function studioEasel(
   } else {
     // Secondary landscape study on the smaller easel.
     batch.add(palette.parisGlass, new THREE.BoxGeometry(cw * 0.86, ch * 0.42, 0.02), {
-      ...place(0, canvasCenterY + ch * 0.18, 0.12),
+      ...place(0, canvasCenterY + ch * 0.18, 0.145),
       rx: tilt,
       ry,
     });
     batch.add(palette.grassDark, new THREE.BoxGeometry(cw * 0.86, ch * 0.36, 0.02), {
-      ...place(0, canvasCenterY - ch * 0.2, 0.12),
+      ...place(0, canvasCenterY - ch * 0.2, 0.145),
       rx: tilt,
       ry,
     });
@@ -1281,7 +1281,7 @@ function lunaStudio(
   skylight.position.set(x, baseH + studioH / 2 - 0.1, z - d * 0.45);
   skylight.rotation.x = 0.22;
   scene.add(skylight);
-  for (const mx of [-4.4, -1.6, 1.6, 4.4]) {
+  for (const mx of [-4.4, -0.7, 4.4]) {
     batch.add(palette.lampIron, new THREE.BoxGeometry(0.07, studioH - 0.45, 0.1), {
       x: x + mx,
       y: baseH + studioH / 2 - 0.1,
