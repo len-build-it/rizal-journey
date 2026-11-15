@@ -54,3 +54,29 @@ Summary of implementation choices, environment workarounds, and observations fro
   - `paris-1889`: `calls=119`, `staticCalls=2`, `triangles=175862`
   - `biarritz-1891`: `calls=109`, `staticCalls=3`, `triangles=30302`
   - `marseille-1891`: `calls=104`, `staticCalls=2`, `triangles=36454`
+
+## Handoff 4 ("the living brochure") & Screenshots (`review/handoff4/`)
+
+- **Figures & 19 narrated scenes (`src/story/figures.ts`, `src/story/SceneDirector.ts`, `src/story/SceneUI.ts`, `src/story/scenes/*.ts`)**: Built silent low-poly 1880s human figures with distinct coats, hats, skirts, aprons, and animations (`idle`, `walk`, `wave`, `write`, `paint`, `examine`, `ride`), plus scripted camera shots, synchronized `aria-live="polite"` captions, `Escape` skip/close handling, and end-frame `Read more` / continue choices across all 19 stops.
+- **Chapter title cards & HUD goals (`src/ui/ChapterCard.ts`, `src/ui/Hud.ts`)**: Added paper chapter transition cards between eras (`Escape`/click/timeout dismissible) and dynamic HUD goal text updating to guide the rider toward the next stop or station.
+- **Path trail & off-screen arrow (`src/world/PathTrail.ts`, `src/world/Area.ts`, `src/ui/Hud.ts`)**: Added per-area `RoadGraph` navigation and Dijkstra shortest-path `InstancedMesh` gold dot trail (`palette.gaslight`) with moving pulse, hidden within 6u of the destination and during scenes/cards/travel, paired with a clamped screen-edge directional arrow (avoiding top-left/top-right HUD pills).
+- **Paper edges instead of invisible walls (`src/world/paperShader.ts`, `src/world/kit.ts`, `src/world/Water.ts`, `src/world/vessels.ts`, `src/world/AreaManager.ts`, `src/player/Player.ts`, `src/ui/Travel.ts`)**: Replaced land boundary walls with hatched paper surround geometry (`#eef0ec`), dashed ink border lines, a 25u exterior paper/sketch shader fade, smooth heading bias back toward area center outside `playBounds`, and a `> 30u` `playInkWipe` reset.
+- **Pop-up scenery (`src/world/kit.ts`, `src/world/paperShader.ts`, `src/world/builders.ts`, `src/world/areas/*.ts`)**: Stored per-vertex base anchors (`aPopupAnchor`) in `StaticBatch.withAnchor`, unfolding buildings/trees/props from `y + 0.015` with slight overshoot between `26..36` units of camera focus (widened to `48..62` during scenes and skipped on touch/reduced motion).
+- **Snapshot illustrations (`src/story/snapshot.ts`, `src/core/progress.ts`, `src/ui/BrochureView.ts`)**: Captured 600x400 offscreen WebGL snapshots at each scene's final caption, applied posterization + Sobel ink outlines + paper wash (`#eef0ec`), saved JPEG data URLs in `ProgressState` with `try/catch` and an in-memory fallback, and rendered them in finale panels and A4 landscape `@media print` sheets (`792x792` px, zero overflow).
+- **Opening, page-fold travel, and closing (`src/ui/DeskScene.ts`, `src/ui/Intro.ts`, `src/ui/Travel.ts`, `src/core/Engine.ts`, `src/main.ts`)**: Replaced the title screen with a Three.js dark wood desk, warm brass/enamel lamp, and 6-panel hinged paper brochure (`CanvasTexture` cover with title, subtitle, and student credit) that unfolds and dives into panel 2 while scenery pops up from flat; added CSS 3D page-fold cover reveal over a paper spread with an inked SVG train and `journeys.ts` lines during train travel; and implemented the world-flatten + desk fold-up closing transition into the finale view (with reduced-motion crossfades).
+
+### Review Screenshots (`review/handoff4/`, 1280x800)
+
+- Desk opening: `desk-closed.png`, `desk-unfold.png`
+- Chapter card & HUD: `chapter-card.png`, `chapter-hud.png`
+- Path trail & off-screen arrow: `path-trail.png`, `offscreen-arrow.png`
+- Paper edge & pop-up riding: `paper-edge.png`, `popup-gallop.png`
+- All 19 stops (mid-scene with caption & end frame): `scene-<storyId>-mid.png`, `scene-<storyId>-end.png`
+- Page-fold travel: `page-fold-mid.png`, `page-fold-travel.png`
+- Finale brochure with snapshots: `finale-snapshots.png`
+
+### Verification (Handoff 4)
+
+- `git diff d424394 -- src/content/`: empty (`src/content/` unmodified).
+- `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`: all pass cleanly.
+- Headless Edge Playwright review sweep (`1280x800`): `errors: []`; draw calls across all 19 scenes range from `49` (`marseille-station`) to `121` (`paris-1889-godfather`), well under the `< 150` budget.

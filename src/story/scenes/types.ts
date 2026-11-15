@@ -16,6 +16,7 @@ export interface SceneContext {
   setLook(override: Partial<AreaLook>): void;
   cutCamera(pos: THREE.Vector3, target: THREE.Vector3): void;
   moveCamera(pos: THREE.Vector3, target: THREE.Vector3, dt: number, damping?: number): void;
+  onDispose(fn: () => void): void;
 }
 
 export interface SceneScript {
