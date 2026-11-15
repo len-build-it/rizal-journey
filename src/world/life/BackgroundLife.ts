@@ -611,6 +611,7 @@ export class BackgroundLife {
     }
 
     this.syncPools(0);
+    this.enableReactionsAndColliders();
   }
 
   /** Enables kinematic colliders, rider reactions, and scene exclusions (wired in Step 4). */
@@ -625,7 +626,7 @@ export class BackgroundLife {
       const rb = world.createRigidBody(
         rapier.RigidBodyDesc.kinematicPositionBased().setTranslation(p.x, p.y + 0.85, p.z),
       );
-      const col = world.createCollider(rapier.ColliderDesc.cylinder(0.82, 0.36), rb);
+      const col = world.createCollider(rapier.ColliderDesc.cylinder(0.82, 0.28), rb);
       bodies?.push(rb);
       colliders?.push(col);
       p.body = rb;
@@ -796,8 +797,11 @@ export class BackgroundLife {
 
       if (this.reactionReady) {
         const dPlayer = Math.hypot(b.x - playerPos.x, b.z - playerPos.z);
-        if (dPlayer < 6.4) {
-          b.flightTimer = Math.max(b.flightTimer, 4.2 + (b.phase % 1.5));
+        if (dPlayer < 6.8) {
+          if (b.flightTimer <= 0.1) {
+            b.orbitAngle = Math.atan2(b.z - playerPos.z, b.x - playerPos.x);
+          }
+          b.flightTimer = Math.max(b.flightTimer, 4.4 + (b.phase % 1.4));
         }
       }
 
