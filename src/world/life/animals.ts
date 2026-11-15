@@ -285,7 +285,7 @@ export function buildFishGeometry(): THREE.BufferGeometry {
  * Reuses the riderless bay horse geometry and adds leather collar and harness straps.
  * Static merged geometry keeps each horse-drawn vehicle lean.
  */
-export function buildHarnessHorseGeometry(coatTint = palette.bay): THREE.BufferGeometry {
+export function buildHarnessHorseGeometry(coatTint: number = palette.bay): THREE.BufferGeometry {
   const rig = buildRiderlessHorse();
   rig.neck.rotation.x = 0.72;
   rig.head.rotation.x = 1.05;

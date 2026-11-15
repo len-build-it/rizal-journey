@@ -26,6 +26,7 @@ import {
   setPopupRange,
 } from './world/paperShader';
 import type { StopMarker } from './world/StopMarker';
+import { palette } from './world/palette';
 import { journeyFrom } from './content/journeys';
 import { chapterFor } from './content/narrative';
 import type { Destination } from './content/stories';
@@ -51,6 +52,22 @@ import {
   buildSheepGeometry,
   previewAnimalMesh,
 } from './world/life/animals';
+import {
+  AnimMode,
+  InstancedPool,
+  bakePersonGeometry,
+  prepareLifeGeometry,
+  setLifeFrame,
+} from './world/life/instancing';
+import {
+  buildCartGeometry,
+  buildFiacreGeometry,
+  buildHandcartGeometry,
+  buildOmnibusGeometry,
+  buildPennyFarthingGeometry,
+  buildRowingBoatGeometry,
+  previewVehicleMesh,
+} from './world/life/vehicles';
 
 async function main(): Promise<void> {
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
@@ -327,6 +344,10 @@ async function main(): Promise<void> {
     input.update();
     player.update(dt, input, cam.yaw);
     area.update(dt, time);
+    setLifeFrame(
+      time,
+      director.isPlaying && director.focusTarget ? director.focusTarget : cam.focusPosition,
+    );
 
     if (director.isPlaying) {
       director.update(dt, time);
@@ -524,6 +545,82 @@ async function main(): Promise<void> {
           engine.camera.position.set(center.x + 14, center.y + 11, center.z - 12);
           engine.camera.lookAt(center.x - 1, center.y + 0.8, center.z - 0.5);
           return { count: actors.length + animalGeos.length };
+        },
+        showLifeInstancingTest: () => {
+          cinematic = true;
+          chapterCard.hide();
+          hud.showPrompt(null);
+          const group = new THREE.Group();
+          const center = areaManager.current?.spawn.clone() ?? new THREE.Vector3();
+
+          // 6 vehicle previews + 1 instanced pool each for 36 people & 18 birds.
+          const vehicleGeos = [
+            buildFiacreGeometry(),
+            buildOmnibusGeometry(),
+            buildCartGeometry('barrels'),
+            buildHandcartGeometry(),
+            buildPennyFarthingGeometry(),
+            buildRowingBoatGeometry(),
+          ];
+          vehicleGeos.forEach((geo, i) => {
+            const m = previewVehicleMesh(geo);
+            m.position.set(center.x - 10 + i * 4.0, center.y, center.z - 4);
+            m.rotation.y = 0.55;
+            group.add(m);
+          });
+
+          const peoplePools = [
+            new InstancedPool(bakePersonGeometry(rolePreset('gentleman', false, 0)), 14, 'test-gent'),
+            new InstancedPool(bakePersonGeometry(rolePreset('lady', false, 1)), 14, 'test-lady'),
+            new InstancedPool(bakePersonGeometry(rolePreset('dockWorker', false, 0)), 14, 'test-work'),
+          ];
+          const tints = [0xffffff, palette.shirt, palette.parisLimestone, palette.awningCream];
+          peoplePools.forEach((pool, pi) => {
+            for (let i = 0; i < 14; i++) {
+              pool.setSlot(
+                i,
+                center.x - 12 + i * 1.8,
+                center.y,
+                center.z + 2 + pi * 2.2,
+                0.35 + (i % 4) * 0.4,
+                0.96 + (i % 3) * 0.03,
+                AnimMode.Walk,
+                i * 0.8 + pi,
+                4.2,
+                1.0,
+                tints[i % tints.length],
+              );
+            }
+            pool.commit(14, true);
+            group.add(pool.mesh);
+          });
+
+          const gullPool = new InstancedPool(
+            prepareLifeGeometry(buildSeagullGeometry(true), 'birdFly'),
+            18,
+            'test-gulls',
+          );
+          for (let i = 0; i < 18; i++) {
+            gullPool.setSlot(
+              i,
+              center.x - 10 + i * 1.2,
+              center.y + 3.4 + (i % 3) * 0.6,
+              center.z - 1 + (i % 2) * 1.5,
+              0.4,
+              1.0,
+              AnimMode.BirdFly,
+              i * 0.7,
+              6.5,
+              1.0,
+            );
+          }
+          gullPool.commit(18);
+          group.add(gullPool.mesh);
+
+          engine.scene.add(group);
+          engine.camera.position.set(center.x - 10, center.y + 7.5, center.z + 14);
+          engine.camera.lookAt(center.x, center.y + 1.0, center.z - 1);
+          return { vehicles: vehicleGeos.length, people: 42, birds: 18 };
         },
         renderStats: () => ({
           calls: engine.renderer.info.render.calls,
