@@ -354,11 +354,10 @@ const paris1889IndiosBravos: SceneScript = {
         const z = 41.5 + Math.sin(theta) * rz;
         const tx = -Math.sin(theta) * rx;
         const tz = Math.cos(theta) * rz;
-        rig.root.position.set(x, 0, z);
-        rig.root.rotation.y = Math.atan2(tx, tz);
-
         const g = elapsed * 10 + idx * 1.4;
-        rig.body.position.y = Math.sin(g * 2) * 0.06;
+        rig.root.position.set(x, 0.04 + Math.max(0, Math.sin(g * 2)) * 0.05, z);
+        rig.root.rotation.y = Math.atan2(tx, tz);
+        rig.body.position.y = Math.sin(g * 2) * 0.04;
         rig.body.rotation.x = Math.sin(g) * 0.05;
         rig.neck.rotation.x = NECK_REST + Math.sin(g - 0.5) * 0.14;
         rig.head.rotation.x = HEAD_REST - Math.sin(g - 0.5) * 0.1;

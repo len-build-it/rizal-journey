@@ -1438,7 +1438,7 @@ function stampIdleHorse(
   pose: IdleHorsePose = 'resting',
 ): void {
   const horse = buildIdleHorse(pose);
-  horse.position.set(x, 0, z);
+  horse.position.set(x, 0.04, z);
   horse.rotation.y = ry;
   horse.updateMatrixWorld(true);
   const byMat = new Map<THREE.Material, number>(

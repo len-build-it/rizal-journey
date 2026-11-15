@@ -167,13 +167,15 @@ function buildHorseModel(neckScale: number, withRider: boolean): HorseRig {
   rump.position.set(0, 1.27, -0.5);
   body.add(rump);
 
-  // Saddle blanket and saddle.
-  const blanket = mesh(new THREE.BoxGeometry(0.64, 0.05, 0.6), palette.saddle);
-  blanket.position.set(0, 1.52, 0.02);
-  body.add(blanket);
-  const saddle = mesh(new THREE.BoxGeometry(0.4, 0.1, 0.44), palette.bayDark);
-  saddle.position.set(0, 1.58, 0.02);
-  body.add(saddle);
+  if (withRider) {
+    // Saddle blanket and saddle only on mounted horses.
+    const blanket = mesh(new THREE.BoxGeometry(0.64, 0.05, 0.6), palette.saddle);
+    blanket.position.set(0, 1.52, 0.02);
+    body.add(blanket);
+    const saddle = mesh(new THREE.BoxGeometry(0.4, 0.1, 0.44), palette.bayDark);
+    saddle.position.set(0, 1.58, 0.02);
+    body.add(saddle);
+  }
 
   // Neck and head.
   const neck = at(new THREE.Group(), 0, 1.36, 0.64);
