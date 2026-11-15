@@ -639,6 +639,14 @@ async function main(): Promise<void> {
           staticCalls: areaManager.current?.staticDrawCalls ?? 0,
           triangles: engine.renderer.info.render.triangles,
         }),
+        lookAt: (px: number, py: number, pz: number, tx: number, ty: number, tz: number) => {
+          cinematic = true;
+          engine.camera.position.set(px, py, pz);
+          engine.camera.lookAt(tx, ty, tz);
+        },
+        resetLook: () => {
+          cinematic = false;
+        },
       },
     });
   }

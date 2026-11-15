@@ -80,3 +80,33 @@ Summary of implementation choices, environment workarounds, and observations fro
 - `git diff d424394 -- src/content/`: empty (`src/content/` unmodified).
 - `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`: all pass cleanly.
 - Headless Edge Playwright review sweep (`1280x800`): `errors: []`; draw calls across all 19 scenes range from `49` (`marseille-station`) to `121` (`paris-1889-godfather`), well under the `< 150` budget.
+
+## Handoff 5 ("background life") & Screenshots (`review/handoff5/`)
+
+- **1880s archetypes, animals & vehicles (`src/story/figures.ts`, `src/world/life/animals.ts`, `src/world/life/vehicles.ts`)**: Expanded `PersonOptions` and `rolePreset(role, winter, seedOffset)` across all 10 silent low-poly French roles (`dockWorker`, `fisherman`, `marketWoman`, `gentleman`, `lady`, `child`, `nurse`, `coachman`, `gendarme`, `vendor`) with period hats, props, and actions; added low-poly palette-colored builders for pigeons, gulls (ground/flying), dogs, cats, sheep, ducks, fish, harness horses, fiacres, double-decker omnibuses, cargo carts, handcarts, rare 1889 Paris penny-farthings, and rowing boats.
+- **Instanced GPU shader & traffic simulation (`src/world/life/instancing.ts`, `src/world/life/BackgroundLife.ts`, `src/world/life/dressings.ts`)**: Grouped all people by role, birds by species/state, animals by species, and vehicles by kind into `InstancedPool` draw calls with per-instance color tinting, GPU vertex limb/wing/oar/graze animations faded beyond 45 units of camera focus, mobile count halving (`engine.quality.mobile`), sidewalk/road loop navigation avoiding stop rings and gateways, rider reactions (stepping aside sideways during walks/gallops, yielding vehicles, flocks bursting into circling flight, trotting dogs), Rapier `kinematicPositionBased` colliders so the horse stops cleanly without knocking figures over, and 14-unit exclusion zones around active stop scenes.
+- **Area integration (`src/world/Area.ts`, `src/world/AreaManager.ts`, `src/story/SceneDirector.ts`, `src/world/areas/*.ts`, `src/main.ts`)**: Dressed all 6 areas (`marseille-1882`, `marseille-1891`, `paris-1883`, `paris-1885`, `paris-1889`, `biarritz-1891`) according to season and location (`yAt` slope placement for Biarritz coastal sheep).
+
+### Before / After Performance (`1280x800` Headless Edge)
+
+| Area | Before (Calls / Triangles) | After (Calls / Triangles) | Added Draw Calls (Budget <= 30) |
+| --- | --- | --- | --- |
+| `marseille-1882` | 117 / 41,940 | 143 / 82,064 | +26 |
+| `paris-1883` | 113 / 171,918 | 141 / 231,935 | +28 |
+| `paris-1885` | 118 / 171,528 | 136 / 206,207 | +18 |
+| `paris-1889` | 122 / 174,390 | 150 / 261,561 | +28 |
+| `biarritz-1891` | 111 / 36,840 | 135 / 63,370 | +24 |
+| `marseille-1891` | 117 / 42,420 | 144 / 82,520 | +27 |
+
+### Review Screenshots (`review/handoff5/`, `1280x800`)
+
+- Model & instancing milestones: `step1-models-gallery.png`, `step2-instancing-test.png`, `step3-marseille-traffic.png`, `step3-paris-traffic.png`, `step4-exclusion.png`
+- Area overviews: `overview-marseille-1882.png`, `overview-paris-1883.png`, `overview-paris-1885.png`, `overview-paris-1889.png`, `overview-biarritz-1891.png`, `overview-marseille-1891.png`
+- Interactive behaviors & feature close-ups: `pigeons-takeoff.png`, `people-step-aside.png`, `paris-boulevard-vehicles.png`, `paris-1889-crowd-tower.png`, `biarritz-sheep-slopes.png`
+- Stop-scene 14u exclusion checks: `scene-marseille-1882.png`, `scene-paris-1883.png`, `scene-paris-1885.png`, `scene-paris-1889.png`, `scene-biarritz-1891.png`, `scene-marseille-1891.png`
+
+### Verification (Handoff 5)
+
+- `git diff d424394 -- src/content/`: empty (`src/content/` unmodified).
+- `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`: all pass cleanly.
+- Headless Edge Playwright verification (`1280x800`): `errors: []` across all 6 area overviews, stop scenes, and reaction captures.
