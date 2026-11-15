@@ -1,5 +1,8 @@
-import '@fontsource-variable/bodoni-moda/opsz.css';
-import '@fontsource-variable/instrument-sans/wght.css';
+import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/literata/standard.css';
+import '@fontsource-variable/literata/standard-italic.css';
+import './ui/kit/kit.css';
+import './ui/brochure/brochure.css';
 import './styles.css';
 import * as THREE from 'three';
 import { Engine } from './core/Engine';
@@ -280,6 +283,7 @@ async function main(): Promise<void> {
         document.documentElement.classList.add('is-closing');
         await animatePopupReveal(1, 0, 750);
         const closingDesk = new DeskScene();
+        await closingDesk.ready();
         engine.setOverrideRender(closingDesk.scene, closingDesk.camera);
         await closingDesk.playCloseFold();
         await new Promise((r) => setTimeout(r, 320));
@@ -678,6 +682,7 @@ async function main(): Promise<void> {
   };
 
   openingDesk = new DeskScene();
+  await openingDesk.ready();
   engine.setOverrideRender(openingDesk.scene, openingDesk.camera);
 
   document.documentElement.classList.add('is-intro');

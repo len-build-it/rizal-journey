@@ -9,10 +9,7 @@ const PAPER_CSS = `#${PAPER_HEX.toString(16).padStart(6, '0')}`;
 const NIGHT_CSS = `#${palette.night.toString(16).padStart(6, '0')}`;
 const IRON_CSS = `#${palette.iron.toString(16).padStart(6, '0')}`;
 
-function createCoverTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 832;
+function drawCoverCanvas(canvas: HTMLCanvasElement): void {
   const ctx = canvas.getContext('2d')!;
 
   ctx.fillStyle = PAPER_CSS;
@@ -27,18 +24,18 @@ function createCoverTexture(): THREE.CanvasTexture {
 
   // Kicker.
   ctx.fillStyle = IRON_CSS;
-  ctx.font = '600 20px "Instrument Sans", system-ui, sans-serif';
-  ctx.fillText('TRAVEL BROCHURE  |  PANEL 1 OF 6', 44, 92);
+  ctx.font = 'italic 20px "Literata Variable", Georgia, serif';
+  ctx.fillText('Travel brochure', 44, 92);
 
   // Title.
   ctx.fillStyle = NIGHT_CSS;
-  ctx.font = '600 66px Georgia, serif';
+  ctx.font = '600 64px "Fraunces Variable", Georgia, serif';
   ctx.fillText('Through', 44, 178);
   ctx.fillText("Rizal's Eyes", 44, 248);
 
   // Subtitle.
   ctx.fillStyle = IRON_CSS;
-  ctx.font = 'italic 30px Georgia, serif';
+  ctx.font = 'italic 30px "Literata Variable", Georgia, serif';
   ctx.fillText('France, 1882 to 1891', 44, 306);
 
   ctx.strokeStyle = 'rgba(28, 35, 64, 0.22)';
@@ -69,7 +66,7 @@ function createCoverTexture(): THREE.CanvasTexture {
 
   // Short cover copy.
   ctx.fillStyle = NIGHT_CSS;
-  ctx.font = '400 22px "Instrument Sans", system-ui, sans-serif';
+  ctx.font = '400 22px "Literata Variable", Georgia, serif';
   const lines = [
     'France was the first place',
     'Jose Rizal set foot in Europe,',
@@ -79,10 +76,17 @@ function createCoverTexture(): THREE.CanvasTexture {
 
   // Student credit at footer.
   ctx.fillStyle = 'rgba(28, 35, 64, 0.68)';
-  ctx.font = '400 17px "Instrument Sans", system-ui, sans-serif';
+  ctx.font = '400 17px "Literata Variable", Georgia, serif';
   ctx.fillText('Lenard, Software Engineering', 44, 728);
   ctx.fillText('Aklan State University', 44, 752);
   ctx.fillText("Chapter 9: Rizal's Travels", 44, 776);
+}
+
+function createCoverTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 832;
+  drawCoverCanvas(canvas);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -90,10 +94,7 @@ function createCoverTexture(): THREE.CanvasTexture {
   return tex;
 }
 
-function createInnerPanelTexture(title: string, sub: string): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 384;
-  canvas.height = 624;
+function drawInnerPanelCanvas(canvas: HTMLCanvasElement, title: string, sub: string): void {
   const ctx = canvas.getContext('2d')!;
 
   ctx.fillStyle = PAPER_CSS;
@@ -103,11 +104,11 @@ function createInnerPanelTexture(title: string, sub: string): THREE.CanvasTextur
   ctx.fillRect(0, 0, canvas.width, 12);
 
   ctx.fillStyle = 'rgba(28, 35, 64, 0.55)';
-  ctx.font = '600 16px "Instrument Sans", system-ui, sans-serif';
+  ctx.font = 'italic 16px "Literata Variable", Georgia, serif';
   ctx.fillText(sub, 28, 56);
 
   ctx.fillStyle = NIGHT_CSS;
-  ctx.font = '600 32px Georgia, serif';
+  ctx.font = '560 32px "Fraunces Variable", Georgia, serif';
   ctx.fillText(title, 28, 100);
 
   ctx.strokeStyle = 'rgba(28, 35, 64, 0.16)';
@@ -120,6 +121,13 @@ function createInnerPanelTexture(title: string, sub: string): THREE.CanvasTextur
     ctx.lineTo(canvas.width - 36 - ((y * 17) % 64), y);
   }
   ctx.stroke();
+}
+
+function createInnerPanelTexture(title: string, sub: string): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 384;
+  canvas.height = 624;
+  drawInnerPanelCanvas(canvas, title, sub);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -143,6 +151,9 @@ export class DeskScene {
   private readonly p2World = new THREE.Vector3();
 
   private readonly disposables: { dispose: () => void }[] = [];
+  private readonly coverTex: THREE.CanvasTexture;
+  private readonly p2Tex: THREE.CanvasTexture;
+  private readonly innerTex: THREE.CanvasTexture;
   private readonly closedCamPos = new THREE.Vector3(0.08, 2.36, 2.96);
   private readonly closedCamLook = new THREE.Vector3(0.04, 0.16, -0.14);
 
@@ -244,9 +255,9 @@ export class DeskScene {
     const panelGeo = new THREE.BoxGeometry(PW, 0.004, PD);
     this.disposables.push(panelGeo);
 
-    const coverTex = createCoverTexture();
-    const p2Tex = createInnerPanelTexture('Marseille', 'PANEL 2 OF 6');
-    const innerTex = createInnerPanelTexture('1882 to 1891', 'JOURNEY LOG');
+    const coverTex = (this.coverTex = createCoverTexture());
+    const p2Tex = (this.p2Tex = createInnerPanelTexture('Marseille', 'Panel 2 of 6'));
+    const innerTex = (this.innerTex = createInnerPanelTexture('1882 to 1891', 'Journey log'));
     const paperMat = new THREE.MeshStandardMaterial({
       color: PAPER_HEX,
       roughness: 0.9,
@@ -317,6 +328,23 @@ export class DeskScene {
     this.scene.add(this.brochureRoot);
     this.setFold(1);
     this.setCameraClosed();
+  }
+
+  /** Waits for Fraunces and Literata fonts before redrawing the cover and panel textures. */
+  async ready(): Promise<void> {
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      await Promise.all([
+        document.fonts.load('600 48px "Fraunces Variable"'),
+        document.fonts.load('400 22px "Literata Variable"'),
+        document.fonts.load('italic 22px "Literata Variable"'),
+      ]);
+      drawCoverCanvas(this.coverTex.image as HTMLCanvasElement);
+      this.coverTex.needsUpdate = true;
+      drawInnerPanelCanvas(this.p2Tex.image as HTMLCanvasElement, 'Marseille', 'Panel 2 of 6');
+      this.p2Tex.needsUpdate = true;
+      drawInnerPanelCanvas(this.innerTex.image as HTMLCanvasElement, '1882 to 1891', 'Journey log');
+      this.innerTex.needsUpdate = true;
+    }
   }
 
   /** Sets Z-fold progress (`1` = folded stacked booklet on desk, `0` = unfolded spread). */

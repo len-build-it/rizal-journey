@@ -8,8 +8,8 @@
   --paper: #eef0ec;
   --ink: #1c2340;
   --ink-soft: #4a5068;
-  --display: 'Bodoni Moda Variable', 'Bodoni Moda', Didot, Georgia, serif;
-  --body: 'Instrument Sans Variable', 'Instrument Sans', system-ui, sans-serif;
+  --display: var(--k-display);
+  --body: var(--k-text);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
