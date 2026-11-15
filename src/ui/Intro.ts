@@ -13,13 +13,15 @@ export function showIntro(
   touch: boolean,
   handlers: IntroHandlers,
 ): HTMLElement {
-  const openBtn = el('button', { class: 'intro-start', type: 'button' }, [
+  const openBtn = el('button', { class: 'intro-start k-btn k-btn--primary', type: 'button' }, [
     'Open the brochure',
   ]);
   const restartBtn = handlers.hasContinue
-    ? el('button', { class: 'intro-secondary', type: 'button' }, ['Start over'])
+    ? el('button', { class: 'intro-secondary k-btn k-btn--quiet', type: 'button' }, ['Start over'])
     : null;
-  const brochure = el('button', { class: 'intro-link', type: 'button' }, ['Read as a brochure']);
+  const brochure = el('button', { class: 'intro-link k-btn k-btn--quiet', type: 'button' }, [
+    'Read as a brochure',
+  ]);
 
   const controls = touch
     ? 'Drag anywhere on the lower left to ride. Push to the edge to gallop.'
@@ -28,9 +30,9 @@ export function showIntro(
   const actions = restartBtn ? [openBtn, restartBtn, brochure] : [openBtn, brochure];
 
   const root = el('section', { class: 'intro is-desk', 'aria-labelledby': 'intro-title' }, [
-    el('div', { class: 'intro-inner' }, [
-      el('p', { class: 'intro-kicker' }, ['France, 1882 to 1891']),
-      el('h1', { class: 'intro-title', id: 'intro-title' }, ["Through Rizal's Eyes"]),
+    el('div', { class: 'intro-inner k-card' }, [
+      el('p', { class: 'k-label intro-kicker' }, ['France, 1882 to 1891']),
+      el('h1', { class: 'intro-title k-display', id: 'intro-title' }, ["Through Rizal's Eyes"]),
       el('p', { class: 'intro-text' }, [
         'Ride from stop to stop across France to fill in the six panels of Jose Rizal\'s travel brochure.',
       ]),

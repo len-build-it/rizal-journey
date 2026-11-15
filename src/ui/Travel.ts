@@ -28,9 +28,9 @@ function buildTrainSvg(): SVGSVGElement {
   svg.append(svgEl('line', { x1: '0', y1: '84', x2: '560', y2: '84', class: 'train-rail' }));
 
   const train = svgEl('g', { class: 'train-group' });
-  const ink = '#1c2340';
-  const accent = '#9c3b2a';
-  const paper = '#eef0ec';
+  const ink = 'var(--k-ink)';
+  const accent = 'var(--k-vermilion)';
+  const paper = 'var(--k-card)';
   // Passenger coach sketched in ink & red hairline.
   train.append(
     svgEl('rect', { x: '14', y: '34', width: '96', height: '38', rx: '3', fill: paper, stroke: ink, 'stroke-width': '2' }),
@@ -84,11 +84,11 @@ export async function playTrainJourney(
     return p;
   });
 
-  const skipHint = el('button', { class: 'travel-skip', type: 'button' }, [
+  const skipHint = el('button', { class: 'travel-skip k-btn k-btn--small', type: 'button' }, [
     reduced ? 'Continue' : 'Tap or press any key to continue',
   ]);
-  const spread = el('div', { class: 'travel-spread' }, [
-    el('p', { class: 'travel-kicker' }, ['En route across Europe']),
+  const spread = el('div', { class: 'travel-spread k-card' }, [
+    el('p', { class: 'k-label travel-kicker' }, ['En route across Europe']),
     buildTrainSvg(),
     linesWrap,
     skipHint,
