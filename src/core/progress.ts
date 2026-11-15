@@ -8,9 +8,22 @@ export interface ProgressState {
   visited: string[];
   panels: number[];
   completed: boolean;
+  snapshots?: Record<string, string>;
 }
 
 const STORAGE_KEY = 'rizal-france-progress-v1';
+const memorySnapshots: Record<string, string> = {};
+
+function sanitizeSnapshots(raw: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof k === 'string' && typeof v === 'string' && v.startsWith('data:image/')) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
 
 export function initialProgress(): ProgressState {
   return {
@@ -18,6 +31,7 @@ export function initialProgress(): ProgressState {
     visited: [],
     panels: [1],
     completed: false,
+    snapshots: { ...memorySnapshots },
   };
 }
 
@@ -39,11 +53,14 @@ export function loadProgress(): ProgressState | null {
       ? parsed.panels.filter((x): x is number => typeof x === 'number' && x >= 1 && x <= 6)
       : [1];
     if (!panels.includes(1)) panels.unshift(1);
+    const storedSnapshots = sanitizeSnapshots(parsed.snapshots);
+    Object.assign(memorySnapshots, storedSnapshots);
     return {
       destination: parsed.destination,
       visited,
       panels,
       completed: Boolean(parsed.completed),
+      snapshots: { ...storedSnapshots, ...memorySnapshots },
     };
   } catch {
     return null;
@@ -51,14 +68,29 @@ export function loadProgress(): ProgressState | null {
 }
 
 export function saveProgress(state: ProgressState): void {
+  if (state.snapshots) {
+    Object.assign(memorySnapshots, state.snapshots);
+  }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
-    // localStorage may be unavailable in restricted contexts.
+    // Quota exceeded or restricted storage: save metadata without snapshots and keep images in memory.
+    try {
+      const compact: ProgressState = {
+        destination: state.destination,
+        visited: state.visited,
+        panels: state.panels,
+        completed: state.completed,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(compact));
+    } catch {
+      // Memory fallback already holds snapshots.
+    }
   }
 }
 
 export function clearProgress(): void {
+  for (const key of Object.keys(memorySnapshots)) delete memorySnapshots[key];
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {

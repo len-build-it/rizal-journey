@@ -6,6 +6,7 @@ import { StoryCard } from './StoryCard';
 export interface BrochureViewOpts {
   mode: 'finale' | 'fallback';
   visited?: Set<string>;
+  snapshots?: Record<string, string>;
   note?: string;
   onBack?: () => void;
   backLabel?: string;
@@ -117,6 +118,7 @@ export function showBrochureView(parent: HTMLElement, opts: BrochureViewOpts): H
     for (const story of stories) {
       const collected = !visited || visited.has(story.id);
       if (isFinale) {
+        const snap = opts.snapshots?.[story.id];
         const itemBtn = el(
           'button',
           {
@@ -124,12 +126,14 @@ export function showBrochureView(parent: HTMLElement, opts: BrochureViewOpts): H
             type: 'button',
           },
           [
+            snap ? el('img', { class: 'bp-story-thumb', src: snap, alt: '' }) : null,
             el('span', { class: 'bp-story-date' }, [story.date]),
             el('span', { class: 'bp-story-title' }, [story.title]),
           ],
         );
         itemBtn.addEventListener('click', () => openStory(story));
         const printSummary = el('div', { class: 'bp-print-story' }, [
+          snap ? el('img', { class: 'bp-print-thumb', src: snap, alt: '' }) : null,
           el('p', { class: 'bp-story-date' }, [story.date]),
           el('h3', { class: 'bp-story-heading' }, [story.title]),
           ...story.paragraphs.map((p) => el('p', { class: 'bp-body' }, [p])),

@@ -21,6 +21,7 @@ export interface ScenePlayCallbacks {
   actionReady: boolean;
   onEnd: () => void;
   onTravel: (fromStoryId: string, to: Destination) => void;
+  onCaptureSnapshot?: (storyId: string) => void;
 }
 
 /**
@@ -41,6 +42,7 @@ export class SceneDirector {
     phase: 'playing' | 'end';
     callbacks: ScenePlayCallbacks;
     lookOverridden: boolean;
+    capturedSnapshot: boolean;
     actors: PersonActor[];
     crowds: ReturnType<typeof buildCrowd>[];
     props: THREE.Object3D[];
@@ -188,6 +190,7 @@ export class SceneDirector {
       phase: 'playing',
       callbacks,
       lookOverridden,
+      capturedSnapshot: false,
       actors,
       crowds,
       props,
@@ -205,6 +208,9 @@ export class SceneDirector {
       onContinue: () => this.handleContinue(),
     });
     this.ui.setCaption(captions[0] ?? '');
+    if (captions.length <= 1) {
+      this.captureFinalCaptionSnapshot();
+    }
   }
 
   update(dt: number, totalTime: number): void {
@@ -222,6 +228,9 @@ export class SceneDirector {
       a.script.update(a.ctx, a.elapsed, dt);
       for (const actor of a.actors) actor.update(dt, totalTime);
       for (const c of a.crowds) c.update(totalTime);
+      if (a.captionIdx >= a.captions.length - 1) {
+        this.captureFinalCaptionSnapshot();
+      }
 
       if (a.elapsed >= a.duration) {
         this.enterEndFrame();
@@ -249,6 +258,9 @@ export class SceneDirector {
       const targetTime = (a.captionIdx / a.captions.length) * a.duration;
       this.stepSimulationTo(targetTime);
       this.ui.setCaption(a.captions[a.captionIdx] ?? '');
+      if (a.captionIdx >= a.captions.length - 1) {
+        this.captureFinalCaptionSnapshot();
+      }
     } else {
       this.skipToEnd();
     }
@@ -277,9 +289,18 @@ export class SceneDirector {
     a.script.update(a.ctx, targetElapsed, 0);
   }
 
+  private captureFinalCaptionSnapshot(): void {
+    const a = this.active;
+    if (!a || a.capturedSnapshot) return;
+    a.capturedSnapshot = true;
+    this.engine.followSun(a.lastTarget, a.area.look.sunDirection);
+    a.callbacks.onCaptureSnapshot?.(a.stop.story.id);
+  }
+
   private enterEndFrame(): void {
     const a = this.active;
     if (!a) return;
+    this.captureFinalCaptionSnapshot();
     a.phase = 'end';
     a.elapsed = a.duration;
     this.ui.showEndFrame(a.stop.story, a.callbacks.actionReady);

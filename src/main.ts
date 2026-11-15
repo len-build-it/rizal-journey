@@ -37,6 +37,7 @@ import { showIntro } from './ui/Intro';
 import { playInkWipe, playTowerTimelapse, playTrainJourney } from './ui/Travel';
 import { showBrochureView } from './ui/BrochureView';
 import { SceneDirector } from './story/SceneDirector';
+import { captureStorySnapshot } from './story/snapshot';
 
 async function main(): Promise<void> {
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
@@ -62,6 +63,7 @@ async function main(): Promise<void> {
   let state: ProgressState = saved ?? initialProgress();
   const visited = new Set<string>(state.visited);
   const filled = new Set<number>(state.panels);
+  const snapshots: Record<string, string> = { ...(state.snapshots ?? {}) };
   hud.setPanels(filled);
 
   const player = new Player(
@@ -112,6 +114,7 @@ async function main(): Promise<void> {
       visited: [...visited],
       panels: [...filled],
       completed: state.completed,
+      snapshots,
     };
     saveProgress(state);
   };
@@ -177,6 +180,15 @@ async function main(): Promise<void> {
     cinematic = true;
     director.play(stop, area, {
       actionReady: ready,
+      onCaptureSnapshot: (storyId) => {
+        setPopupFocus(director.focusTarget ?? cam.focusPosition);
+        setPopupRange(48, 62);
+        const url = captureStorySnapshot(engine);
+        if (url) {
+          snapshots[storyId] = url;
+          persist();
+        }
+      },
       onEnd: () => {
         cinematic = false;
         if (!traveling) input.enabled = true;
@@ -199,6 +211,7 @@ async function main(): Promise<void> {
       showBrochureView(uiRoot, {
         mode: 'finale',
         visited,
+        snapshots,
         backLabel: 'Back to riding',
         onBack: () => {
           input.enabled = true;
@@ -383,6 +396,8 @@ async function main(): Promise<void> {
           }
         },
         closeCard: () => card.hide(),
+        openFinale: () => void travelTo('marseille-1891-lessons', { area: 'finale' }),
+        snapshots,
         renderStats: () => ({
           calls: engine.renderer.info.render.calls,
           staticCalls: areaManager.current?.staticDrawCalls ?? 0,

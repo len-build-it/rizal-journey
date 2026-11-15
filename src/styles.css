@@ -1319,6 +1319,22 @@ button {
   opacity: 0.72;
 }
 
+.bp-story-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  height: auto;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  border: 1px solid rgb(28 35 64 / 0.22);
+  object-fit: cover;
+  background: var(--paper);
+}
+
+.bp-print-thumb {
+  display: none;
+}
+
 .bp-story-date {
   margin: 0;
   font-family: var(--body);
@@ -1619,6 +1635,17 @@ button {
     display: none;
   }
 
+  .bp-print-thumb {
+    display: block;
+    width: 100%;
+    height: 11mm;
+    margin-bottom: 1pt;
+    border-radius: 1mm;
+    border: 0.3pt solid rgb(28 35 64 / 0.28);
+    object-fit: cover;
+    background: var(--paper);
+  }
+
   .bp-print-story,
   .bp-print-refs,
   .bp-refs-block {
@@ -1645,26 +1672,26 @@ button {
   }
 
   .bp-body {
-    font-size: 7pt;
-    line-height: 1.18;
-    margin-bottom: 1.8pt;
+    font-size: 6.4pt;
+    line-height: 1.12;
+    margin-bottom: 1.2pt;
   }
 
   .bp-note {
-    font-size: 7pt;
-    line-height: 1.16;
+    font-size: 6.4pt;
+    line-height: 1.1;
   }
 
   .bp-print-refs,
   .bp-refs-block {
-    margin-top: 3pt;
-    padding-top: 2.5pt;
+    margin-top: 2pt;
+    padding-top: 2pt;
     border-top: 0.5pt solid rgb(28 35 64 / 0.25);
   }
 
   .bp-refs-heading {
-    margin: 0 0 1.5pt;
-    font-size: 7.5pt;
+    margin: 0 0 1pt;
+    font-size: 7pt;
   }
 
   .bp-refs-list,
@@ -1673,8 +1700,8 @@ button {
     padding-left: 0;
     list-style: none;
     counter-reset: ref;
-    font-size: 7pt;
-    line-height: 1.12;
+    font-size: 6.3pt;
+    line-height: 1.08;
     overflow-wrap: anywhere;
   }
 
