@@ -35,6 +35,8 @@ export class Engine {
   private accumulator = 0;
   private running = false;
   private time = 0;
+  private overrideScene: THREE.Scene | null = null;
+  private overrideCamera: THREE.PerspectiveCamera | null = null;
   static readonly STEP = 1 / 60;
   /** Catch-up limit per frame; raised for slow headless review runs. */
   maxSteps = 5;
@@ -103,6 +105,26 @@ export class Engine {
     this.renderer.setAnimationLoop((t) => this.frame(t));
   }
 
+  /** Replaces the active render target scene/camera (used by the opening/closing desk scene). */
+  setOverrideRender(scene: THREE.Scene | null, camera: THREE.PerspectiveCamera | null): void {
+    this.overrideScene = scene;
+    this.overrideCamera = camera;
+    if (camera) {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    }
+  }
+
+  /** Renders one frame of the active area scene and returns a JPEG data URL for transitions. */
+  captureFrame(quality = 0.88): string | null {
+    this.renderer.render(this.scene, this.camera);
+    try {
+      return this.renderer.domElement.toDataURL('image/jpeg', quality);
+    } catch {
+      return null;
+    }
+  }
+
   private frame(timestamp: number): void {
     this.timer.update(timestamp);
     const dt = Math.min(this.timer.getDelta(), this.maxSteps * Engine.STEP);
@@ -115,12 +137,16 @@ export class Engine {
       this.accumulator -= Engine.STEP;
       steps++;
     }
-    this.renderer.render(this.scene, this.camera);
+    this.renderer.render(this.overrideScene ?? this.scene, this.overrideCamera ?? this.camera);
   }
 
   private resize(): void {
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
+    if (this.overrideCamera) {
+      this.overrideCamera.aspect = innerWidth / innerHeight;
+      this.overrideCamera.updateProjectionMatrix();
+    }
     this.renderer.setSize(innerWidth, innerHeight, false);
   }
 }

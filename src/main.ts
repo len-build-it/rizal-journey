@@ -34,6 +34,7 @@ import { Hud } from './ui/Hud';
 import { StoryCard } from './ui/StoryCard';
 import { Joystick } from './ui/Joystick';
 import { showIntro } from './ui/Intro';
+import { DeskScene } from './ui/DeskScene';
 import { playInkWipe, playTowerTimelapse, playTrainJourney } from './ui/Travel';
 import { showBrochureView } from './ui/BrochureView';
 import { SceneDirector } from './story/SceneDirector';
@@ -106,7 +107,31 @@ async function main(): Promise<void> {
   let cinematic = false;
   let traveling = false;
   let resettingEdge = false;
+  let popupReveal = 1;
   const camTarget = new THREE.Vector3();
+
+  const animatePopupReveal = (from: number, to: number, ms: number): Promise<void> => {
+    if (reducedMotion || touch || ms <= 0) {
+      popupReveal = to;
+      return Promise.resolve();
+    }
+    popupReveal = from;
+    return new Promise((resolve) => {
+      const start = performance.now();
+      const tick = (now: number): void => {
+        const u = Math.min(1, (now - start) / ms);
+        const eased = 1 - Math.pow(1 - u, 3);
+        popupReveal = from + (to - from) * eased;
+        if (u >= 1) {
+          popupReveal = to;
+          resolve();
+          return;
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  };
 
   const persist = (): void => {
     state = {
@@ -201,23 +226,41 @@ async function main(): Promise<void> {
     });
   };
 
+  const openFinaleView = (): void => {
+    showBrochureView(uiRoot, {
+      mode: 'finale',
+      visited,
+      snapshots,
+      backLabel: 'Back to riding',
+      onBack: () => {
+        input.enabled = true;
+        canvas.focus({ preventScroll: true });
+      },
+    });
+  };
+
   const travelTo = async (fromStoryId: string, to: Destination): Promise<void> => {
     if (traveling) return;
     if (to.area === 'finale') {
+      traveling = true;
       input.enabled = false;
       hud.showPrompt(null);
       state.completed = true;
       persist();
-      showBrochureView(uiRoot, {
-        mode: 'finale',
-        visited,
-        snapshots,
-        backLabel: 'Back to riding',
-        onBack: () => {
-          input.enabled = true;
-          canvas.focus({ preventScroll: true });
-        },
-      });
+      if (!reducedMotion) {
+        document.documentElement.classList.add('is-closing');
+        await animatePopupReveal(1, 0, 750);
+        const closingDesk = new DeskScene();
+        engine.setOverrideRender(closingDesk.scene, closingDesk.camera);
+        await closingDesk.playCloseFold();
+        await new Promise((r) => setTimeout(r, 320));
+        engine.setOverrideRender(null, null);
+        closingDesk.dispose();
+        popupReveal = 1;
+        document.documentElement.classList.remove('is-closing');
+      }
+      traveling = false;
+      openFinaleView();
       return;
     }
 
@@ -232,6 +275,7 @@ async function main(): Promise<void> {
 
     const journey = journeyFrom(fromStoryId);
     const dest: AreaDestination = to;
+    const captured = journey?.mode === 'train' ? engine.captureFrame() : null;
 
     if (journey?.mode === 'tower') {
       const area = await areaManager.load(dest, visited);
@@ -240,9 +284,13 @@ async function main(): Promise<void> {
       cinematic = false;
       cam.snap(player.position);
     } else if (journey?.mode === 'train') {
-      await playTrainJourney(uiRoot, journey, async () => {
+      await playTrainJourney(uiRoot, journey, captured, async () => {
         await areaManager.load(dest, visited);
       });
+      if (!reducedMotion && !touch) {
+        popupReveal = 0;
+        void animatePopupReveal(0, 1, 900);
+      }
     } else {
       await areaManager.load(dest, visited);
     }
@@ -344,7 +392,11 @@ async function main(): Promise<void> {
     engine.camera.updateMatrixWorld();
     hud.updateArrow(nextTarget?.position ?? null, engine.camera, hideGuides);
     setPopupFocus(cam.focusPosition);
-    setPopupRange(26, 36);
+    if (popupReveal <= 0.001) {
+      setPopupRange(-1, 0);
+    } else {
+      setPopupRange(26 * popupReveal, 36 * popupReveal);
+    }
 
     engine.followSun(
       cinematic && area.towerCenter ? area.towerCenter : player.position,
@@ -354,6 +406,8 @@ async function main(): Promise<void> {
     fog.near = cam.currentDistance + area.look.fogNear - 30;
     fog.far = cam.currentDistance + area.look.fogFar - 30;
   });
+
+  let openingDesk: DeskScene | null = null;
 
   if (new URLSearchParams(location.search).has('review')) {
     // Headless review runs render slowly; let the simulation keep real time.
@@ -396,7 +450,17 @@ async function main(): Promise<void> {
           }
         },
         closeCard: () => card.hide(),
-        openFinale: () => void travelTo('marseille-1891-lessons', { area: 'finale' }),
+        openFinale: (instant = true) => {
+          if (instant) {
+            state.completed = true;
+            persist();
+            openFinaleView();
+          } else {
+            void travelTo('marseille-1891-lessons', { area: 'finale' });
+          }
+        },
+        travelSample: (fromId: string, to: AreaDestination) => travelTo(fromId, to),
+        setDeskFold: (u: number) => openingDesk?.setFold(u),
         snapshots,
         renderStats: () => ({
           calls: engine.renderer.info.render.calls,
@@ -411,7 +475,21 @@ async function main(): Promise<void> {
   document.documentElement.classList.add('is-ready');
 
   const beginPlaying = async (): Promise<void> => {
-    document.documentElement.classList.remove('is-intro');
+    if (openingDesk && !reducedMotion) {
+      popupReveal = 0;
+      await openingDesk.playOpen();
+      engine.setOverrideRender(null, null);
+      openingDesk.dispose();
+      openingDesk = null;
+      document.documentElement.classList.remove('is-intro');
+      await animatePopupReveal(0, 1, 950);
+    } else {
+      engine.setOverrideRender(null, null);
+      openingDesk?.dispose();
+      openingDesk = null;
+      popupReveal = 1;
+      document.documentElement.classList.remove('is-intro');
+    }
     syncHudGoal();
     const ch = currentChapter();
     if (ch) await chapterCard.show(ch);
@@ -419,13 +497,16 @@ async function main(): Promise<void> {
     canvas.focus({ preventScroll: true });
   };
 
+  openingDesk = new DeskScene();
+  engine.setOverrideRender(openingDesk.scene, openingDesk.camera);
+
   document.documentElement.classList.add('is-intro');
   let introEl: HTMLElement | null = null;
   const openIntro = (): void => {
     introEl = showIntro(uiRoot, touch, {
       hasContinue: hasSavedProgress(saved),
-      onContinue: () => void beginPlaying(),
-      onStart: async () => {
+      onOpen: () => void beginPlaying(),
+      onRestart: async () => {
         visited.clear();
         filled.clear();
         filled.add(1);

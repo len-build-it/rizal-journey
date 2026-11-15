@@ -24,49 +24,56 @@ function buildTrainSvg(): SVGSVGElement {
     viewBox: '0 0 560 96',
     'aria-hidden': 'true',
   });
-  // Rail line across the full width.
+  // Inked rail line across the full width of the paper spread.
   svg.append(svgEl('line', { x1: '0', y1: '84', x2: '560', y2: '84', class: 'train-rail' }));
 
   const train = svgEl('g', { class: 'train-group' });
-  // Passenger coach trailing behind the locomotive.
+  const ink = '#1c2340';
+  const accent = '#9c3b2a';
+  const paper = '#eef0ec';
+  // Passenger coach sketched in ink & red hairline.
   train.append(
-    svgEl('rect', { x: '14', y: '34', width: '96', height: '38', rx: '3', fill: '#3b4259' }),
-    svgEl('rect', { x: '10', y: '30', width: '104', height: '6', rx: '2', fill: '#9c3b2a' }),
-    svgEl('rect', { x: '24', y: '42', width: '16', height: '14', rx: '1', fill: '#e2b04a' }),
-    svgEl('rect', { x: '48', y: '42', width: '16', height: '14', rx: '1', fill: '#e2b04a' }),
-    svgEl('rect', { x: '72', y: '42', width: '16', height: '14', rx: '1', fill: '#e2b04a' }),
-    svgEl('rect', { x: '108', y: '66', width: '12', height: '4', fill: '#5a5d66' }),
-    svgEl('circle', { cx: '34', cy: '76', r: '6', fill: '#9c3b2a' }),
-    svgEl('circle', { cx: '90', cy: '76', r: '6', fill: '#9c3b2a' }),
+    svgEl('rect', { x: '14', y: '34', width: '96', height: '38', rx: '3', fill: paper, stroke: ink, 'stroke-width': '2' }),
+    svgEl('rect', { x: '10', y: '30', width: '104', height: '6', rx: '2', fill: accent }),
+    svgEl('rect', { x: '24', y: '42', width: '16', height: '14', rx: '1', fill: paper, stroke: ink, 'stroke-width': '1.6' }),
+    svgEl('rect', { x: '48', y: '42', width: '16', height: '14', rx: '1', fill: paper, stroke: ink, 'stroke-width': '1.6' }),
+    svgEl('rect', { x: '72', y: '42', width: '16', height: '14', rx: '1', fill: paper, stroke: ink, 'stroke-width': '1.6' }),
+    svgEl('rect', { x: '108', y: '66', width: '12', height: '4', fill: ink }),
+    svgEl('circle', { cx: '34', cy: '76', r: '6', fill: paper, stroke: accent, 'stroke-width': '2.2' }),
+    svgEl('circle', { cx: '90', cy: '76', r: '6', fill: paper, stroke: accent, 'stroke-width': '2.2' }),
   );
 
-  // Steam locomotive: cab, boiler, funnel and driving wheels.
+  // Steam locomotive ink sketch.
   train.append(
-    svgEl('rect', { x: '120', y: '30', width: '34', height: '40', rx: '2', fill: '#24252b' }),
-    svgEl('rect', { x: '117', y: '26', width: '40', height: '5', rx: '2', fill: '#9c3b2a' }),
-    svgEl('rect', { x: '129', y: '37', width: '14', height: '13', rx: '1', fill: '#e2b04a' }),
-    svgEl('rect', { x: '154', y: '40', width: '62', height: '26', rx: '4', fill: '#2c3244' }),
-    svgEl('rect', { x: '176', y: '32', width: '10', height: '8', rx: '3', fill: '#e2b04a' }),
-    svgEl('polygon', { points: '198,40 208,40 211,22 195,22', fill: '#24252b' }),
-    svgEl('polygon', { points: '216,58 232,74 216,74', fill: '#5a5d66' }),
-    svgEl('rect', { x: '122', y: '66', width: '96', height: '6', fill: '#121729' }),
-    svgEl('circle', { cx: '136', cy: '75', r: '8', fill: '#9c3b2a' }),
-    svgEl('circle', { cx: '160', cy: '75', r: '8', fill: '#9c3b2a' }),
-    svgEl('circle', { cx: '188', cy: '77', r: '6', fill: '#9c3b2a' }),
-    svgEl('circle', { cx: '206', cy: '77', r: '6', fill: '#9c3b2a' }),
-    // Steam puffs.
-    svgEl('circle', { cx: '192', cy: '14', r: '5', fill: '#d9dee0', opacity: '0.65' }),
-    svgEl('circle', { cx: '178', cy: '10', r: '7', fill: '#d9dee0', opacity: '0.45' }),
-    svgEl('circle', { cx: '160', cy: '8', r: '8', fill: '#d9dee0', opacity: '0.28' }),
+    svgEl('rect', { x: '120', y: '30', width: '34', height: '40', rx: '2', fill: paper, stroke: ink, 'stroke-width': '2' }),
+    svgEl('rect', { x: '117', y: '26', width: '40', height: '5', rx: '2', fill: accent }),
+    svgEl('rect', { x: '129', y: '37', width: '14', height: '13', rx: '1', fill: paper, stroke: ink, 'stroke-width': '1.6' }),
+    svgEl('rect', { x: '154', y: '40', width: '62', height: '26', rx: '4', fill: paper, stroke: ink, 'stroke-width': '2' }),
+    svgEl('rect', { x: '176', y: '32', width: '10', height: '8', rx: '3', fill: accent }),
+    svgEl('polygon', { points: '198,40 208,40 211,22 195,22', fill: ink }),
+    svgEl('polygon', { points: '216,58 232,74 216,74', fill: paper, stroke: ink, 'stroke-width': '1.8' }),
+    svgEl('rect', { x: '122', y: '66', width: '96', height: '5', fill: ink }),
+    svgEl('circle', { cx: '136', cy: '75', r: '8', fill: paper, stroke: accent, 'stroke-width': '2.2' }),
+    svgEl('circle', { cx: '160', cy: '75', r: '8', fill: paper, stroke: accent, 'stroke-width': '2.2' }),
+    svgEl('circle', { cx: '188', cy: '77', r: '6', fill: paper, stroke: accent, 'stroke-width': '2' }),
+    svgEl('circle', { cx: '206', cy: '77', r: '6', fill: paper, stroke: accent, 'stroke-width': '2' }),
+    // Fine ink steam rings.
+    svgEl('circle', { cx: '192', cy: '14', r: '5', fill: 'none', stroke: ink, 'stroke-width': '1.4', opacity: '0.55' }),
+    svgEl('circle', { cx: '178', cy: '10', r: '7', fill: 'none', stroke: ink, 'stroke-width': '1.2', opacity: '0.38' }),
+    svgEl('circle', { cx: '160', cy: '8', r: '8', fill: 'none', stroke: ink, 'stroke-width': '1', opacity: '0.24' }),
   );
   svg.append(train);
   return svg;
 }
 
-/** Full-screen night-blue train interlude with line-by-line travel notes and skip support. */
+/**
+ * Page-fold train transition: folds the captured frame of the outgoing scene away like a paper leaf,
+ * revealing a paper spread with journey lines printed in sequence and an inked SVG train.
+ */
 export async function playTrainJourney(
   parent: HTMLElement,
   journey: Journey,
+  capturedFrame: string | null,
   prepareArea: () => Promise<void>,
 ): Promise<void> {
   const reduced = prefersReducedMotion();
@@ -80,12 +87,28 @@ export async function playTrainJourney(
   const skipHint = el('button', { class: 'travel-skip', type: 'button' }, [
     reduced ? 'Continue' : 'Tap or press any key to continue',
   ]);
-  const root = el('section', { class: 'travel', role: 'dialog', 'aria-label': 'Train journey' }, [
-    el('div', { class: 'travel-inner' }, [buildTrainSvg(), linesWrap, skipHint]),
+  const spread = el('div', { class: 'travel-spread' }, [
+    el('p', { class: 'travel-kicker' }, ['En route across Europe']),
+    buildTrainSvg(),
+    linesWrap,
+    skipHint,
+  ]);
+  const cover = el('div', { class: 'travel-cover', 'aria-hidden': 'true' }, [
+    capturedFrame ? el('img', { class: 'travel-captured', src: capturedFrame, alt: '' }) : null,
+    el('div', { class: 'travel-cover-back' }),
+  ]);
+  const stage = el('div', { class: 'travel-fold-stage' }, [spread, cover]);
+  const root = el('section', { class: 'travel is-spread', role: 'dialog', 'aria-label': 'Train journey' }, [
+    stage,
   ]);
   if (reduced) root.classList.add('is-reduced');
   parent.append(root);
-  requestAnimationFrame(() => root.classList.add('is-open'));
+  requestAnimationFrame(() => {
+    root.classList.add('is-open');
+    if (!reduced) {
+      requestAnimationFrame(() => root.classList.add('is-folded-open'));
+    }
+  });
 
   const areaReady = prepareArea();
 
@@ -106,7 +129,7 @@ export async function playTrainJourney(
             root.remove();
             resolve();
           },
-          reduced ? 180 : 380,
+          reduced ? 180 : 420,
         );
       });
     };
@@ -132,11 +155,11 @@ export async function playTrainJourney(
             () => {
               p.classList.add('is-visible');
             },
-            350 + i * 1600,
+            500 + i * 1450,
           ),
         );
       });
-      timers.push(window.setTimeout(finish, 350 + lineEls.length * 1600 + 800));
+      timers.push(window.setTimeout(finish, 500 + lineEls.length * 1450 + 800));
     }
   });
 }
