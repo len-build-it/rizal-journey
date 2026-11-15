@@ -2,10 +2,18 @@ import type { Chapter } from '../content/narrative';
 import { el } from './dom';
 
 const DISPLAY_MS = 4200;
-const GOAL_BEAT_MS = 650;
+
+const CHAPTER_WORDS: Record<number, string> = {
+  1: 'one',
+  2: 'two',
+  3: 'three',
+  4: 'four',
+  5: 'five',
+  6: 'six',
+};
 
 /**
- * Full-screen chapter title card styled as a printed brochure panel on the night-blue backdrop.
+ * Full-screen chapter title card styled as soft cardstock over a muted backdrop.
  * Dismisses after ~4 seconds or immediately on any key/pointer input.
  */
 export class ChapterCard {
@@ -15,19 +23,18 @@ export class ChapterCard {
   private readonly placeEl: HTMLElement;
   private readonly goalEl: HTMLElement;
   private timer = 0;
-  private beatTimer = 0;
   private resolver: (() => void) | null = null;
   private onInput: (() => void) | null = null;
 
   constructor(parent: HTMLElement) {
-    this.kicker = el('p', { class: 'chapter-kicker' });
-    this.titleEl = el('h2', { class: 'chapter-title' });
-    this.placeEl = el('p', { class: 'chapter-place' });
-    const rule = el('div', { class: 'chapter-rule', 'aria-hidden': 'true' });
-    this.goalEl = el('p', { class: 'chapter-goal' });
-    const hint = el('p', { class: 'chapter-hint' }, ['Press any key or click to ride']);
+    this.kicker = el('p', { class: 'k-label chapter-kicker' });
+    this.titleEl = el('h2', { class: 'k-chapter__title' });
+    this.placeEl = el('p', { class: 'k-chapter__place' });
+    const rule = el('div', { class: 'k-chapter__rule', 'aria-hidden': 'true' });
+    this.goalEl = el('p', { class: 'k-chapter__goal' });
+    const hint = el('p', { class: 'k-chapter__hint' }, ['Press any key to ride']);
 
-    const panel = el('article', { class: 'chapter-panel' }, [
+    const panel = el('article', { class: 'k-card k-chapter' }, [
       this.kicker,
       this.titleEl,
       this.placeEl,
@@ -56,21 +63,12 @@ export class ChapterCard {
 
   show(chapter: Chapter): Promise<void> {
     this.hide();
-    this.kicker.textContent = `Chapter ${chapter.number}`;
+    const word = CHAPTER_WORDS[chapter.number] ?? String(chapter.number);
+    this.kicker.textContent = `Chapter ${word}`;
     this.titleEl.textContent = chapter.title;
     this.placeEl.textContent = chapter.place;
     this.goalEl.textContent = chapter.goal;
-    this.root.classList.remove('is-goal-visible');
     this.root.hidden = false;
-
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
-      this.root.classList.add('is-goal-visible');
-    } else {
-      this.beatTimer = window.setTimeout(() => {
-        this.root.classList.add('is-goal-visible');
-      }, GOAL_BEAT_MS);
-    }
 
     return new Promise((resolve) => {
       this.resolver = resolve;
@@ -84,7 +82,6 @@ export class ChapterCard {
 
   hide(): void {
     clearTimeout(this.timer);
-    clearTimeout(this.beatTimer);
     if (this.onInput) {
       window.removeEventListener('keydown', this.onInput, { capture: true });
       this.root.removeEventListener('pointerdown', this.onInput);

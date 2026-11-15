@@ -16,23 +16,17 @@ export class StoryCard {
 
   constructor(parent: HTMLElement) {
     this.body = el('div', { class: 'card-body' });
-    const close = el(
-      'button',
-      { class: 'card-close', type: 'button', 'aria-label': 'Close story' },
-      ['Close'],
-    );
-    close.addEventListener('click', () => this.hide());
     this.root = el(
       'aside',
       {
-        class: 'card',
+        class: 'card k-card k-story',
         role: 'dialog',
         'aria-modal': 'false',
         'aria-labelledby': 'card-title',
         tabindex: '-1',
         hidden: '',
       },
-      [close, this.body],
+      [this.body],
     );
     parent.append(this.root);
     addEventListener('keydown', (e) => {
@@ -89,30 +83,55 @@ export class StoryCard {
   ): Node[] {
     const sourceKeys = [...new Set(story.factIds.flatMap((id) => factById(id)?.sources ?? []))];
     const nodes: Node[] = [
-      el('p', { class: 'card-panel' }, [`Brochure panel ${story.panel} of 6`]),
-      el('p', { class: 'card-date' }, [story.date]),
-      el('h2', { class: 'card-title', id: 'card-title' }, [story.title]),
-      ...story.paragraphs.map((p) => el('p', { class: 'card-text' }, [p])),
+      el('p', { class: 'k-story__date' }, [story.date]),
+      el('h2', { class: 'k-story__title', id: 'card-title' }, [story.title]),
+      ...story.paragraphs.map((p) => el('p', { class: 'k-story__text' }, [p])),
     ];
-    if (story.note) nodes.push(el('p', { class: 'card-note' }, [story.note]));
+    if (story.note) nodes.push(el('p', { class: 'k-story__note' }, [story.note]));
+
+    const closeBtn = el(
+      'button',
+      { class: 'k-btn k-btn--small', type: 'button', 'aria-label': 'Close story' },
+      ['Close'],
+    );
+    closeBtn.addEventListener('click', () => this.hide());
+
+    const sourceList = el(
+      'ul',
+      { class: 'card-sources-list', hidden: '' },
+      sourceKeys.map((k) => el('li', {}, [SOURCES[k] ?? k])),
+    );
+    const sourcesBtn = el(
+      'button',
+      {
+        class: 'k-btn k-btn--small k-btn--quiet',
+        type: 'button',
+        'aria-expanded': 'false',
+      },
+      ['Sources'],
+    );
+    sourcesBtn.addEventListener('click', () => {
+      const open = sourceList.hidden;
+      sourceList.hidden = !open;
+      sourcesBtn.setAttribute('aria-expanded', String(open));
+    });
+
+    const buttons: HTMLElement[] = [closeBtn, sourcesBtn];
     if (story.action && !hideAction) {
       const label = actionDisabled
         ? (actionLabel ?? 'Visit the other stops first')
         : story.action.label;
-      const btn = el('button', { class: 'card-action', type: 'button' }, [label]);
-      if (actionDisabled) btn.disabled = true;
-      else btn.addEventListener('click', () => this.onAction?.(story));
-      nodes.push(btn);
+      const actionBtn = el(
+        'button',
+        { class: 'card-action k-btn k-btn--small k-btn--primary', type: 'button' },
+        [label],
+      );
+      if (actionDisabled) actionBtn.disabled = true;
+      else actionBtn.addEventListener('click', () => this.onAction?.(story));
+      buttons.push(actionBtn);
     }
-    const sources = el('details', { class: 'card-sources' }, [
-      el('summary', {}, ['Sources']),
-      el(
-        'ul',
-        {},
-        sourceKeys.map((k) => el('li', {}, [SOURCES[k] ?? k])),
-      ),
-    ]);
-    nodes.push(sources);
+
+    nodes.push(el('div', { class: 'card-actions' }, buttons), sourceList);
     return nodes;
   }
 }
