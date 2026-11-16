@@ -22,6 +22,7 @@ export interface BrochureInput {
   visited: ReadonlySet<string>;
   /** Ink snapshot image URLs keyed by story id. */
   snapshots: ReadonlyMap<string, string>;
+  /** Printed at the foot of the cover, one line each: the student's name, section and school, and the activity. */
   credit: { name: string; course: string; activity: string };
 }
 
@@ -170,6 +171,11 @@ function print(story: Story, input: BrochureInput, cls: string): HTMLElement {
   return fig;
 }
 
+/** A small tag on the corner of a ticket or card the player did not visit. It adds no height. */
+function unseenTag(): HTMLElement {
+  return h('span', 'b-unseen-tag', ['Not visited']);
+}
+
 function text(story: Story, extra: (Node | null)[] = []): HTMLElement {
   return h('div', 'b-text', [
     h('p', 'b-date', [story.date]),
@@ -240,9 +246,12 @@ function ticket(story: Story, input: BrochureInput, from: string, to: string): H
   const body = h('div', 'b-ticket__body', [
     h('h3', 'b-title', [story.title]),
     h('p', 'b-summary', [summaryOf(story)]),
-    seen ? null : h('p', 'b-unseen-note', ['Not visited on this ride.']),
   ]);
-  const art = h('article', `b-story b-ticket${seen ? '' : ' is-unseen'}`, [stub, body]);
+  const art = h('article', `b-story b-ticket${seen ? '' : ' is-unseen'}`, [
+    stub,
+    body,
+    seen ? null : unseenTag(),
+  ]);
   art.setAttribute('aria-label', `Journey from ${from} to ${to}, ${story.date}`);
   return art;
 }
@@ -261,7 +270,7 @@ function closing(story: Story, input: BrochureInput): HTMLElement {
     h('p', 'b-date', [story.date]),
     h('h3', 'b-closing__title', [story.title]),
     lessons,
-    input.visited.has(story.id) ? null : h('p', 'b-unseen-note', ['Not visited on this ride.']),
+    input.visited.has(story.id) ? null : unseenTag(),
   ]);
 }
 
@@ -333,8 +342,10 @@ function cover(input: BrochureInput): HTMLElement {
     h('p', 'b-cover__intro', [
       'France was the first place Jose Rizal set foot in Europe, and the last place he left it. Follow him from a 20-year-old student on his way to Spain to a published novelist leaving Europe.',
     ]),
-    h('p', 'b-cover__credit', [
-      `${input.credit.name}. ${input.credit.course}. ${input.credit.activity}.`,
+    h('div', 'b-cover__credit', [
+      h('p', 'b-cover__name', [input.credit.name]),
+      h('p', '', [input.credit.course]),
+      h('p', '', [input.credit.activity]),
     ]),
   ]);
 }
@@ -475,9 +486,11 @@ export function overflowingPanels(root: HTMLElement): string[] {
   return [...root.querySelectorAll<HTMLElement>('.b-panel')]
     .filter((p) => {
       const flow = p.querySelector<HTMLElement>('.b-flow');
-      if (p.scrollHeight > p.clientHeight + 1) return true;
+      // Half a millimetre of tolerance absorbs line-box rounding when the brochure is zoomed.
+      const tolerance = Math.max(1, (p.clientWidth / PANEL_W) * 0.5);
+      if (p.scrollHeight > p.clientHeight + tolerance) return true;
       // The flow is allowed to shrink; it must still hold every story.
-      return flow ? flow.scrollHeight > flow.clientHeight + 1 : false;
+      return flow ? flow.scrollHeight > flow.clientHeight + tolerance : false;
     })
     .map((p) => p.getAttribute('aria-label') ?? p.className);
 }

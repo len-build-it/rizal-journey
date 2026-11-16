@@ -103,8 +103,7 @@ def run(label, width, height, mobile):
         page.wait_for_timeout(750)
         fallback_overflow = page.evaluate("window.__rizal.overflowingPanels()")
         print(f"[{label}] fallback overflow={fallback_overflow}")
-        if not mobile:
-            assert not fallback_overflow, f"Fallback brochure panels overflowed: {fallback_overflow}"
+        assert not fallback_overflow, f"Fallback brochure panels overflowed: {fallback_overflow}"
         fallback_routes = page.evaluate("[2,3,4,5,6].filter(n => !document.querySelector(`.b-panel--${n} > .b-route svg path`))")
         assert not fallback_routes, f"Fallback missing route lines on panels: {fallback_routes}"
         page.locator(".b-sheet--a").scroll_into_view_if_needed()
@@ -124,6 +123,22 @@ def run(label, width, height, mobile):
         dismiss_chapter_if_open(page)
         page.wait_for_timeout(500)
         page.screenshot(path=str(OUT / f"{label}-riding.png"))
+
+        # Test finale with no stops visited at both desktop and mobile sizes.
+        page.evaluate("window.__rizal.openFinale(true)")
+        page.wait_for_selector(".brochure-view.is-finale .b-brochure[data-route-ready='true']", timeout=15000)
+        page.wait_for_timeout(850)
+        finale_none_overflow = page.evaluate("window.__rizal.overflowingPanels()")
+        print(f"[{label}] finale-none overflow={finale_none_overflow}")
+        assert not finale_none_overflow, f"Finale (none visited) panels overflowed: {finale_none_overflow}"
+        page.locator(".b-sheet--a").scroll_into_view_if_needed()
+        page.wait_for_timeout(200)
+        page.screenshot(path=str(OUT / f"{label}-finale-none-side-a.png"))
+        page.locator(".b-sheet--b").scroll_into_view_if_needed()
+        page.wait_for_timeout(200)
+        page.screenshot(path=str(OUT / f"{label}-finale-none-side-b.png"))
+        page.click(".brochure-actions .k-btn:not(.k-btn--primary)")
+        page.wait_for_timeout(350)
 
         # Test station locking before reading other stops.
         page.evaluate("window.__rizal.openStop('marseille-station')")
@@ -209,8 +224,7 @@ def run(label, width, height, mobile):
                     page.wait_for_timeout(900)
                     finale_overflow = page.evaluate("window.__rizal.overflowingPanels()")
                     print(f"[{label}] finale overflow={finale_overflow}")
-                    if not mobile:
-                        assert not finale_overflow, f"Finale brochure panels overflowed: {finale_overflow}"
+                    assert not finale_overflow, f"Finale brochure panels overflowed: {finale_overflow}"
                     finale_routes = page.evaluate("[2,3,4,5,6].filter(n => !document.querySelector(`.b-panel--${n} > .b-route svg path`))")
                     assert not finale_routes, f"Finale missing route lines on panels: {finale_routes}"
                     page.locator(".b-sheet--a").scroll_into_view_if_needed()

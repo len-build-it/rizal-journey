@@ -189,12 +189,21 @@
   line-height: 1.4;
 }
 
-.b-unseen-note {
-  margin: 0.8mm 0 0;
+.b-unseen-tag {
+  position: absolute;
+  z-index: 3;
+  top: -1.6mm;
+  right: 3mm;
+  padding: 0.5mm 1.8mm 0.6mm;
+  background: var(--k-card);
+  border: 0.25mm solid var(--k-card-edge);
+  border-radius: 1mm;
   font-family: var(--k-text);
   font-style: italic;
-  font-size: 6.6pt;
+  font-size: 6.2pt;
+  line-height: 1.2;
   color: var(--k-ink-soft);
+  transform: rotate(2deg);
 }
 
 /* Full-width stories leave a lane on the left for the route. */
@@ -205,6 +214,8 @@
 /* Prints: ink snapshots taped onto the page */
 
 .b-print {
+  /* Picture shape; each layout sets its own, and the empty frame uses the same one. */
+  --ar: 3 / 2;
   position: relative;
   margin: 0;
   transform: rotate(var(--tilt, 0deg));
@@ -221,7 +232,7 @@
 .b-print img {
   display: block;
   width: 100%;
-  aspect-ratio: 3 / 2;
+  aspect-ratio: var(--ar);
   object-fit: cover;
   /* Lift the night scenes first, then print everything in the same two inks. */
   filter: brightness(1.35) contrast(1.04) url('#b-ink');
@@ -248,7 +259,7 @@
 .b-print__empty {
   display: grid;
   place-items: center;
-  aspect-ratio: 3 / 2;
+  aspect-ratio: var(--ar);
   padding: 2mm;
   border: 0.3mm dashed rgb(32 50 74 / 0.45);
   font-family: var(--k-text);
@@ -328,8 +339,8 @@
   margin-bottom: 3mm;
 }
 
-.b-story--feature .b-print img {
-  aspect-ratio: 1.9 / 1;
+.b-print--feature {
+  --ar: 1.9 / 1;
 }
 
 /* Bleed: the opening picture runs off the top and sides of the panel */
@@ -356,8 +367,8 @@
   box-shadow: none;
 }
 
-.b-print--bleed img {
-  aspect-ratio: 99 / 46;
+.b-print--bleed {
+  --ar: 99 / 42;
 }
 
 .b-print--bleed .b-postmark {
@@ -387,8 +398,11 @@
   margin-bottom: 8mm;
 }
 
+.b-print--tall {
+  --ar: 1 / 0.86;
+}
+
 .b-print--tall img {
-  aspect-ratio: 1 / 0.86;
   object-position: 50% 30%;
 }
 
@@ -518,7 +532,7 @@
 /* Closing: the last story, set on a dark card */
 
 .b-closing {
-  padding: 3.4mm 4.2mm 3.2mm;
+  padding: 3mm 4.2mm 2.8mm;
   background: var(--k-ink);
   color: var(--k-card);
   border-radius: 2mm;
@@ -551,7 +565,7 @@
 }
 
 .b-closing__lessons li {
-  padding: 0.75mm 0;
+  padding: 0.5mm 0;
   border-top: 0.25mm solid rgb(242 234 216 / 0.22);
 }
 
@@ -563,8 +577,8 @@
   color: var(--k-sage);
 }
 
-.b-closing .b-unseen-note {
-  color: var(--k-sage);
+.b-closing {
+  position: relative;
 }
 
 /* References at the foot of panel 6 */
@@ -676,6 +690,20 @@
   font-size: 6.8pt;
   line-height: 1.4;
   color: var(--k-ink-soft);
+}
+
+.b-cover__credit p {
+  margin: 0;
+}
+
+.b-cover__credit .b-cover__name {
+  margin-bottom: 0.6mm;
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 10pt;
+  color: var(--k-ink);
 }
 
 /* Print: two A4 landscape pages, side A then side B, at true size. */

@@ -18,8 +18,11 @@ import {
 
 const page = document.body.dataset.page;
 if (page === 'brochure') {
-  // One stop is left unvisited to show the empty frame.
-  const visited = new Set(STORIES.map((s) => s.id).filter((id) => id !== 'paris-1889-godfather'));
+  // One stop is left unvisited to show the empty frame; ?unvisited=all shows a ride with no stops.
+  const noneVisited = new URLSearchParams(location.search).get('unvisited') === 'all';
+  const visited = new Set(
+    noneVisited ? [] : STORIES.map((s) => s.id).filter((id) => id !== 'paris-1889-godfather'),
+  );
   const snapshots = defaultSnapshots();
   const root = renderBrochure({
     visited,
