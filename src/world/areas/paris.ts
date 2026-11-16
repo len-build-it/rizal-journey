@@ -1113,7 +1113,7 @@ function studioEasel(
   ry: number,
   cw: number,
   ch: number,
-  withParisianLife: boolean,
+  withBloodCompact: boolean,
 ): void {
   const cos = Math.cos(ry);
   const sin = Math.sin(ry);
@@ -1155,18 +1155,23 @@ function studioEasel(
     ry,
   });
 
-  if (withParisianLife) {
-    // Low-poly study suggestive of The Parisian Life: warm lamplit wall, table, silhouettes.
+  if (withBloodCompact) {
+    // Low-poly study of the 1565 blood compact: figures gathered around a table in warm, dim light.
     const dabs: [number, number, number, number, number, number][] = [
-      [palette.awningOchre, -cw * 0.12, 0.18, cw * 0.7, ch * 0.56, 0.032],
-      [palette.gaslight, -cw * 0.2, 0.28, cw * 0.34, ch * 0.24, 0.038],
-      [palette.awningRed, cw * 0.24, 0.08, cw * 0.42, ch * 0.62, 0.032],
-      [palette.cafeTable, -cw * 0.02, -0.18, cw * 0.54, ch * 0.22, 0.04],
-      [palette.shirt, -cw * 0.18, -0.02, cw * 0.18, ch * 0.32, 0.045],
-      [palette.coat, cw * 0.14, 0.0, cw * 0.16, ch * 0.34, 0.045],
-      [palette.coat, cw * 0.31, -0.04, cw * 0.14, ch * 0.3, 0.045],
-      [palette.skin, -cw * 0.18, 0.2, cw * 0.08, ch * 0.11, 0.05],
-      [palette.hat, cw * 0.14, 0.22, cw * 0.09, ch * 0.12, 0.05],
+      [palette.doorBrown, 0, 0.02, cw * 0.9, ch * 0.86, 0.03],
+      [palette.ochre, -0.02 * cw, 0.14, cw * 0.42, ch * 0.34, 0.034],
+      [palette.gaslight, -0.02 * cw, 0.12, cw * 0.14, ch * 0.16, 0.038],
+      // Table across the foreground.
+      [palette.crate, 0, -0.22 * ch, cw * 0.64, ch * 0.2, 0.04],
+      // Left figure (Sikatuna) & right figures (Legazpi and companions) gathered at the table.
+      [palette.awningRed, -cw * 0.22, -0.02, cw * 0.18, ch * 0.36, 0.044],
+      [palette.skin, -cw * 0.21, 0.22, cw * 0.09, ch * 0.11, 0.048],
+      [palette.coat, cw * 0.16, 0.0, cw * 0.17, ch * 0.38, 0.044],
+      [palette.skin, cw * 0.15, 0.23, cw * 0.09, ch * 0.11, 0.048],
+      [palette.coat, cw * 0.32, -0.02, cw * 0.14, ch * 0.34, 0.042],
+      [palette.coat, -cw * 0.35, -0.04, cw * 0.12, ch * 0.32, 0.042],
+      // Cup/pact accent on the table.
+      [palette.vermilion, -0.02 * cw, -0.1 * ch, cw * 0.07, ch * 0.09, 0.048],
     ];
     for (const [col, lx, lyOff, dw, dh, dz] of dabs) {
       batch.add(col, new THREE.BoxGeometry(dw, dh, 0.02), {
@@ -1281,7 +1286,7 @@ function lunaStudio(
   skylight.position.set(x, baseH + studioH / 2 - 0.1, z - d * 0.45);
   skylight.rotation.x = 0.22;
   scene.add(skylight);
-  for (const mx of [-4.4, -0.7, 4.4]) {
+  for (const mx of [-4.45, 4.45]) {
     batch.add(palette.lampIron, new THREE.BoxGeometry(0.07, studioH - 0.45, 0.1), {
       x: x + mx,
       y: baseH + studioH / 2 - 0.1,
