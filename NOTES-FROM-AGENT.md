@@ -113,7 +113,7 @@ Summary of implementation choices, environment workarounds, and observations fro
 
 ## Handoff 6 ("soft cardstock" UI kit, finished brochure & scene fixes)
 
-- **Typography & preview tooling (`package.json`, `src/main.ts`, `preview/*`)**: Installed `@fontsource-variable/fraunces` (`full.css`) and `@fontsource-variable/literata` (`standard.css` + `standard-italic.css`), removed `@fontsource-variable/bodoni-moda` and `@fontsource-variable/instrument-sans`, imported `src/ui/kit/kit.css` and `src/ui/brochure/brochure.css` before `src/styles.css`, and added `npm run preview` (`vite build --config preview/vite.config.ts`). Replaced the previous `npm run preview` (`vite preview`) script so the kit/brochure preview builds to `dist-preview/`.
+- **Typography & preview tooling (`package.json`, `src/main.ts`, `preview/*`)**: Installed `@fontsource-variable/fraunces` (`full.css`) and `@fontsource-variable/literata` (`standard.css` + `standard-italic.css`), removed `@fontsource-variable/bodoni-moda` and `@fontsource-variable/instrument-sans`, imported `src/ui/kit/kit.css` and `src/ui/brochure/brochure.css` before `src/styles.css`, and kept `"preview": "vite preview"` while naming the brochure preview `"preview:brochure"` (`vite build --config preview/vite.config.ts`).
 - **2D UI kit & 3D trail/stop markers (`src/ui/*.ts`, `src/story/SceneUI.ts`, `src/world/palette.ts`, `src/world/PathTrail.ts`, `src/world/StopMarker.ts`, `src/styles.css`)**: Applied the soft cardstock kit classes (`.k-card`, `.k-chip`, `.k-stamps`, `.k-band`, `.k-btn`, `.k-key`, `.k-toast`, `.k-chapter`, `.k-story`) across the title card (`.intro-inner.k-card` so ink focus outlines stay high-contrast), chapter cards (spelled-out chapter numbers, goal visible right away, `"Press any key to ride"`), HUD pills/stamps/prompts/toast, story cards, scene caption/action bands, and travel spread. Switched 3D trail dots and stop markers to vermilion (`palette.vermilion`, `0xc2452d`) with Prussian ink outer rims (`palette.ink`, `0x20324a`). Removed all legacy CSS variables from `src/styles.css`.
 - **Desk cover & finished brochure integration (`src/ui/DeskScene.ts`, `src/ui/BrochureView.ts`, `src/main.ts`, `index.html`)**: Redrew `DeskScene`'s cover canvas to match the brochure's panel 1 (`#efe6d1` cardstock, Fraunces display title, Literata italic vermilion subtitle, `routeMapSvg()` SVG data URI with resolved palette tokens, intro copy, and student credit) after awaiting `document.fonts` + SVG image readiness. Integrated `renderBrochure`, `fitBrochure`, and `overflowingPanels` into `src/ui/BrochureView.ts` for both the finale (collected snapshots) and "Read as a brochure" fallback (all 13 stories marked visited, no snapshots), with staggered side A / side B settle animations (`prefers-reduced-motion` aware) and two-page A4 landscape `@media print` styling. Note: `src/ui/kit/kit.css`, `src/ui/brochure/*`, and `src/content/*` were left untouched.
 - **Five 3D scene fixes (`src/world/areas/paris.ts`, `src/story/scenes/parisScenes.ts`, `src/story/scenes/props.ts`, `src/story/scenes/marseilleScenes.ts`, `src/story/scenes/biarritzScenes.ts`, `src/player/models.ts`, `src/main.ts`)**:
@@ -134,7 +134,7 @@ Summary of implementation choices, environment workarounds, and observations fro
 ### Verification (Handoff 6)
 
 - `git diff src/content/ src/ui/kit/ src/ui/brochure/`: empty.
-- `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`, `npm run preview`: all passed cleanly.
+- `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`, `npm run preview:brochure`: all passed cleanly.
 - `python -I scripts/review.py "http://localhost:4173/?review" review/handoff6 mobile` (desktop `1280x800` + mobile `390x844` via headless Edge SwiftShader): exit code 0, zero console/page errors, `fallback overflow=[]` and `finale overflow=[]` on both desktop and mobile, and `desk-brochure-print.pdf` verified as 2 A4 landscape pages.
 
 ## Handoff 6B (Redesigned brochure, route layout & recaptured snapshots)
@@ -157,6 +157,6 @@ Per Handoff 6B rules (`src/ui/brochure/*` left unmodified except recaptured `def
 ### Verification (Handoff 6B)
 
 - `git diff d424394 -- src/content/ src/ui/kit/ src/ui/brochure/renderBrochure.ts src/ui/brochure/brochure.css src/ui/brochure/routeMap.ts src/ui/brochure/postmark.ts`: empty.
-- `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`, `npm run preview`: all passed cleanly.
+- `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`, `npm run preview:brochure`: all passed cleanly.
 - `scripts/review.py` desktop (`1280x800`): exit code 0, zero console/page errors, `fallback overflow=[]`, `finale overflow=[]`, route SVGs verified on panels 2 to 6, and `desk-brochure-print.pdf` verified as 2 A4 landscape pages.
 - `preview/brochure.html` (`1280x800`): `overflow=[]`, unvisited `paris-1889-godfather` displays `'Not visited'`.
