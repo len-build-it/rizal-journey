@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { palette } from '../world/palette';
 import { routeMapSvg } from './brochure/routeMap';
+import { CREDIT } from './credit';
 
 const PW = 0.92;
 const PD = 1.5;
@@ -109,24 +110,23 @@ function drawCoverCanvas(canvas: HTMLCanvasElement, mapImg: HTMLImageElement | n
     25,
   );
 
-  // Rule and student credit at footer in small Literata.
+  // Rule and student credit at footer: name in display font, then course and activity.
   ctx.strokeStyle = 'rgba(32, 50, 74, 0.35)';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(pad, 744);
-  ctx.lineTo(w - pad, 744);
+  ctx.moveTo(pad, 736);
+  ctx.lineTo(w - pad, 736);
   ctx.stroke();
 
+  let cy = 762;
+  ctx.fillStyle = INK_CSS;
+  ctx.font = '600 17px "Fraunces Variable", Georgia, serif';
+  cy = wrapText(ctx, CREDIT.name, pad, cy, w - pad * 2, 22);
+
   ctx.fillStyle = INK_SOFT_CSS;
-  ctx.font = '400 14px "Literata Variable", Georgia, serif';
-  wrapText(
-    ctx,
-    "Lenard. Software Engineering, Aklan State University. Chapter 9 Activity: A Journey Through Rizal's Travels.",
-    pad,
-    768,
-    w - pad * 2,
-    20,
-  );
+  ctx.font = '400 13px "Literata Variable", Georgia, serif';
+  cy = wrapText(ctx, CREDIT.course, pad, cy, w - pad * 2, 18);
+  wrapText(ctx, CREDIT.activity, pad, cy, w - pad * 2, 18);
 }
 
 function createCoverTexture(): THREE.CanvasTexture {

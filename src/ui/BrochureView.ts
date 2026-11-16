@@ -5,6 +5,7 @@ import {
   layoutBrochure,
   renderBrochure,
 } from './brochure/renderBrochure';
+import { CREDIT } from './credit';
 import { el } from './dom';
 
 export interface BrochureViewOpts {
@@ -15,12 +16,6 @@ export interface BrochureViewOpts {
   onBack?: () => void;
   backLabel?: string;
 }
-
-const CREDIT = {
-  name: 'Lenard',
-  course: 'Software Engineering, Aklan State University',
-  activity: "Chapter 9 Activity: A Journey Through Rizal's Travels",
-};
 
 export function showBrochureView(parent: HTMLElement, opts: BrochureViewOpts): HTMLElement {
   const isFinale = opts.mode === 'finale';
