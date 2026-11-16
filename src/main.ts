@@ -44,7 +44,14 @@ import { showBrochureView } from './ui/BrochureView';
 import { overflowingPanels } from './ui/brochure/renderBrochure';
 import { SceneDirector } from './story/SceneDirector';
 import { captureStorySnapshot } from './story/snapshot';
-import { PersonActor, rolePreset, type PersonAction, type PersonRole } from './story/figures';
+import {
+  PERSON_LEG_LENGTH,
+  PersonActor,
+  rolePreset,
+  strideOmega,
+  type PersonAction,
+  type PersonRole,
+} from './story/figures';
 import {
   buildCatGeometry,
   buildDogGeometry,
@@ -462,6 +469,35 @@ async function main(): Promise<void> {
   });
 
   let openingDesk: DeskScene | null = null;
+  let stripStage: {
+    who: string;
+    group: THREE.Group;
+    pool: InstancedPool;
+    speed: number;
+    legLength: number;
+    mode: number;
+    camZ: number;
+    camY: number;
+    lookY: number;
+    midX: number;
+  } | null = null;
+
+  const disposeWalkStrip = (): void => {
+    if (!stripStage) return;
+    stripStage.pool.dispose();
+    stripStage.group.traverse((o) => {
+      if (o instanceof THREE.Mesh) {
+        o.geometry.dispose();
+        if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
+        else o.material.dispose();
+      }
+    });
+    stripStage.group.removeFromParent();
+    stripStage = null;
+    player.setSceneVisible(true);
+    hud.root.style.display = '';
+    cinematic = false;
+  };
 
   if (new URLSearchParams(location.search).has('review')) {
     // Headless review runs render slowly; let the simulation keep real time.
@@ -656,6 +692,107 @@ async function main(): Promise<void> {
         resetLook: () => {
           cinematic = false;
         },
+        walkStripPose: (who: 'man' | 'woman' | 'child' | 'dog' | 'horse', t: number) => {
+          const area = areaManager.current;
+          if (!area) return;
+          if (!stripStage || stripStage.who !== who) {
+            disposeWalkStrip();
+            cinematic = true;
+            chapterCard.hide();
+            hud.showPrompt(null);
+            hud.root.style.display = 'none';
+            player.setSceneVisible(false);
+            const c = area.spawn;
+            const stageY = c.y + 120;
+            const group = new THREE.Group();
+            const floorGeo = new THREE.BoxGeometry(12, 0.2, 6);
+            const floorMat = new THREE.MeshStandardMaterial({
+              color: palette.parisSidewalk,
+              roughness: 0.9,
+              flatShading: true,
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.position.set(c.x, stageY - 0.1, c.z);
+            floor.receiveShadow = true;
+            group.add(floor);
+            const tickGeo = new THREE.BoxGeometry(0.025, 0.008, 1.4);
+            const tickMat = new THREE.MeshStandardMaterial({ color: palette.ink, roughness: 0.9 });
+            for (let tx = -4; tx <= 4; tx += 0.25) {
+              const tick = new THREE.Mesh(tickGeo, tickMat);
+              tick.position.set(c.x + tx, stageY + 0.004, c.z);
+              group.add(tick);
+            }
+            let geo: THREE.BufferGeometry;
+            let speed = 1.22;
+            let legLength = PERSON_LEG_LENGTH;
+            let mode: number = AnimMode.Walk;
+            let camZ = 4.6;
+            let camY = 1.05;
+            let lookY = 0.92;
+            if (who === 'man') {
+              geo = bakePersonGeometry(rolePreset('gentleman', false, 0));
+            } else if (who === 'woman') {
+              geo = bakePersonGeometry(rolePreset('lady', false, 1));
+              camZ = 5.0;
+              camY = 1.15;
+              lookY = 1.02;
+            } else if (who === 'child') {
+              geo = bakePersonGeometry(rolePreset('child', false, 0));
+              legLength = PERSON_LEG_LENGTH * 0.72;
+              camZ = 3.6;
+              camY = 0.82;
+              lookY = 0.65;
+            } else if (who === 'dog') {
+              geo = prepareLifeGeometry(buildDogGeometry(), 'quad');
+              speed = 1.1;
+              legLength = 0.24;
+              mode = AnimMode.Quad;
+              camZ = 3.4;
+              camY = 0.52;
+              lookY = 0.34;
+            } else {
+              geo = prepareLifeGeometry(buildFiacreGeometry());
+              speed = 2.6;
+              legLength = 1.06;
+              mode = AnimMode.Vehicle;
+              camZ = 7.6;
+              camY = 1.45;
+              lookY = 1.02;
+            }
+            const pool = new InstancedPool(geo, 1, `walk-strip-${who}`);
+            group.add(pool.mesh);
+            engine.scene.add(group);
+            const span = speed * 0.56;
+            const midX = c.x + (who === 'horse' ? 1.1 : 0);
+            stripStage = {
+              who,
+              group,
+              pool,
+              speed,
+              legLength,
+              mode,
+              camZ,
+              camY,
+              lookY,
+              midX: midX - span * 0.5 + span * 0.5,
+            };
+          }
+          const st = stripStage;
+          const c = area.spawn;
+          const stageY = c.y + 120;
+          const span = st.speed * 0.56;
+          const startX = c.x - span * 0.5;
+          const x = startX + st.speed * t;
+          const phase = strideOmega(st.speed, st.legLength) * t;
+          st.pool.setSlot(0, x, stageY, c.z, Math.PI * 0.5, 1, st.mode, phase, 0, 1.0, 0xffffff);
+          st.pool.commit(1, true);
+          const camTargetX = c.x + (who === 'horse' ? 1.8 : 0);
+          cam.focusPosition.set(camTargetX, stageY, c.z);
+          engine.camera.position.set(camTargetX, stageY + st.camY, c.z + st.camZ);
+          engine.camera.lookAt(camTargetX, stageY + st.lookY, c.z);
+          engine.followSun(new THREE.Vector3(camTargetX, stageY, c.z), area.look.sunDirection);
+        },
+        clearWalkStrip: disposeWalkStrip,
         overflowingPanels: () => {
           const el = document.querySelector<HTMLElement>('.b-brochure');
           return el ? overflowingPanels(el) : ['missing'];
