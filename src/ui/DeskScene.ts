@@ -227,7 +227,7 @@ export class DeskScene {
     this.scene.add(key);
 
     const lampLight = new THREE.PointLight(palette.gaslight, 6.0, 8.5, 1.6);
-    lampLight.position.set(1.02, 1.25, -0.52);
+    lampLight.position.set(1.02, 0.99, -0.6);
     this.scene.add(lampLight);
 
     // Dark wood desk surface + subtle blotter pad.
@@ -254,16 +254,24 @@ export class DeskScene {
     this.scene.add(blotter);
     this.disposables.push(blotterGeo, blotterMat);
 
-    // Classic brass & enamel desk lamp standing back-right.
+    // Classic brass & deep bottle-green enamel desk lamp standing back-right, lit warmly inside.
     const brassMat = new THREE.MeshStandardMaterial({
-      color: palette.funnel,
+      color: palette.brass,
       roughness: 0.35,
       metalness: 0.55,
     });
     const shadeMat = new THREE.MeshStandardMaterial({
-      color: palette.shutterGreen,
-      roughness: 0.45,
-      side: THREE.DoubleSide,
+      color: palette.bottleGreen,
+      roughness: 0.42,
+      metalness: 0.06,
+      side: THREE.FrontSide,
+    });
+    const shadeInnerMat = new THREE.MeshStandardMaterial({
+      color: palette.awningCream,
+      emissive: palette.gaslight,
+      emissiveIntensity: 0.55,
+      roughness: 0.6,
+      side: THREE.BackSide,
     });
     const bulbMat = new THREE.MeshStandardMaterial({
       color: 0xfff4d0,
@@ -271,14 +279,15 @@ export class DeskScene {
       emissiveIntensity: 1.5,
       roughness: 0.25,
     });
-    this.disposables.push(brassMat, shadeMat, bulbMat);
+    this.disposables.push(brassMat, shadeMat, shadeInnerMat, bulbMat);
 
     const baseGeo = new THREE.CylinderGeometry(0.24, 0.28, 0.07, 16);
     const stemGeo = new THREE.CylinderGeometry(0.03, 0.038, 1.05, 10);
     const armGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.52, 8);
     const shadeGeo = new THREE.ConeGeometry(0.32, 0.24, 16, 1, true);
+    const shadeInnerGeo = new THREE.ConeGeometry(0.314, 0.236, 16, 1, true);
     const bulbGeo = new THREE.SphereGeometry(0.085, 10, 8);
-    this.disposables.push(baseGeo, stemGeo, armGeo, shadeGeo, bulbGeo);
+    this.disposables.push(baseGeo, stemGeo, armGeo, shadeGeo, shadeInnerGeo, bulbGeo);
 
     const lampGroup = new THREE.Group();
     lampGroup.position.set(1.38, 0, -0.82);
@@ -295,9 +304,12 @@ export class DeskScene {
     shade.position.set(-0.38, 1.1, 0.24);
     shade.rotation.set(0.22, 0, -0.2);
     shade.castShadow = true;
+    const shadeInner = new THREE.Mesh(shadeInnerGeo, shadeInnerMat);
+    shadeInner.position.copy(shade.position);
+    shadeInner.rotation.copy(shade.rotation);
     const bulb = new THREE.Mesh(bulbGeo, bulbMat);
     bulb.position.set(-0.36, 1.01, 0.22);
-    lampGroup.add(base, stem, arm, shade, bulb);
+    lampGroup.add(base, stem, arm, shade, shadeInner, bulb);
     this.scene.add(lampGroup);
 
     // Hinged six-panel paper brochure (each panel given crisp cardstock thickness).

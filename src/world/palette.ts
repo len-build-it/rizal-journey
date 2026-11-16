@@ -90,4 +90,5 @@ export const palette = {
   sand: 0xe3cfa6,
   sandWet: 0xc9b082,
   brass: 0xcfa44e,
+  bottleGreen: 0x1e4330,
 } as const;
