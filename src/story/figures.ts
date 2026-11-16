@@ -94,6 +94,25 @@ export interface PersonRig {
   dispose(): void;
 }
 
+function isDescendantOf(obj: THREE.Object3D, ancestor: THREE.Object3D): boolean {
+  let cur: THREE.Object3D | null = obj;
+  while (cur) {
+    if (cur === ancestor) return true;
+    cur = cur.parent;
+  }
+  return false;
+}
+
+/** Returns the shader part tag (1..5, or 0 for torso/body) for a mesh inside a PersonRig. */
+export function personPartId(obj: THREE.Object3D, rig: PersonRig): number {
+  if (isDescendantOf(obj, rig.legL)) return 1;
+  if (isDescendantOf(obj, rig.legR)) return 2;
+  if (isDescendantOf(obj, rig.armL)) return 3;
+  if (isDescendantOf(obj, rig.armR)) return 4;
+  if (isDescendantOf(obj, rig.head)) return 5;
+  return 0;
+}
+
 function mergeParts(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   const merged = mergeGeometries(parts, false);
   for (const p of parts) p.dispose();

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { buildPerson, type PersonOptions } from '../../story/figures';
+import { buildPerson, personPartId, type PersonOptions } from '../../story/figures';
 import { injectWorldShader } from '../paperShader';
 
 export const LIFE_ANIM_DIST = 45;
@@ -138,10 +138,21 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
               transformed.y = r.x; transformed.z = r.y;
             }
           } else if (lifeMode < 5.5) {
-            // Vehicle / boat / carriage bounce & oars
-            if (aLifePart > 1.5 && aLifePart < 2.5) {
-              transformed.y += abs(sin(lt)) * 0.045 * amp;
-            } else if (aLifePart > 2.5 && aLifePart < 4.5) {
+            // Vehicle / boat / carriage bounce, horse/pusher legs & oars
+            float swing = sin(lt) * 0.42 * amp;
+            if (aLifePart > 0.5 && aLifePart < 1.5) {
+              vec2 r = lifeRot2(transformed.yz, vec2(0.85, 1.8), swing);
+              transformed.y = r.x; transformed.z = r.y;
+            } else if (aLifePart > 1.5 && aLifePart < 2.5) {
+              vec2 r = lifeRot2(transformed.yz, vec2(0.85, 1.8), -swing);
+              transformed.y = r.x; transformed.z = r.y;
+            } else if (aLifePart > 2.5 && aLifePart < 3.5) {
+              vec2 r = lifeRot2(transformed.yz, vec2(0.95, 1.0), -swing);
+              transformed.y = r.x; transformed.z = r.y;
+            } else if (aLifePart > 3.5 && aLifePart < 4.5) {
+              vec2 r = lifeRot2(transformed.yz, vec2(0.95, 1.0), swing);
+              transformed.y = r.x; transformed.z = r.y;
+            } else if (aLifePart > 5.5 && aLifePart < 7.5) {
               float stroke = sin(lt) * 0.34 * amp;
               transformed.z += stroke * 0.32;
               transformed.y += cos(lt) * 0.08 * amp;
@@ -150,8 +161,19 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
             }
           } else if (lifeMode < 6.5) {
             // Quadruped walk / graze
+            float qSwing = sin(lt) * 0.38 * amp;
             if (aLifePart > 0.5 && aLifePart < 1.5) {
-              transformed.z += sin(lt) * 0.08 * amp;
+              vec2 r = lifeRot2(transformed.yz, vec2(0.24, 0.2), qSwing);
+              transformed.y = r.x; transformed.z = r.y;
+            } else if (aLifePart > 1.5 && aLifePart < 2.5) {
+              vec2 r = lifeRot2(transformed.yz, vec2(0.24, 0.2), -qSwing);
+              transformed.y = r.x; transformed.z = r.y;
+            } else if (aLifePart > 2.5 && aLifePart < 3.5) {
+              vec2 r = lifeRot2(transformed.yz, vec2(0.24, -0.2), -qSwing);
+              transformed.y = r.x; transformed.z = r.y;
+            } else if (aLifePart > 3.5 && aLifePart < 4.5) {
+              vec2 r = lifeRot2(transformed.yz, vec2(0.24, -0.2), qSwing);
+              transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 4.5 && aLifePart < 5.5) {
               float graze = amp < 0.45 ? -0.35 + sin(lt * 0.5) * 0.08 : sin(lt) * 0.08 * amp;
               vec2 r = lifeRot2(transformed.yz, vec2(0.32, 0.16), graze);
@@ -223,12 +245,7 @@ export function bakePersonGeometry(opts: PersonOptions): THREE.BufferGeometry {
     if (c instanceof THREE.Mesh) {
       const g = c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone();
       g.applyMatrix4(c.matrixWorld);
-      let partId = 0;
-      if (c.name === 'legL') partId = 1;
-      else if (c.name === 'legR') partId = 2;
-      else if (c.name === 'armL') partId = 3;
-      else if (c.name === 'armR') partId = 4;
-      else if (c.name === 'head') partId = 5;
+      const partId = personPartId(c, rig);
 
       const count = g.getAttribute('position').count;
       const partAttr = new Float32Array(count);

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { buildPerson, rolePreset, type PersonOptions } from '../../story/figures';
+import { buildPerson, personPartId, rolePreset, type PersonOptions } from '../../story/figures';
 import { mat, paintPart, place, type Placement } from '../kit';
 import { palette } from '../palette';
 import { buildHarnessHorseGeometry } from './animals';
@@ -33,19 +33,23 @@ function paintTagged(
 function bakeExistingColors(
   geo: THREE.BufferGeometry,
   p?: Placement,
-  partId = 0,
+  partIdOverride?: number,
 ): THREE.BufferGeometry {
   const g = geo.index ? geo.toNonIndexed() : geo.clone();
+  const hasPart = Boolean(g.getAttribute('aLifePart'));
   for (const name of Object.keys(g.attributes)) {
-    if (name !== 'position' && name !== 'normal' && name !== 'color') {
+    if (name !== 'position' && name !== 'normal' && name !== 'color' && name !== 'aLifePart') {
       g.deleteAttribute(name);
     }
   }
   if (!g.getAttribute('color')) {
-    return paintTagged(g, palette.bay, p, partId);
+    return paintTagged(g, palette.bay, p, partIdOverride ?? 0);
   }
   if (p) place(g, p);
-  return withLifePart(g, partId);
+  if (partIdOverride !== undefined || !hasPart) {
+    return withLifePart(g, partIdOverride ?? 0);
+  }
+  return g;
 }
 
 function mergeVehicleParts(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
@@ -89,12 +93,11 @@ function addBakedPerson(
       const m = new THREE.Matrix4().multiplyMatrices(offset, c.matrixWorld);
       const geo = c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone();
       geo.applyMatrix4(m);
+      const rigPart = personPartId(c, rig);
       let partId = 0;
-      if (c.name === 'head') partId = 5;
-      else if (c.name === 'armL' && !seated && !pushing) partId = 3;
-      else if (c.name === 'armR' && !seated && !pushing) partId = 4;
-      else if (c.name === 'legL' && pushing) partId = 1;
-      else if (c.name === 'legR' && pushing) partId = 2;
+      if (rigPart === 5) partId = 5;
+      else if ((rigPart === 3 || rigPart === 4) && !seated && !pushing) partId = rigPart;
+      else if ((rigPart === 1 || rigPart === 2) && pushing) partId = rigPart;
       parts.push(bakeExistingColors(geo, undefined, partId));
     }
   });
@@ -116,25 +119,25 @@ function addWheelPair(
         new THREE.CylinderGeometry(radius, radius, 0.08, 12),
         rimColor,
         { x, y: radius, z, rz: Math.PI * 0.5 },
-        1,
+        8,
       ),
       paintTagged(
         new THREE.CylinderGeometry(radius * 0.78, radius * 0.78, 0.09, 10),
         hubColor,
         { x, y: radius, z, rz: Math.PI * 0.5 },
-        1,
+        8,
       ),
       paintTagged(
         new THREE.BoxGeometry(0.11, radius * 1.68, 0.05),
         hubColor,
         { x, y: radius, z },
-        1,
+        8,
       ),
       paintTagged(
         new THREE.BoxGeometry(0.11, 0.05, radius * 1.68),
         hubColor,
         { x, y: radius, z },
-        1,
+        8,
       ),
     );
   }
@@ -186,7 +189,7 @@ export function buildFiacreGeometry(bodyColor: number = palette.hull): THREE.Buf
   addBakedPerson(parts, rolePreset('coachman', false, 0), { y: 0.72, z: 0.04 }, true);
 
   const horse = buildHarnessHorseGeometry(palette.bayDark);
-  parts.push(bakeExistingColors(horse, { z: 1.48 }, 2));
+  parts.push(bakeExistingColors(horse, { z: 1.48 }));
   horse.dispose();
 
   return mergeVehicleParts(parts);
@@ -262,11 +265,11 @@ export function buildOmnibusGeometry(bodyColor: number = palette.awningBlue): TH
   );
 
   const horseL = buildHarnessHorseGeometry(palette.bay);
-  parts.push(bakeExistingColors(horseL, { x: -0.46, z: 1.92 }, 2));
+  parts.push(bakeExistingColors(horseL, { x: -0.46, z: 1.92 }));
   horseL.dispose();
 
   const horseR = buildHarnessHorseGeometry(palette.crateDark);
-  parts.push(bakeExistingColors(horseR, { x: 0.46, z: 1.92 }, 2));
+  parts.push(bakeExistingColors(horseR, { x: 0.46, z: 1.92 }));
   horseR.dispose();
 
   return mergeVehicleParts(parts);
@@ -366,7 +369,7 @@ export function buildCartGeometry(
   addBakedPerson(parts, rolePreset('dockWorker', false, 1), { y: 0.4, z: 0.14 }, true);
 
   const horse = buildHarnessHorseGeometry(palette.bay);
-  parts.push(bakeExistingColors(horse, { z: 1.54 }, 2));
+  parts.push(bakeExistingColors(horse, { z: 1.54 }));
   horse.dispose();
 
   return mergeVehicleParts(parts);
@@ -423,25 +426,25 @@ export function buildPennyFarthingGeometry(): THREE.BufferGeometry {
       new THREE.TorusGeometry(0.64, 0.032, 6, 16),
       palette.lampIron,
       { y: 0.66, z: 0.32, ry: Math.PI * 0.5 },
-      1,
+      8,
     ),
     paintTagged(
       new THREE.BoxGeometry(0.03, 1.24, 0.03),
       palette.railSteel,
       { y: 0.66, z: 0.32 },
-      1,
+      8,
     ),
     paintTagged(
       new THREE.BoxGeometry(0.03, 0.03, 1.24),
       palette.railSteel,
       { y: 0.66, z: 0.32 },
-      1,
+      8,
     ),
     paintTagged(
       new THREE.TorusGeometry(0.2, 0.024, 5, 10),
       palette.lampIron,
       { y: 0.22, z: -0.62, ry: Math.PI * 0.5 },
-      1,
+      8,
     ),
     // Fork, curved backbone, handlebars, saddle.
     paintTagged(new THREE.CylinderGeometry(0.025, 0.025, 0.78, 6), palette.railSteel, {
@@ -482,18 +485,18 @@ export function buildRowingBoatGeometry(hullColor: number = palette.hull): THREE
     paintTagged(new THREE.BoxGeometry(1.04, 0.07, 2.8), palette.deckWood, { y: 0.32 }),
     paintTagged(new THREE.BoxGeometry(0.92, 0.06, 0.26), palette.crate, { y: 0.26, z: 0.06 }),
     paintTagged(new THREE.BoxGeometry(0.92, 0.06, 0.26), palette.crate, { y: 0.26, z: -0.82 }),
-    // Oars tagged with armL (3) & armR (4) so shader sweeps them gently.
+    // Oars tagged with 6 & 7 so shader sweeps them gently.
     paintTagged(
       new THREE.CylinderGeometry(0.024, 0.032, 1.65, 5),
       palette.deckWood,
       { x: -0.78, y: 0.24, z: 0.12, rx: 0.28, rz: -1.18 },
-      3,
+      6,
     ),
     paintTagged(
       new THREE.CylinderGeometry(0.024, 0.032, 1.65, 5),
       palette.deckWood,
       { x: 0.78, y: 0.24, z: 0.12, rx: 0.28, rz: 1.18 },
-      4,
+      7,
     ),
   ];
 

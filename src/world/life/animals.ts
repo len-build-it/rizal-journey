@@ -1,8 +1,45 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { buildRiderlessHorse } from '../../player/models';
-import { mat, paintPart } from '../kit';
+import { buildRiderlessHorse, type HorseRig } from '../../player/models';
+import { mat, paintPart, type Placement } from '../kit';
 import { palette } from '../palette';
+
+function withPartId(geo: THREE.BufferGeometry, partId: number): THREE.BufferGeometry {
+  const count = geo.getAttribute('position').count;
+  const partAttr = new Float32Array(count);
+  partAttr.fill(partId);
+  geo.setAttribute('aLifePart', new THREE.BufferAttribute(partAttr, 1));
+  return geo;
+}
+
+function animalPart(
+  geo: THREE.BufferGeometry,
+  color: number,
+  placement?: Placement,
+  partId = 0,
+): THREE.BufferGeometry {
+  return withPartId(paintPart(geo, color, placement), partId);
+}
+
+function isDescendantOf(obj: THREE.Object3D, ancestor: THREE.Object3D): boolean {
+  let cur: THREE.Object3D | null = obj;
+  while (cur) {
+    if (cur === ancestor) return true;
+    cur = cur.parent;
+  }
+  return false;
+}
+
+function horsePartId(obj: THREE.Object3D, rig: HorseRig): number {
+  for (const leg of rig.legs) {
+    if (isDescendantOf(obj, leg.hip)) {
+      if (leg.front) return leg.side < 0 ? 1 : 2;
+      return leg.side < 0 ? 3 : 4;
+    }
+  }
+  if (isDescendantOf(obj, rig.neck) || isDescendantOf(obj, rig.head)) return 5;
+  return 0;
+}
 
 function mergeAnimalParts(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   const merged = mergeGeometries(parts, false);
@@ -120,39 +157,59 @@ export function buildSeagullGeometry(flying = true): THREE.BufferGeometry {
 
 export function buildDogGeometry(coatColor = palette.ochre): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [
-    paintPart(new THREE.BoxGeometry(0.24, 0.24, 0.56), coatColor, { y: 0.34 }),
-    paintPart(new THREE.IcosahedronGeometry(0.13, 0), coatColor, { y: 0.49, z: 0.31 }),
-    paintPart(new THREE.BoxGeometry(0.1, 0.09, 0.12), palette.doorBrown, { y: 0.46, z: 0.41 }),
-    paintPart(new THREE.ConeGeometry(0.045, 0.1, 4), palette.doorBrown, {
-      x: -0.09,
-      y: 0.59,
-      z: 0.28,
-      rz: 0.25,
-    }),
-    paintPart(new THREE.ConeGeometry(0.045, 0.1, 4), palette.doorBrown, {
-      x: 0.09,
-      y: 0.59,
-      z: 0.28,
-      rz: -0.25,
-    }),
-    paintPart(new THREE.CylinderGeometry(0.025, 0.035, 0.24, 5), coatColor, {
-      y: 0.44,
-      z: -0.32,
-      rx: -0.65,
-    }),
+    animalPart(new THREE.BoxGeometry(0.24, 0.24, 0.56), coatColor, { y: 0.34 }, 0),
+    animalPart(new THREE.IcosahedronGeometry(0.13, 0), coatColor, { y: 0.49, z: 0.31 }, 5),
+    animalPart(new THREE.BoxGeometry(0.1, 0.09, 0.12), palette.doorBrown, { y: 0.46, z: 0.41 }, 5),
+    animalPart(
+      new THREE.ConeGeometry(0.045, 0.1, 4),
+      palette.doorBrown,
+      {
+        x: -0.09,
+        y: 0.59,
+        z: 0.28,
+        rz: 0.25,
+      },
+      5,
+    ),
+    animalPart(
+      new THREE.ConeGeometry(0.045, 0.1, 4),
+      palette.doorBrown,
+      {
+        x: 0.09,
+        y: 0.59,
+        z: 0.28,
+        rz: -0.25,
+      },
+      5,
+    ),
+    animalPart(
+      new THREE.CylinderGeometry(0.025, 0.035, 0.24, 5),
+      coatColor,
+      {
+        y: 0.44,
+        z: -0.32,
+        rx: -0.65,
+      },
+      0,
+    ),
   ];
-  for (const [lx, lz] of [
-    [-0.08, 0.2],
-    [0.08, 0.2],
-    [-0.08, -0.2],
-    [0.08, -0.2],
+  for (const [lx, lz, partId] of [
+    [-0.08, 0.2, 1],
+    [0.08, 0.2, 2],
+    [-0.08, -0.2, 3],
+    [0.08, -0.2, 4],
   ] as const) {
     parts.push(
-      paintPart(new THREE.CylinderGeometry(0.038, 0.03, 0.24, 5), coatColor, {
-        x: lx,
-        y: 0.12,
-        z: lz,
-      }),
+      animalPart(
+        new THREE.CylinderGeometry(0.038, 0.03, 0.24, 5),
+        coatColor,
+        {
+          x: lx,
+          y: 0.12,
+          z: lz,
+        },
+        partId,
+      ),
     );
   }
   return mergeAnimalParts(parts);
@@ -160,39 +217,64 @@ export function buildDogGeometry(coatColor = palette.ochre): THREE.BufferGeometr
 
 export function buildCatGeometry(coatColor = palette.crateDark): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [
-    paintPart(new THREE.CapsuleGeometry(0.085, 0.24, 3, 6), coatColor, {
-      y: 0.17,
-      rx: Math.PI / 2,
-    }),
-    paintPart(new THREE.IcosahedronGeometry(0.085, 0), coatColor, { y: 0.27, z: 0.19 }),
-    paintPart(new THREE.ConeGeometry(0.03, 0.075, 4), coatColor, {
-      x: -0.055,
-      y: 0.35,
-      z: 0.18,
-    }),
-    paintPart(new THREE.ConeGeometry(0.03, 0.075, 4), coatColor, {
-      x: 0.055,
-      y: 0.35,
-      z: 0.18,
-    }),
-    paintPart(new THREE.CylinderGeometry(0.018, 0.024, 0.24, 5), coatColor, {
-      y: 0.28,
-      z: -0.2,
-      rx: -0.35,
-    }),
+    animalPart(
+      new THREE.CapsuleGeometry(0.085, 0.24, 3, 6),
+      coatColor,
+      {
+        y: 0.17,
+        rx: Math.PI / 2,
+      },
+      0,
+    ),
+    animalPart(new THREE.IcosahedronGeometry(0.085, 0), coatColor, { y: 0.27, z: 0.19 }, 5),
+    animalPart(
+      new THREE.ConeGeometry(0.03, 0.075, 4),
+      coatColor,
+      {
+        x: -0.055,
+        y: 0.35,
+        z: 0.18,
+      },
+      5,
+    ),
+    animalPart(
+      new THREE.ConeGeometry(0.03, 0.075, 4),
+      coatColor,
+      {
+        x: 0.055,
+        y: 0.35,
+        z: 0.18,
+      },
+      5,
+    ),
+    animalPart(
+      new THREE.CylinderGeometry(0.018, 0.024, 0.24, 5),
+      coatColor,
+      {
+        y: 0.28,
+        z: -0.2,
+        rx: -0.35,
+      },
+      0,
+    ),
   ];
-  for (const [lx, lz] of [
-    [-0.05, 0.11],
-    [0.05, 0.11],
-    [-0.05, -0.11],
-    [0.05, -0.11],
+  for (const [lx, lz, partId] of [
+    [-0.05, 0.11, 1],
+    [0.05, 0.11, 2],
+    [-0.05, -0.11, 3],
+    [0.05, -0.11, 4],
   ] as const) {
     parts.push(
-      paintPart(new THREE.CylinderGeometry(0.022, 0.018, 0.14, 5), coatColor, {
-        x: lx,
-        y: 0.07,
-        z: lz,
-      }),
+      animalPart(
+        new THREE.CylinderGeometry(0.022, 0.018, 0.14, 5),
+        coatColor,
+        {
+          x: lx,
+          y: 0.07,
+          z: lz,
+        },
+        partId,
+      ),
     );
   }
   return mergeAnimalParts(parts);
@@ -200,40 +282,65 @@ export function buildCatGeometry(coatColor = palette.crateDark): THREE.BufferGeo
 
 export function buildSheepGeometry(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [
-    paintPart(new THREE.IcosahedronGeometry(0.32, 0), palette.foam, {
-      y: 0.56,
-      sx: 0.95,
-      sy: 0.9,
-      sz: 1.35,
-    }),
-    paintPart(new THREE.IcosahedronGeometry(0.24, 0), palette.shirt, {
-      y: 0.62,
-      z: 0.14,
-    }),
-    paintPart(new THREE.IcosahedronGeometry(0.13, 0), palette.bayDark, {
-      y: 0.64,
-      z: 0.44,
-      sx: 0.85,
-      sy: 0.9,
-      sz: 1.15,
-    }),
-    paintPart(new THREE.BoxGeometry(0.24, 0.05, 0.06), palette.bayDark, {
-      y: 0.68,
-      z: 0.4,
-    }),
+    animalPart(
+      new THREE.IcosahedronGeometry(0.32, 0),
+      palette.foam,
+      {
+        y: 0.56,
+        sx: 0.95,
+        sy: 0.9,
+        sz: 1.35,
+      },
+      0,
+    ),
+    animalPart(
+      new THREE.IcosahedronGeometry(0.24, 0),
+      palette.shirt,
+      {
+        y: 0.62,
+        z: 0.14,
+      },
+      0,
+    ),
+    animalPart(
+      new THREE.IcosahedronGeometry(0.13, 0),
+      palette.bayDark,
+      {
+        y: 0.64,
+        z: 0.44,
+        sx: 0.85,
+        sy: 0.9,
+        sz: 1.15,
+      },
+      5,
+    ),
+    animalPart(
+      new THREE.BoxGeometry(0.24, 0.05, 0.06),
+      palette.bayDark,
+      {
+        y: 0.68,
+        z: 0.4,
+      },
+      5,
+    ),
   ];
-  for (const [lx, lz] of [
-    [-0.14, 0.2],
-    [0.14, 0.2],
-    [-0.14, -0.2],
-    [0.14, -0.2],
+  for (const [lx, lz, partId] of [
+    [-0.14, 0.2, 1],
+    [0.14, 0.2, 2],
+    [-0.14, -0.2, 3],
+    [0.14, -0.2, 4],
   ] as const) {
     parts.push(
-      paintPart(new THREE.CylinderGeometry(0.042, 0.032, 0.32, 5), palette.bayDark, {
-        x: lx,
-        y: 0.16,
-        z: lz,
-      }),
+      animalPart(
+        new THREE.CylinderGeometry(0.042, 0.032, 0.32, 5),
+        palette.bayDark,
+        {
+          x: lx,
+          y: 0.16,
+          z: lz,
+        },
+        partId,
+      ),
     );
   }
   return mergeAnimalParts(parts);
@@ -298,25 +405,35 @@ export function buildHarnessHorseGeometry(coatTint: number = palette.bay): THREE
       geo.applyMatrix4(c.matrixWorld);
       const color =
         c.material instanceof THREE.MeshStandardMaterial ? c.material.color.getHex() : coatTint;
-      parts.push(paintPart(geo, color === palette.bay ? coatTint : color));
+      parts.push(animalPart(geo, color === palette.bay ? coatTint : color, undefined, horsePartId(c, rig)));
       c.geometry.dispose();
     }
   });
 
   // Leather collar and girth strap.
   parts.push(
-    paintPart(new THREE.TorusGeometry(0.24, 0.045, 5, 10), palette.saddle, {
-      y: 1.48,
-      z: 0.58,
-      rx: 0.42,
-    }),
-    paintPart(new THREE.CylinderGeometry(0.32, 0.32, 0.1, 10, 1, true), palette.doorBrown, {
-      y: 1.36,
-      z: 0.08,
-      rx: Math.PI / 2,
-      sx: 0.85,
-      sz: 1.08,
-    }),
+    animalPart(
+      new THREE.TorusGeometry(0.24, 0.045, 5, 10),
+      palette.saddle,
+      {
+        y: 1.48,
+        z: 0.58,
+        rx: 0.42,
+      },
+      0,
+    ),
+    animalPart(
+      new THREE.CylinderGeometry(0.32, 0.32, 0.1, 10, 1, true),
+      palette.doorBrown,
+      {
+        y: 1.36,
+        z: 0.08,
+        rx: Math.PI / 2,
+        sx: 0.85,
+        sz: 1.08,
+      },
+      0,
+    ),
   );
 
   return mergeAnimalParts(parts);
