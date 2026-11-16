@@ -277,7 +277,14 @@ button {
   width: 100%;
   border: 0;
   cursor: pointer;
-  transition: transform 0.12s var(--k-ease);
+  transition:
+    opacity 0.2s ease,
+    transform 0.12s var(--k-ease);
+}
+
+.scene-caption-band.is-fading {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .scene-caption-band:hover {

@@ -20,7 +20,9 @@ const CAPTION_SECONDS = 3.6;
 export interface ScenePlayCallbacks {
   actionReady: boolean;
   onEnd: () => void;
+  onLeaveEarly?: () => void;
   onTravel: (fromStoryId: string, to: Destination) => void;
+  onCompleteStop?: (stop: StopMarker) => void;
   onCaptureSnapshot?: (storyId: string) => void;
 }
 
@@ -298,6 +300,7 @@ export class SceneDirector {
     const a = this.active;
     if (!a || a.capturedSnapshot) return;
     a.capturedSnapshot = true;
+    a.callbacks.onCompleteStop?.(a.stop);
     this.engine.followSun(a.lastTarget, a.area.look.sunDirection);
     a.callbacks.onCaptureSnapshot?.(a.stop.story.id);
   }
@@ -345,11 +348,20 @@ export class SceneDirector {
     cb.onEnd();
   }
 
-  cleanup(): void {
+  leaveEarly(): void {
+    const a = this.active;
+    if (!a) return;
+    const cb = a.callbacks;
+    this.cleanup(true);
+    cb.onLeaveEarly?.();
+  }
+
+  cleanup(fadeUI = false): void {
     const a = this.active;
     if (!a) return;
     this.active = null;
-    this.ui.hide();
+    if (fadeUI) this.ui.fadeOutAndHide();
+    else this.ui.hide();
     if (a.lookOverridden) applyLook(this.engine, a.area);
     for (const actor of a.actors) actor.rig.dispose();
     for (const c of a.crowds) c.dispose();

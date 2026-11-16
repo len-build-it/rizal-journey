@@ -18,6 +18,12 @@ import {
   type AreaDestination,
   type ProgressState,
 } from './core/progress';
+import {
+  completeStopScene,
+  leaveStopSceneEarly,
+  stopEntryAction,
+  type RideProgress,
+} from './core/rideLogic';
 import { Player } from './player/Player';
 import { AreaManager } from './world/AreaManager';
 import { PathTrail } from './world/PathTrail';
@@ -104,7 +110,9 @@ async function main(): Promise<void> {
   let state: ProgressState = saved ?? initialProgress();
   const visited = new Set<string>(state.visited);
   const filled = new Set<number>(state.panels);
+  const leftEarly = new Set<string>();
   const snapshots: Record<string, string> = { ...(state.snapshots ?? {}) };
+  const rideProgress: RideProgress = { visited, filled, leftEarly, snapshots };
   hud.setPanels(filled);
 
   const player = new Player(
@@ -213,16 +221,16 @@ async function main(): Promise<void> {
     cam.framing.shiftY = narrow ? 0.3 : 0;
     hud.showPrompt(null);
 
-    stop.visited = true;
-    visited.add(stop.story.id);
-    if (!filled.has(stop.story.panel)) {
-      filled.add(stop.story.panel);
-      hud.setPanels(filled);
-    }
-    syncHudGoal();
-    persist();
-
     const ready = allOtherStopsVisited(area, stop.story.id, visited);
+    const lockedStation = Boolean(stop.story.action) && !ready;
+    if (!lockedStation) {
+      stop.visited = true;
+      const { newlyFilledPanel } = completeStopScene(rideProgress, stop.story);
+      if (newlyFilledPanel) hud.setPanels(filled);
+      syncHudGoal();
+      persist();
+    }
+
     card.show(stop.story, {
       actionDisabled: !ready,
       actionLabel: 'Visit the other stops first',
@@ -251,30 +259,37 @@ async function main(): Promise<void> {
 
     input.enabled = false;
     hud.showPrompt(null);
-    stop.visited = true;
-    visited.add(stop.story.id);
-    if (!filled.has(stop.story.panel)) {
-      filled.add(stop.story.panel);
-      hud.setPanels(filled);
-    }
-    syncHudGoal();
-    persist();
 
     cinematic = true;
     director.play(stop, area, {
       actionReady: ready,
-      onCaptureSnapshot: (storyId) => {
+      onCompleteStop: (completedStop) => {
+        completedStop.visited = true;
+        const { newlyFilledPanel } = completeStopScene(rideProgress, completedStop.story);
+        if (newlyFilledPanel) hud.setPanels(filled);
+        syncHudGoal();
+        persist();
+      },
+      onCaptureSnapshot: (_storyId) => {
         setPopupFocus(director.focusTarget ?? cam.focusPosition);
         setPopupRange(48, 62);
         const url = captureStorySnapshot(engine);
         if (url) {
-          snapshots[storyId] = url;
+          completeStopScene(rideProgress, stop.story, url);
           persist();
         }
       },
       onEnd: () => {
         cinematic = false;
         if (!traveling) input.enabled = true;
+        canvas.focus({ preventScroll: true });
+      },
+      onLeaveEarly: () => {
+        leaveStopSceneEarly(rideProgress, stop.story.id);
+        cinematic = false;
+        current = stop;
+        if (!traveling) input.enabled = true;
+        hud.showPrompt(`Watch: ${stop.story.title}`);
         canvas.focus({ preventScroll: true });
       },
       onTravel: (id, to) => {
@@ -419,12 +434,17 @@ async function main(): Promise<void> {
           const lockedStation =
             Boolean(current.story.action) &&
             !allOtherStopsVisited(area, current.story.id, visited);
-          if (lockedStation) {
-            hud.showPrompt('Visit the other stops first');
-          } else if (!current.visited && input.enabled && !card.open) {
+          const action = stopEntryAction(current.story, {
+            visited,
+            leftEarly,
+            isLockedStation: lockedStation,
+          });
+          if (action.kind === 'autoplay' && input.enabled && !card.open) {
             playStopScene(current);
           } else if (!card.open) {
-            hud.showPrompt(`Replay: ${current.story.title}`);
+            hud.showPrompt(
+              action.kind === 'prompt' ? action.label : `Watch: ${current.story.title}`,
+            );
           }
         }
       }
@@ -872,8 +892,10 @@ async function main(): Promise<void> {
       onOpen: () => void beginPlaying(),
       onRestart: async () => {
         visited.clear();
+        leftEarly.clear();
         filled.clear();
         filled.add(1);
+        for (const k of Object.keys(snapshots)) delete snapshots[k];
         state = initialProgress();
         clearProgress();
         hud.setPanels(filled);

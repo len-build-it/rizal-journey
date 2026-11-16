@@ -15,6 +15,7 @@ export class SceneUI {
   private onAdvance: (() => void) | null = null;
   private onReadMore: (() => void) | null = null;
   private onContinue: (() => void) | null = null;
+  private fadeTimer = 0;
 
   constructor(parent: HTMLElement) {
     this.captionText = el('span', { class: 'scene-caption-text' });
@@ -59,6 +60,9 @@ export class SceneUI {
   }
 
   start(handlers: { onAdvance: () => void; onReadMore: () => void; onContinue: () => void }): void {
+    clearTimeout(this.fadeTimer);
+    this.fadeTimer = 0;
+    this.captionBand.classList.remove('is-fading');
     this.onAdvance = handlers.onAdvance;
     this.onReadMore = handlers.onReadMore;
     this.onContinue = handlers.onContinue;
@@ -98,7 +102,24 @@ export class SceneUI {
     this.continueBtn.focus({ preventScroll: true });
   }
 
+  fadeOutAndHide(): void {
+    clearTimeout(this.fadeTimer);
+    this.onAdvance = null;
+    this.onReadMore = null;
+    this.onContinue = null;
+    this.actionsBar.hidden = true;
+    if (this.captionBand.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.hide();
+      return;
+    }
+    this.captionBand.classList.add('is-fading');
+    this.fadeTimer = window.setTimeout(() => this.hide(), 220);
+  }
+
   hide(): void {
+    clearTimeout(this.fadeTimer);
+    this.fadeTimer = 0;
+    this.captionBand.classList.remove('is-fading');
     this.root.hidden = true;
     this.captionBand.hidden = true;
     this.actionsBar.hidden = true;
