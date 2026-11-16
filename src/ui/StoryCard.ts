@@ -30,7 +30,11 @@ export class StoryCard {
     );
     parent.append(this.root);
     addEventListener('keydown', (e) => {
-      if (this.open && e.key === 'Escape') this.hide();
+      if (this.open && e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        this.hide();
+      }
     });
   }
 

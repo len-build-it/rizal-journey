@@ -63,19 +63,12 @@ export class SceneDirector {
   ) {
     this.ui = new SceneUI(uiRoot);
     window.addEventListener('keydown', (e) => {
-      if (!this.active || this.card.open) return;
+      if (!this.active || this.card.open || this.engine.paused) return;
       if (e.code === 'Space' || e.code === 'Enter') {
         if (this.active.phase === 'playing') {
           e.preventDefault();
           e.stopPropagation();
           this.advance();
-        }
-      } else if (e.code === 'Escape') {
-        e.preventDefault();
-        if (this.active.phase === 'playing') {
-          this.skipToEnd();
-        } else {
-          this.closeToRiding();
         }
       }
     });

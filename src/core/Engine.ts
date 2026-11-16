@@ -29,6 +29,7 @@ export class Engine {
   readonly hemi: THREE.HemisphereLight;
   world!: RAPIER.World;
   rapier = RAPIER;
+  paused = false;
 
   private readonly updaters: ((dt: number, time: number) => void)[] = [];
   private readonly timer = new THREE.Timer();
@@ -127,15 +128,19 @@ export class Engine {
 
   private frame(timestamp: number): void {
     this.timer.update(timestamp);
-    const dt = Math.min(this.timer.getDelta(), this.maxSteps * Engine.STEP);
-    this.accumulator += dt;
-    let steps = 0;
-    while (this.accumulator >= Engine.STEP && steps < this.maxSteps) {
-      this.time += Engine.STEP;
-      for (const fn of this.updaters) fn(Engine.STEP, this.time);
-      this.world.step();
-      this.accumulator -= Engine.STEP;
-      steps++;
+    if (this.paused) {
+      this.accumulator = 0;
+    } else {
+      const dt = Math.min(this.timer.getDelta(), this.maxSteps * Engine.STEP);
+      this.accumulator += dt;
+      let steps = 0;
+      while (this.accumulator >= Engine.STEP && steps < this.maxSteps) {
+        this.time += Engine.STEP;
+        for (const fn of this.updaters) fn(Engine.STEP, this.time);
+        this.world.step();
+        this.accumulator -= Engine.STEP;
+        steps++;
+      }
     }
     this.renderer.render(this.overrideScene ?? this.scene, this.overrideCamera ?? this.camera);
   }

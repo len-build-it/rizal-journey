@@ -45,7 +45,8 @@ import { StoryCard } from './ui/StoryCard';
 import { Joystick } from './ui/Joystick';
 import { showIntro } from './ui/Intro';
 import { DeskScene } from './ui/DeskScene';
-import { playInkWipe, playTowerTimelapse, playTrainJourney } from './ui/Travel';
+import { GameMenu, type MenuContext } from './ui/GameMenu';
+import { playInkWipe, playTowerTimelapse, playTrainJourney, type TravelHandle } from './ui/Travel';
 import { showBrochureView } from './ui/BrochureView';
 import { overflowingPanels } from './ui/brochure/renderBrochure';
 import { SceneDirector } from './story/SceneDirector';
@@ -104,6 +105,7 @@ async function main(): Promise<void> {
   const hud = new Hud(uiRoot, touch);
   const card = new StoryCard(uiRoot);
   const chapterCard = new ChapterCard(uiRoot);
+  const menu = new GameMenu(uiRoot, touch, () => hud.focusMenuButton());
   if (touch) new Joystick(uiRoot, input);
 
   const saved = loadProgress();
@@ -150,6 +152,10 @@ async function main(): Promise<void> {
   await areaManager.load(state.destination, visited);
   syncHudGoal();
 
+  let introOpen = true;
+  let brochureOpen = false;
+  let activeTravel: TravelHandle | null = null;
+  let prevInputEnabled = false;
   let current: StopMarker | null = null;
   let focusOverride: THREE.Vector3 | null = null;
   let areaPan: { target: THREE.Vector3; elapsed: number } | null = null;
@@ -173,8 +179,17 @@ async function main(): Promise<void> {
     areaPan = { target: focusPt, elapsed: 0 };
     if (reducedMotion) cam.snap(focusPt);
   };
-  window.addEventListener('keydown', cancelAreaPan);
-  window.addEventListener('pointerdown', cancelAreaPan);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Tab' || e.key === 'Shift') return;
+    if (menu.open || engine.paused) return;
+    cancelAreaPan();
+  });
+  window.addEventListener('pointerdown', (e) => {
+    if (menu.open || engine.paused) return;
+    const target = e.target as Element | null;
+    if (target?.closest('.hud-menu-btn, .hud-checklist')) return;
+    cancelAreaPan();
+  });
 
   const animatePopupReveal = (from: number, to: number, ms: number): Promise<void> => {
     if (reducedMotion || touch || ms <= 0) {
@@ -183,9 +198,14 @@ async function main(): Promise<void> {
     }
     popupReveal = from;
     return new Promise((resolve) => {
-      const start = performance.now();
+      let elapsed = 0;
+      let last = performance.now();
       const tick = (now: number): void => {
-        const u = Math.min(1, (now - start) / ms);
+        if (!engine.paused) {
+          elapsed += Math.min(64, now - last);
+        }
+        last = now;
+        const u = Math.min(1, elapsed / ms);
         const eased = 1 - Math.pow(1 - u, 3);
         popupReveal = from + (to - from) * eased;
         if (u >= 1) {
@@ -198,6 +218,128 @@ async function main(): Promise<void> {
       requestAnimationFrame(tick);
     });
   };
+
+  const canOpenMenu = (): boolean =>
+    !introOpen &&
+    !brochureOpen &&
+    !chapterCard.open &&
+    !card.open &&
+    !document.documentElement.classList.contains('is-closing');
+
+  const syncMenuButton = (): void => {
+    const visible =
+      !introOpen &&
+      !brochureOpen &&
+      !menu.open &&
+      !document.documentElement.classList.contains('is-closing');
+    hud.setMenuVisible(visible);
+    hud.setMenuExpanded(menu.open);
+  };
+
+  const restorePromptIfStandingAtStop = (): void => {
+    if (director.isPlaying || traveling || card.open || !current) return;
+    const area = areaManager.current;
+    if (!area) return;
+    const lockedStation =
+      Boolean(current.story.action) && !allOtherStopsVisited(area, current.story.id, visited);
+    const action = stopEntryAction(current.story, {
+      visited,
+      leftEarly,
+      isLockedStation: lockedStation,
+    });
+    if (action.kind === 'prompt') hud.showPrompt(action.label);
+  };
+
+  const resumeEngineAndInput = (restoreInput: boolean): void => {
+    engine.paused = false;
+    activeTravel?.setPaused(false);
+    if (restoreInput && !director.isPlaying && !traveling && !card.open && !introOpen && !brochureOpen) {
+      input.enabled = prevInputEnabled;
+    }
+    restorePromptIfStandingAtStop();
+  };
+
+  const resumeFromMenu = (): void => {
+    menu.hide({ returnFocus: true });
+    resumeEngineAndInput(true);
+    syncMenuButton();
+  };
+
+  const openGameMenu = (): void => {
+    if (menu.open || !canOpenMenu()) return;
+    prevInputEnabled = input.enabled;
+    input.enabled = false;
+    input.clearKeys();
+    engine.paused = true;
+    activeTravel?.setPaused(true);
+    hud.showPrompt(null);
+
+    const context: MenuContext = director.isPlaying
+      ? director.currentPhase === 'playing'
+        ? 'scene'
+        : 'scene-end'
+      : activeTravel
+        ? 'travel'
+        : 'riding';
+
+    menu.show(context, {
+      onResume: () => resumeFromMenu(),
+      onSkipScene: () => {
+        menu.hide({ returnFocus: false });
+        resumeEngineAndInput(false);
+        syncMenuButton();
+        director.skipToEnd();
+      },
+      onLeaveScene: () => {
+        menu.hide({ returnFocus: false });
+        resumeEngineAndInput(false);
+        syncMenuButton();
+        director.leaveEarly();
+      },
+      onSkipJourney: () => {
+        menu.hide({ returnFocus: false });
+        resumeEngineAndInput(false);
+        syncMenuButton();
+        activeTravel?.skip();
+      },
+      onBrochureSoFar: () => {
+        menu.hide({ returnFocus: false });
+        brochureOpen = true;
+        syncMenuButton();
+        showBrochureView(uiRoot, {
+          mode: 'finale',
+          title: 'Your brochure so far',
+          visited,
+          snapshots,
+          backLabel: 'Back to riding',
+          onBack: () => {
+            brochureOpen = false;
+            resumeEngineAndInput(true);
+            syncMenuButton();
+            canvas.focus({ preventScroll: true });
+          },
+        });
+      },
+      onPlaces: () => {
+        // Implemented in step 5.
+      },
+      onBackToDesk: () => {
+        void returnToDesk();
+      },
+    });
+    syncMenuButton();
+  };
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || e.repeat || e.defaultPrevented) return;
+    if (menu.open) {
+      e.preventDefault();
+      resumeFromMenu();
+    } else if (canOpenMenu()) {
+      e.preventDefault();
+      openGameMenu();
+    }
+  });
 
   const persist = (): void => {
     state = {
@@ -300,12 +442,16 @@ async function main(): Promise<void> {
   };
 
   const openFinaleView = (): void => {
+    brochureOpen = true;
+    syncMenuButton();
     showBrochureView(uiRoot, {
       mode: 'finale',
       visited,
       snapshots,
       backLabel: 'Back to riding',
       onBack: () => {
+        brochureOpen = false;
+        syncMenuButton();
         input.enabled = true;
         canvas.focus({ preventScroll: true });
       },
@@ -354,13 +500,25 @@ async function main(): Promise<void> {
     if (journey?.mode === 'tower') {
       const area = await areaManager.load(dest, visited);
       cinematic = true;
-      await playTowerTimelapse(uiRoot, journey, engine.camera, area);
+      await playTowerTimelapse(uiRoot, journey, engine.camera, area, (h) => {
+        activeTravel = h;
+      });
+      activeTravel = null;
       cinematic = false;
       cam.snap(player.position);
     } else if (journey?.mode === 'train') {
-      await playTrainJourney(uiRoot, journey, captured, async () => {
-        await areaManager.load(dest, visited);
-      });
+      await playTrainJourney(
+        uiRoot,
+        journey,
+        captured,
+        async () => {
+          await areaManager.load(dest, visited);
+        },
+        (h) => {
+          activeTravel = h;
+        },
+      );
+      activeTravel = null;
       if (!reducedMotion && !touch) {
         popupReveal = 0;
         void animatePopupReveal(0, 1, 900);
@@ -372,16 +530,20 @@ async function main(): Promise<void> {
     syncHudGoal();
     persist();
     traveling = false;
+    if (introOpen) return;
     const nextChapter = currentChapter();
     if (nextChapter) {
+      syncMenuButton();
       await chapterCard.show(nextChapter);
     }
+    syncMenuButton();
     input.enabled = true;
     startAreaOpenPan();
     canvas.focus({ preventScroll: true });
   };
 
-  hud.onPrompt = () => current && !card.open && !traveling && playStopScene(current);
+  hud.onPrompt = () => current && !card.open && !traveling && !menu.open && playStopScene(current);
+  hud.onMenu = () => openGameMenu();
 
   engine.onUpdate((dt, time) => {
     const area = areaManager.current;
@@ -863,18 +1025,23 @@ async function main(): Promise<void> {
       engine.setOverrideRender(null, null);
       openingDesk.dispose();
       openingDesk = null;
+      introOpen = false;
       document.documentElement.classList.remove('is-intro');
+      syncMenuButton();
       await animatePopupReveal(0, 1, 950);
     } else {
       engine.setOverrideRender(null, null);
       openingDesk?.dispose();
       openingDesk = null;
       popupReveal = 1;
+      introOpen = false;
       document.documentElement.classList.remove('is-intro');
+      syncMenuButton();
     }
     syncHudGoal();
     const ch = currentChapter();
     if (ch) await chapterCard.show(ch);
+    syncMenuButton();
     input.enabled = true;
     startAreaOpenPan();
     canvas.focus({ preventScroll: true });
@@ -885,10 +1052,11 @@ async function main(): Promise<void> {
   engine.setOverrideRender(openingDesk.scene, openingDesk.camera);
 
   document.documentElement.classList.add('is-intro');
+  syncMenuButton();
   let introEl: HTMLElement | null = null;
   const openIntro = (): void => {
     introEl = showIntro(uiRoot, touch, {
-      hasContinue: hasSavedProgress(saved),
+      hasContinue: hasSavedProgress(state),
       onOpen: () => void beginPlaying(),
       onRestart: async () => {
         visited.clear();
@@ -910,16 +1078,57 @@ async function main(): Promise<void> {
       },
       onBrochure: () => {
         if (introEl) introEl.hidden = true;
+        brochureOpen = true;
+        syncMenuButton();
         showBrochureView(uiRoot, {
           mode: 'fallback',
           backLabel: 'Back to title',
           onBack: () => {
+            brochureOpen = false;
+            syncMenuButton();
             if (introEl) introEl.hidden = false;
           },
         });
       },
     });
   };
+
+  const returnToDesk = async (): Promise<void> => {
+    menu.hide({ returnFocus: false });
+    engine.paused = false;
+    input.enabled = false;
+    input.clearKeys();
+    cancelAreaPan();
+    card.hide();
+    chapterCard.hide();
+    hud.showPrompt(null);
+    if (director.isPlaying) {
+      director.cleanup();
+      cinematic = false;
+    }
+    if (activeTravel) {
+      const t = activeTravel;
+      activeTravel = null;
+      await t.cancel();
+    }
+    traveling = false;
+    current = null;
+    focusOverride = null;
+    cam.framing.zoom = 1;
+    cam.framing.shiftX = 0;
+    cam.framing.shiftY = 0;
+    document.documentElement.classList.remove('is-closing');
+    popupReveal = 1;
+
+    openingDesk = new DeskScene();
+    await openingDesk.ready();
+    engine.setOverrideRender(openingDesk.scene, openingDesk.camera);
+    document.documentElement.classList.add('is-intro');
+    introOpen = true;
+    syncMenuButton();
+    openIntro();
+  };
+
   openIntro();
 }
 

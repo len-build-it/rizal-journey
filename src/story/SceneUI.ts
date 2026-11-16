@@ -20,7 +20,7 @@ export class SceneUI {
   constructor(parent: HTMLElement) {
     this.captionText = el('span', { class: 'scene-caption-text' });
     const hint = el('span', { class: 'k-band__hint' }, [
-      'Click, Space or Enter to continue. Esc to skip.',
+      'Click, Space or Enter to continue. Esc for the menu.',
     ]);
     this.captionBand = el(
       'button',

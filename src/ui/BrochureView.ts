@@ -10,6 +10,7 @@ import { el } from './dom';
 
 export interface BrochureViewOpts {
   mode: 'finale' | 'fallback';
+  title?: string;
   visited?: Set<string>;
   snapshots?: Record<string, string>;
   note?: string;
@@ -61,7 +62,7 @@ export function showBrochureView(parent: HTMLElement, opts: BrochureViewOpts): H
   const header = el('header', { class: 'brochure-header' }, [
     el('div', { class: 'brochure-header-copy' }, [
       el('h1', { class: 'k-display brochure-title' }, [
-        isFinale ? 'Your finished brochure' : "Through Rizal's Eyes",
+        opts.title ?? (isFinale ? 'Your finished brochure' : "Through Rizal's Eyes"),
       ]),
       el('p', { class: 'brochure-sub' }, [
         isFinale

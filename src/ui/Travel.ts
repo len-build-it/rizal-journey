@@ -5,6 +5,12 @@ import { el } from './dom';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+export interface TravelHandle {
+  setPaused(paused: boolean): void;
+  skip(): void;
+  cancel(): Promise<void>;
+}
+
 function prefersReducedMotion(): boolean {
   return matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
@@ -75,6 +81,7 @@ export async function playTrainJourney(
   journey: Journey,
   capturedFrame: string | null,
   prepareArea: () => Promise<void>,
+  onHandle?: (handle: TravelHandle) => void,
 ): Promise<void> {
   const reduced = prefersReducedMotion();
   const linesWrap = el('div', { class: 'travel-lines' });
@@ -114,12 +121,41 @@ export async function playTrainJourney(
 
   await new Promise<void>((resolve) => {
     let finished = false;
-    const timers: number[] = [];
+    let paused = false;
+    interface TimerEntry {
+      id: number;
+      endAt: number;
+      remaining: number;
+      fn: () => void;
+      done: boolean;
+    }
+    const timers: TimerEntry[] = [];
+
+    const scheduleTimer = (ms: number, fn: () => void): void => {
+      const entry: TimerEntry = {
+        id: 0,
+        endAt: performance.now() + ms,
+        remaining: ms,
+        fn,
+        done: false,
+      };
+      entry.id = window.setTimeout(() => {
+        entry.done = true;
+        fn();
+      }, ms);
+      timers.push(entry);
+    };
+
+    const clearAllTimers = (): void => {
+      for (const t of timers) {
+        if (!t.done) clearTimeout(t.id);
+      }
+    };
 
     const finish = (): void => {
       if (finished) return;
       finished = true;
-      for (const t of timers) clearTimeout(t);
+      clearAllTimers();
       window.removeEventListener('keydown', onKey);
       root.removeEventListener('click', onTap);
       void areaReady.then(() => {
@@ -136,30 +172,64 @@ export async function playTrainJourney(
 
     const canSkipAt = performance.now() + 260;
     const onKey = (e: KeyboardEvent): void => {
-      if (performance.now() < canSkipAt) return;
-      if (e.key === 'Tab' || e.key === 'Shift') return;
+      if (paused || performance.now() < canSkipAt) return;
+      if (e.key === 'Tab' || e.key === 'Shift' || e.key === 'Escape') return;
       finish();
     };
     const onTap = (): void => {
-      if (performance.now() < canSkipAt) return;
+      if (paused || performance.now() < canSkipAt) return;
       finish();
     };
+
+    onHandle?.({
+      setPaused: (next) => {
+        if (finished || paused === next) return;
+        paused = next;
+        root.classList.toggle('is-paused', next);
+        const now = performance.now();
+        if (next) {
+          for (const t of timers) {
+            if (!t.done) {
+              clearTimeout(t.id);
+              t.remaining = Math.max(0, t.endAt - now);
+            }
+          }
+        } else {
+          for (const t of timers) {
+            if (!t.done) {
+              t.endAt = now + t.remaining;
+              t.id = window.setTimeout(() => {
+                t.done = true;
+                t.fn();
+              }, t.remaining);
+            }
+          }
+        }
+      },
+      skip: () => finish(),
+      cancel: async () => {
+        if (!finished) {
+          finished = true;
+          clearAllTimers();
+          window.removeEventListener('keydown', onKey);
+          root.removeEventListener('click', onTap);
+          root.remove();
+          resolve();
+        }
+        await areaReady;
+      },
+    });
 
     window.addEventListener('keydown', onKey);
     root.addEventListener('click', onTap);
 
     if (!reduced) {
       lineEls.forEach((p, i) => {
-        timers.push(
-          window.setTimeout(
-            () => {
-              p.classList.add('is-visible');
-            },
-            500 + i * 1450,
-          ),
-        );
+        scheduleTimer(500 + i * 1450, () => {
+          p.classList.add('is-visible');
+        });
       });
-      timers.push(window.setTimeout(finish, 500 + lineEls.length * 1450 + 800));
+      scheduleTimer(500 + lineEls.length * 1450 + 800, finish);
     }
   });
 }
@@ -173,6 +243,7 @@ export async function playTowerTimelapse(
   journey: Journey,
   camera: THREE.PerspectiveCamera,
   area: Area,
+  onHandle?: (handle: TravelHandle) => void,
 ): Promise<void> {
   const center = area.towerCenter ?? new THREE.Vector3(-34, 0, 0);
   const reduced = prefersReducedMotion();
@@ -191,13 +262,29 @@ export async function playTowerTimelapse(
     ]);
     parent.append(caption);
     await new Promise<void>((resolve) => {
+      let paused = false;
+      let closed = false;
       const done = (): void => {
+        if (closed) return;
+        closed = true;
         window.removeEventListener('keydown', onKey);
         caption.remove();
         resolve();
       };
-      const onKey = (): void => done();
-      caption.addEventListener('click', done);
+      const onKey = (e: KeyboardEvent): void => {
+        if (paused || e.key === 'Tab' || e.key === 'Shift' || e.key === 'Escape') return;
+        done();
+      };
+      onHandle?.({
+        setPaused: (next) => {
+          paused = next;
+        },
+        skip: done,
+        cancel: async () => done(),
+      });
+      caption.addEventListener('click', () => {
+        if (!paused) done();
+      });
       window.addEventListener('keydown', onKey);
     });
     return;
@@ -216,8 +303,10 @@ export async function playTowerTimelapse(
   await new Promise<void>((resolve) => {
     let raf = 0;
     let skipped = false;
-    const start = performance.now();
-    const canSkipAt = start + 300;
+    let paused = false;
+    let elapsed = 0;
+    let lastNow = performance.now();
+    const canSkipAt = lastNow + 300;
     let lastLineIdx = 0;
 
     const cleanup = (): void => {
@@ -230,47 +319,70 @@ export async function playTowerTimelapse(
     };
 
     const onSkip = (): void => {
-      if (performance.now() < canSkipAt || skipped) return;
+      if (paused || performance.now() < canSkipAt || skipped) return;
       skipped = true;
       cleanup();
     };
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Tab' || e.key === 'Shift') return;
+      if (paused || e.key === 'Tab' || e.key === 'Shift' || e.key === 'Escape') return;
       onSkip();
     };
+
+    onHandle?.({
+      setPaused: (next) => {
+        if (paused === next) return;
+        paused = next;
+        if (!next) lastNow = performance.now();
+      },
+      skip: () => {
+        if (skipped) return;
+        skipped = true;
+        cleanup();
+      },
+      cancel: async () => {
+        if (skipped) return;
+        skipped = true;
+        cleanup();
+      },
+    });
+
     skipBtn.addEventListener('click', onSkip);
     window.addEventListener('keydown', onKey);
 
     const tick = (now: number): void => {
       if (skipped) return;
-      const elapsed = (now - start) / 1000;
-      const t = Math.min(1, elapsed / DURATION);
-      const p = Math.min(1, elapsed / BUILD_END);
-      area.setTowerProgress?.(p);
+      const dt = paused ? 0 : Math.min(0.1, (now - lastNow) / 1000);
+      lastNow = now;
+      if (!paused) {
+        elapsed += dt;
+        const t = Math.min(1, elapsed / DURATION);
+        const p = Math.min(1, elapsed / BUILD_END);
+        area.setTowerProgress?.(p);
 
-      // Show matching milestone line as progress crosses each keyframe.
-      let lineIdx = 0;
-      for (let i = 0; i < thresholds.length; i++) {
-        if (p >= thresholds[i]!) lineIdx = i;
-      }
-      if (lineIdx !== lastLineIdx) {
-        lastLineIdx = lineIdx;
-        lineEl.textContent = journey.lines[lineIdx] ?? '';
-      }
+        // Show matching milestone line as progress crosses each keyframe.
+        let lineIdx = 0;
+        for (let i = 0; i < thresholds.length; i++) {
+          if (p >= thresholds[i]!) lineIdx = i;
+        }
+        if (lineIdx !== lastLineIdx) {
+          lastLineIdx = lineIdx;
+          lineEl.textContent = journey.lines[lineIdx] ?? '';
+        }
 
-      const angle = 0.25 + t * Math.PI * 0.72;
-      const radius = THREE.MathUtils.lerp(46, 54, t);
-      const camY = THREE.MathUtils.lerp(13, 25, t);
-      camera.position.set(
-        center.x + Math.sin(angle) * radius,
-        camY,
-        center.z + Math.cos(angle) * radius,
-      );
-      camera.lookAt(center.x, THREE.MathUtils.lerp(14, 20, t), center.z);
+        const angle = 0.25 + t * Math.PI * 0.72;
+        const radius = THREE.MathUtils.lerp(46, 54, t);
+        const camY = THREE.MathUtils.lerp(13, 25, t);
+        camera.position.set(
+          center.x + Math.sin(angle) * radius,
+          camY,
+          center.z + Math.cos(angle) * radius,
+        );
+        camera.lookAt(center.x, THREE.MathUtils.lerp(14, 20, t), center.z);
 
-      if (elapsed >= DURATION) {
-        cleanup();
-        return;
+        if (elapsed >= DURATION) {
+          cleanup();
+          return;
+        }
       }
       raf = requestAnimationFrame(tick);
     };

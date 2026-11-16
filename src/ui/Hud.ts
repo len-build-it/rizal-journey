@@ -11,6 +11,9 @@ const _targetLift = new THREE.Vector3(0, 1.0, 0);
  */
 export class Hud {
   readonly root: HTMLElement;
+  private readonly leftStack: HTMLElement;
+  private readonly topRight: HTMLElement;
+  private readonly menuBtn: HTMLButtonElement;
   private readonly place: HTMLElement;
   private readonly year: HTMLElement;
   private readonly goalEl: HTMLElement;
@@ -24,6 +27,7 @@ export class Hud {
   private readonly arrowLabel: HTMLElement;
   private toastTimer = 0;
   onPrompt: (() => void) | null = null;
+  onMenu: (() => void) | null = null;
 
   constructor(parent: HTMLElement, touch: boolean) {
     this.place = el('span', { class: 'k-chip__place' });
@@ -31,6 +35,7 @@ export class Hud {
     this.goalEl = el('span', { class: 'k-chip__goal', hidden: '' });
     const whereTop = el('span', { class: 'hud-where-top' }, [this.year, this.place]);
     const where = el('div', { class: 'hud-where k-chip' }, [whereTop, this.goalEl]);
+    this.leftStack = el('div', { class: 'hud-left' }, [where]);
 
     const stampsWrap = el('div', { class: 'hud-stamps k-stamps', role: 'img' });
     for (let i = 1; i <= 6; i++) {
@@ -40,6 +45,20 @@ export class Hud {
     }
     this.foldLabel = el('span', { class: 'k-stamps__count' });
     stampsWrap.append(this.foldLabel);
+
+    this.menuBtn = el(
+      'button',
+      {
+        class: 'hud-menu-btn k-btn k-btn--quiet k-btn--small',
+        type: 'button',
+        'aria-haspopup': 'dialog',
+        'aria-expanded': 'false',
+        'aria-label': 'Menu',
+      },
+      [buildMenuIcon(), el('span', {}, ['Menu'])],
+    ) as HTMLButtonElement;
+    this.menuBtn.addEventListener('click', () => this.onMenu?.());
+    this.topRight = el('div', { class: 'hud-top-right' }, [stampsWrap, this.menuBtn]);
 
     this.promptLabel = el('span', { class: 'hud-prompt-label' });
     this.prompt = el('button', { class: 'hud-prompt k-btn k-btn--small', type: 'button' }, [
@@ -76,8 +95,8 @@ export class Hud {
     ]);
 
     this.root = el('div', { class: 'hud' }, [
-      where,
-      stampsWrap,
+      this.leftStack,
+      this.topRight,
       promptWrap,
       this.toastEl,
       this.arrow,
@@ -122,8 +141,13 @@ export class Hud {
     const scale = Math.max(Math.abs(dx) / limitX, Math.abs(dy) / limitY) || 1;
     const px = w * 0.5 + dx / scale;
     let py = h * 0.5 + dy / scale;
-    if (px < 280 && py < 108) py = 108;
-    else if (px > w - 280 && py < 88) py = 88;
+    const leftRect = this.leftStack.getBoundingClientRect();
+    const rightRect = this.topRight.getBoundingClientRect();
+    if (leftRect.width > 0 && px < leftRect.right + 100 && py < leftRect.bottom + 26) {
+      py = leftRect.bottom + 26;
+    } else if (rightRect.width > 0 && px > rightRect.left - 100 && py < rightRect.bottom + 26) {
+      py = rightRect.bottom + 26;
+    }
     const angle = Math.atan2(dy, dx);
 
     this.arrow.hidden = false;
@@ -159,10 +183,45 @@ export class Hud {
     if (wrap) wrap.hidden = false;
   }
 
+  setMenuVisible(visible: boolean): void {
+    this.menuBtn.hidden = !visible;
+  }
+
+  setMenuExpanded(expanded: boolean): void {
+    this.menuBtn.setAttribute('aria-expanded', String(expanded));
+  }
+
+  focusMenuButton(): void {
+    if (!this.menuBtn.hidden) {
+      this.menuBtn.focus({ preventScroll: true });
+    }
+  }
+
   toast(text: string): void {
     this.toastEl.textContent = text;
     this.toastEl.classList.add('is-on');
     clearTimeout(this.toastTimer);
     this.toastTimer = window.setTimeout(() => this.toastEl.classList.remove('is-on'), 3200);
   }
+}
+
+function buildMenuIcon(): SVGSVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('width', '14');
+  svg.setAttribute('height', '14');
+  svg.setAttribute('aria-hidden', 'true');
+  for (const y of [3.5, 8, 12.5]) {
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', '2');
+    line.setAttribute('y1', String(y));
+    line.setAttribute('x2', '14');
+    line.setAttribute('y2', String(y));
+    line.setAttribute('stroke', 'currentColor');
+    line.setAttribute('stroke-width', '1.8');
+    line.setAttribute('stroke-linecap', 'round');
+    svg.append(line);
+  }
+  return svg;
 }

@@ -25,7 +25,7 @@ export function showIntro(
 
   const controls = touch
     ? 'Drag anywhere on the lower left to ride. Push to the edge to gallop.'
-    : 'Ride with WASD or arrow keys. Hold Shift to gallop. Press E at a stop.';
+    : 'Ride with WASD or arrow keys. Hold Shift to gallop. Press E at a stop. Esc for the menu.';
 
   const actions = restartBtn ? [openBtn, restartBtn, brochure] : [openBtn, brochure];
 

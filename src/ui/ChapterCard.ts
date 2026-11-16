@@ -72,7 +72,13 @@ export class ChapterCard {
 
     return new Promise((resolve) => {
       this.resolver = resolve;
-      const dismiss = (): void => this.hide();
+      const dismiss = (e?: Event): void => {
+        if (e instanceof KeyboardEvent && e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        this.hide();
+      };
       this.onInput = dismiss;
       window.addEventListener('keydown', dismiss, { once: true, capture: true });
       this.root.addEventListener('pointerdown', dismiss, { once: true });

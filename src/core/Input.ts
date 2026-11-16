@@ -39,6 +39,13 @@ export class Input {
     this.interactQueued = true;
   }
 
+  clearKeys(): void {
+    this.keys.clear();
+    this.stickX = 0;
+    this.stickY = 0;
+    this.interactQueued = false;
+  }
+
   update(): void {
     const k = this.keys;
     const fwd = Number(k.has('KeyW') || k.has('ArrowUp'));
