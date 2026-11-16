@@ -480,6 +480,7 @@ async function main(): Promise<void> {
     }
 
     const nextTarget = pathTrail.update(area, player.position, visited, hideGuides, time);
+    for (const s of area.stops) s.setNextTarget(s === nextTarget);
     engine.camera.updateMatrixWorld();
     hud.updateArrow(nextTarget?.position ?? null, nextTarget?.story.title ?? null, engine.camera, hideGuides);
     setPopupFocus(cam.focusPosition);

@@ -1340,13 +1340,13 @@ function deWeckerClinic(
     batch.add(
       palette.gaslight,
       new THREE.BoxGeometry(1.1, 2.15, 0.12),
-      { x: x - 0.1, y: 1.1, z: z - 3.82 },
+      { x: x - 0.1, y: 1.1, z: z - 3.9 },
       { emissive: palette.gaslight, roughness: 0.35 },
     );
     batch.add(
       palette.gaslight,
       new THREE.BoxGeometry(1.3, 1.45, 0.12),
-      { x: x + 1.55, y: 1.55, z: z - 3.82 },
+      { x: x + 1.55, y: 1.55, z: z - 3.9 },
       { emissive: palette.gaslight, roughness: 0.35 },
     );
     signs.addSign({
@@ -1366,12 +1366,13 @@ function deWeckerClinic(
       sub: 'Rue du Cherche-Midi',
       style: 'vermilion',
       x: x - 0.1,
-      y: 2.95,
-      z: z - 4.0,
+      y: 2.65,
+      z: z - 4.98,
       ry: Math.PI,
       width: 2.2,
       height: 0.56,
       anchor: [x, 0, z],
+      doubleSided: true,
     });
   }
   parkBench(batch, ctx, x + 1.6, z - 4.4, Math.PI);
@@ -1511,9 +1512,9 @@ function lunaStudio(
       text: isGodfatherStop ? 'Luna Family' : "Juan Luna's Studio",
       sub: isGodfatherStop ? '1889' : '1885 to 1886',
       style: 'vermilion',
-      x: x - 1.95,
+      x: x - 2.35,
       y: 1.85,
-      z: z - d / 2 - 0.12,
+      z: z - d / 2 - 0.14,
       ry: Math.PI,
       width: 1.85,
       height: 0.62,
@@ -1778,13 +1779,14 @@ function bookshop(
       text: 'Garnier Hermanos',
       sub: 'Print shop',
       style: 'vermilion',
-      x: x - 0.5,
-      y: 3.35,
-      z: front - 0.15,
+      x,
+      y: 2.65,
+      z: front - 1.25,
       ry: Math.PI,
       width: 3.4,
       height: 0.72,
       anchor: [x, 0, z],
+      doubleSided: true,
     });
   }
 }

@@ -37,12 +37,13 @@ export class PathTrail {
   private cachedSamples: { pos: THREE.Vector3; arc: number; distToStop: number }[] = [];
 
   constructor(scene: THREE.Scene) {
-    const geo = new THREE.CircleGeometry(0.18, 12);
+    const geo = new THREE.CircleGeometry(0.24, 14);
     geo.rotateX(-Math.PI / 2);
     this.mat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.96,
+      fog: false,
       depthWrite: false,
       polygonOffset: true,
       polygonOffsetFactor: -2,

@@ -216,6 +216,7 @@ export class StopMarker {
   readonly group = new THREE.Group();
   readonly radius = 2.6;
   visited = false;
+  private isNext = false;
 
   private readonly ring: THREE.Mesh;
   private readonly postmark: THREE.Mesh;
@@ -333,7 +334,7 @@ export class StopMarker {
       new THREE.MeshBasicMaterial({ color: 0xffffff, map: this.signTex, fog: false }),
     );
     this.signGroup.add(post, signCard);
-    this.signGroup.position.set(dirX * 1.15 + sideX * 2.45, 0, dirZ * 1.15 + sideZ * 2.45);
+    this.signGroup.position.set(dirX * 0.15 + sideX * 2.9, 0, dirZ * 0.15 + sideZ * 2.9);
     this.signGroup.visible = false;
     this.group.add(this.signGroup);
 
@@ -353,6 +354,10 @@ export class StopMarker {
     this.group.add(this.waitGroup);
   }
 
+  setNextTarget(next: boolean): void {
+    this.isNext = next;
+  }
+
   /** Returns true while the rider stands inside the ring. */
   update(dt: number, time: number, rider: THREE.Vector3): boolean {
     const dx = rider.x - this.position.x;
@@ -370,28 +375,31 @@ export class StopMarker {
       this.beamMat.color.setHex(this.visited ? palette.roofSlate : palette.vermilion);
     }
 
-    const base = this.visited ? 0.32 : 1;
-    const markScale = this.visited ? 0.56 : 1 + this.proximity * 0.08;
+    const active = !this.visited && this.isNext;
+    const base = this.visited ? 0.3 : active ? 1 : 0.48;
+    const markScale = this.visited ? 0.52 : active ? 1.12 + this.proximity * 0.08 : 0.56;
+    this.postmarkMat.color.setHex(!this.visited && !this.isNext ? 0xbcb6aa : 0xffffff);
     this.postmark.scale.setScalar(markScale);
-    this.postmark.rotation.y = time * (this.visited ? 0.35 : 0.75);
+    this.postmark.rotation.y = time * (this.visited ? 0.35 : active ? 0.75 : 0.4);
     this.postmark.position.y =
-      (this.visited ? 5.2 : 6.0) +
-      Math.sin(time * 1.9) * (this.visited ? 0.08 : 0.18) +
+      (active ? 6.1 : 5.0) +
+      Math.sin(time * 1.9) * (active ? 0.18 : 0.08) +
       this.proximity * 0.25;
 
-    this.ringMat.opacity = this.visited ? 0.48 : 0.78 + this.proximity * 0.22;
+    this.ringMat.opacity = this.visited ? 0.44 : active ? 0.88 + this.proximity * 0.12 : 0.46;
     this.discMat.opacity = (0.14 + this.proximity * 0.2) * base;
-    this.beamMat.opacity = this.visited ? 0.04 : 0.22 + this.proximity * 0.16;
+    this.beamMat.opacity = this.visited ? 0.04 : active ? 0.3 + this.proximity * 0.16 : 0.05;
     const pulse = 1 + Math.sin(time * 3) * 0.03 * (1 - this.proximity);
     this.ring.scale.setScalar(pulse);
 
-    // Pop-up title signboard within ~14 m for unvisited stops, using the world pop-up curve.
-    const signTarget = !this.visited && d < 14 ? 1 : 0;
+    const lockedStation = Boolean(this.story.action) && !this.isNext;
+    // Pop-up title signboard within ~14 m for unvisited (and unlocked) stops, using the world curve.
+    const signTarget = !this.visited && !lockedStation && d < 14 ? 1 : 0;
     this.signU = THREE.MathUtils.damp(this.signU, signTarget, 7, dt);
     const rise = THREE.MathUtils.smoothstep(this.signU, 0, 0.72);
     const over = THREE.MathUtils.smoothstep(this.signU, 0.32, 1.0);
     const popScale = rise * (1 + 0.11 * Math.sin(over * Math.PI));
-    this.signGroup.visible = !this.visited && popScale > 0.01;
+    this.signGroup.visible = !this.visited && !lockedStation && popScale > 0.01;
     if (this.signGroup.visible) {
       this.signGroup.scale.set(0.85 + 0.15 * rise, Math.max(0.001, popScale), 1);
       const sx = this.position.x + this.signGroup.position.x;
@@ -400,7 +408,7 @@ export class StopMarker {
     }
 
     // Scene waiting figures appear when near an unvisited stop, and one turns and waves within 10 m.
-    this.waitGroup.visible = !this.visited && d < 24;
+    this.waitGroup.visible = !this.visited && !lockedStation && d < 24;
     if (this.waitGroup.visible) {
       this.waveMix = THREE.MathUtils.damp(this.waveMix, d < 10 ? 1 : 0, 7, dt);
       for (const w of this.waiters) {

@@ -95,8 +95,8 @@ export class SignAtlas {
       this.geos.push(raw);
     };
 
-    addFace(opts.doubleSided ? 0.02 : 0, 0);
-    if (opts.doubleSided) addFace(-0.02, Math.PI);
+    addFace(opts.doubleSided ? 0.085 : 0, 0);
+    if (opts.doubleSided) addFace(-0.085, Math.PI);
   }
 
   private drawCell(col: number, row: number, opts: StorySignOpts): void {
