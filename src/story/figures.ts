@@ -91,6 +91,9 @@ export interface PersonRig {
   armR: THREE.Group;
   legL: THREE.Group;
   legR: THREE.Group;
+  kneeL: THREE.Group;
+  kneeR: THREE.Group;
+  skirt?: THREE.Group;
   dispose(): void;
 }
 
@@ -103,13 +106,16 @@ function isDescendantOf(obj: THREE.Object3D, ancestor: THREE.Object3D): boolean 
   return false;
 }
 
-/** Returns the shader part tag (1..5, or 0 for torso/body) for a mesh inside a PersonRig. */
+/** Returns the shader part tag (1..5, 9 skirt, 11/12 shins, or 0 for torso/body) for a mesh inside a PersonRig. */
 export function personPartId(obj: THREE.Object3D, rig: PersonRig): number {
+  if (isDescendantOf(obj, rig.kneeL)) return 11;
   if (isDescendantOf(obj, rig.legL)) return 1;
+  if (isDescendantOf(obj, rig.kneeR)) return 12;
   if (isDescendantOf(obj, rig.legR)) return 2;
   if (isDescendantOf(obj, rig.armL)) return 3;
   if (isDescendantOf(obj, rig.armR)) return 4;
   if (isDescendantOf(obj, rig.head)) return 5;
+  if (rig.skirt && isDescendantOf(obj, rig.skirt)) return 9;
   return 0;
 }
 
@@ -120,6 +126,7 @@ export function personPivotGroup(obj: THREE.Object3D, rig: PersonRig): THREE.Obj
   if (isDescendantOf(obj, rig.armL)) return rig.armL;
   if (isDescendantOf(obj, rig.armR)) return rig.armR;
   if (isDescendantOf(obj, rig.head)) return rig.head;
+  if (rig.skirt && isDescendantOf(obj, rig.skirt)) return rig.skirt;
   return rig.hips;
 }
 
@@ -294,50 +301,67 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
   const torso = new THREE.Group();
   hips.add(torso);
 
-  // Torso, coat tails or long skirt, collar, optional apron/shawl/bustle/bundle.
+  // Torso, coat tails, collar, visible neck, optional apron/shawl/bundle.
   const bodyParts: THREE.BufferGeometry[] = [
-    paintPart(new THREE.CylinderGeometry(0.145, 0.175, 0.56, 7), colors.coat, { y: 0.28 }),
-    paintPart(new THREE.CylinderGeometry(0.075, 0.095, 0.07, 6), palette.shirt, { y: 0.57 }),
+    paintPart(new THREE.CylinderGeometry(0.145, 0.175, 0.56, 8), colors.coat, { y: 0.28 }),
+    paintPart(new THREE.CylinderGeometry(0.075, 0.095, 0.06, 8, 1, true), palette.shirt, { y: 0.57 }),
+    paintPart(new THREE.CylinderGeometry(0.056, 0.066, 0.11, 8, 1, true), palette.skin, { y: 0.635 }),
   ];
+  let skirtGroup: THREE.Group | undefined;
   if (colors.isDress) {
-    bodyParts.push(
-      paintPart(new THREE.CylinderGeometry(0.16, 0.34, 0.72, 8), colors.skirt, { y: -0.34 }),
-    );
+    skirtGroup = new THREE.Group();
+    const skirtParts: THREE.BufferGeometry[] = [
+      paintPart(new THREE.CylinderGeometry(0.16, 0.26, 0.62, 8), colors.skirt, { y: -0.31 }),
+    ];
     if (opts.bustle) {
-      bodyParts.push(
-        paintPart(new THREE.IcosahedronGeometry(0.17, 0), colors.skirt, {
+      skirtParts.push(
+        paintPart(new THREE.IcosahedronGeometry(0.16, 0), colors.skirt, {
           y: -0.1,
-          z: -0.17,
+          z: -0.16,
           sx: 1.05,
           sy: 0.95,
           sz: 1.15,
         }),
       );
     }
+    if (opts.apron) {
+      skirtParts.push(
+        paintPart(new THREE.BoxGeometry(0.24, 0.56, 0.05), colors.apron, {
+          y: -0.26,
+          z: 0.2,
+          rx: -0.14,
+        }),
+      );
+    }
+    skirtGroup.add(mergedMesh(skirtParts, 'person-skirt'));
+    hips.add(skirtGroup);
   } else if (opts.smock || (opts.coat ?? 'frock') === 'frock') {
     bodyParts.push(
-      paintPart(new THREE.CylinderGeometry(0.175, 0.22, 0.22, 7), colors.coat, { y: -0.09 }),
+      paintPart(new THREE.CylinderGeometry(0.175, 0.22, 0.22, 8), colors.coat, { y: -0.09 }),
     );
   }
-  if (opts.apron) {
+  if (opts.apron && !colors.isDress) {
     bodyParts.push(
       paintPart(new THREE.BoxGeometry(0.24, 0.62, 0.06), colors.apron, {
-        y: colors.isDress ? -0.02 : 0.05,
+        y: 0.05,
         z: 0.17,
       }),
     );
   }
   if (opts.shawl) {
     bodyParts.push(
-      paintPart(new THREE.CylinderGeometry(0.17, 0.23, 0.22, 7), colors.shawl, { y: 0.44 }),
+      paintPart(new THREE.CylinderGeometry(0.17, 0.23, 0.22, 8, 1, true), colors.shawl, { y: 0.44 }),
     );
   }
   if (opts.prop === 'sack') {
     bodyParts.push(
-      paintPart(new THREE.CapsuleGeometry(0.14, 0.28, 3, 6), palette.crate, {
+      paintPart(new THREE.IcosahedronGeometry(0.19, 0), palette.crate, {
         x: 0.18,
         y: 0.56,
         z: -0.02,
+        sx: 0.82,
+        sy: 1.45,
+        sz: 0.82,
         rx: 1.32,
         rz: -0.25,
       }),
@@ -382,28 +406,28 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
 
   // Head + hair + hat + optional eye bandage.
   const head = new THREE.Group();
-  head.position.set(0, 0.68, 0);
+  head.position.set(0, 0.7, 0);
   torso.add(head);
   const headParts: THREE.BufferGeometry[] = [
     paintPart(new THREE.IcosahedronGeometry(0.125, 1), palette.skin),
     paintPart(
-      new THREE.SphereGeometry(0.132, 7, 5, 0, Math.PI * 2, 0, Math.PI * 0.52),
+      new THREE.SphereGeometry(0.132, 6, 4, 0, Math.PI * 2, 0, Math.PI * 0.52),
       colors.hair,
       { y: 0.015, z: -0.012 },
     ),
   ];
   if (hatStyle === 'bowler') {
     headParts.push(
-      paintPart(new THREE.SphereGeometry(0.13, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.55), colors.hat, {
+      paintPart(new THREE.SphereGeometry(0.13, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.55), colors.hat, {
         y: 0.055,
         sy: 1.05,
       }),
-      paintPart(new THREE.CylinderGeometry(0.19, 0.19, 0.02, 10), colors.hat, { y: 0.065 }),
+      paintPart(new THREE.CylinderGeometry(0.19, 0.19, 0.02, 8), colors.hat, { y: 0.065 }),
     );
   } else if (hatStyle === 'top') {
     headParts.push(
       paintPart(new THREE.CylinderGeometry(0.125, 0.115, 0.23, 8), colors.hat, { y: 0.18 }),
-      paintPart(new THREE.CylinderGeometry(0.195, 0.195, 0.02, 10), colors.hat, { y: 0.07 }),
+      paintPart(new THREE.CylinderGeometry(0.195, 0.195, 0.02, 8), colors.hat, { y: 0.07 }),
     );
   } else if (hatStyle === 'small') {
     headParts.push(
@@ -411,7 +435,7 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
         y: 0.11,
         rx: -0.1,
       }),
-      paintPart(new THREE.CylinderGeometry(0.17, 0.17, 0.018, 9), palette.awningOchre, {
+      paintPart(new THREE.CylinderGeometry(0.17, 0.17, 0.018, 8), palette.awningOchre, {
         y: 0.075,
         rx: -0.1,
       }),
@@ -483,7 +507,7 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
     const arm = new THREE.Group();
     arm.position.set(side * 0.185, 0.5, 0);
     const parts: THREE.BufferGeometry[] = [
-      paintPart(new THREE.CylinderGeometry(0.055, 0.044, 0.48, 6), colors.arm, { y: -0.24 }),
+      paintPart(new THREE.CylinderGeometry(0.055, 0.044, 0.48, 8), colors.arm, { y: -0.24 }),
       paintPart(new THREE.IcosahedronGeometry(0.043, 0), palette.skin, { y: -0.5 }),
     ];
     if (side === 1) {
@@ -530,7 +554,7 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
         );
       } else if (opts.prop === 'hoop') {
         parts.push(
-          paintPart(new THREE.TorusGeometry(0.24, 0.018, 5, 14), palette.doorBrown, {
+          paintPart(new THREE.TorusGeometry(0.24, 0.018, 4, 12), palette.doorBrown, {
             x: 0.08,
             y: -0.7,
             z: 0.24,
@@ -576,28 +600,35 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
   const armL = buildArm(-1);
   const armR = buildArm(1);
 
-  // Left & right legs (shorter shoes only if wearing long skirt; rolled calves if fisherman).
-  const buildLeg = (side: -1 | 1): THREE.Group => {
+  // Left & right legs split into thigh and shin with a knee pivot and distinct shoes.
+  const buildLeg = (side: -1 | 1): { hip: THREE.Group; knee: THREE.Group } => {
     const leg = new THREE.Group();
     leg.position.set(side * 0.085, 0, 0);
-    const parts: THREE.BufferGeometry[] = colors.isDress
-      ? [paintPart(new THREE.BoxGeometry(0.095, 0.09, 0.2), palette.hat, { y: -0.71, z: 0.04 })]
-      : opts.rolledTrousers
-        ? [
-            paintPart(new THREE.CylinderGeometry(0.072, 0.064, 0.46, 6), colors.trouser, { y: -0.23 }),
-            paintPart(new THREE.CylinderGeometry(0.052, 0.046, 0.24, 6), palette.skin, { y: -0.57 }),
-            paintPart(new THREE.BoxGeometry(0.095, 0.085, 0.2), palette.hat, { y: -0.71, z: 0.035 }),
-          ]
-        : [
-            paintPart(new THREE.CylinderGeometry(0.072, 0.056, 0.7, 6), colors.trouser, { y: -0.35 }),
-            paintPart(new THREE.BoxGeometry(0.095, 0.085, 0.2), palette.hat, { y: -0.71, z: 0.035 }),
-          ];
-    leg.add(mergedMesh(parts, side < 0 ? 'person-legL' : 'person-legR'));
+    const legColor = colors.isDress ? colors.skirt : colors.trouser;
+    const thighParts: THREE.BufferGeometry[] = [
+      paintPart(new THREE.CylinderGeometry(0.072, 0.06, 0.36, 8), legColor, { y: -0.18 }),
+    ];
+    leg.add(mergedMesh(thighParts, side < 0 ? 'person-legL' : 'person-legR'));
+
+    const knee = new THREE.Group();
+    knee.position.set(0, -0.36, 0);
+    const shinParts: THREE.BufferGeometry[] = opts.rolledTrousers
+      ? [
+          paintPart(new THREE.CylinderGeometry(0.06, 0.054, 0.14, 8), legColor, { y: -0.07 }),
+          paintPart(new THREE.CylinderGeometry(0.05, 0.044, 0.2, 8), palette.skin, { y: -0.24 }),
+          paintPart(new THREE.BoxGeometry(0.1, 0.085, 0.22), palette.hat, { y: -0.355, z: 0.045 }),
+        ]
+      : [
+          paintPart(new THREE.CylinderGeometry(0.058, 0.046, 0.34, 8), legColor, { y: -0.17 }),
+          paintPart(new THREE.BoxGeometry(0.1, 0.085, 0.22), palette.hat, { y: -0.355, z: 0.045 }),
+        ];
+    knee.add(mergedMesh(shinParts, side < 0 ? 'person-shinL' : 'person-shinR'));
+    leg.add(knee);
     hips.add(leg);
-    return leg;
+    return { hip: leg, knee };
   };
-  const legL = buildLeg(-1);
-  const legR = buildLeg(1);
+  const leftLeg = buildLeg(-1);
+  const rightLeg = buildLeg(1);
 
   return {
     root,
@@ -606,8 +637,11 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
     head,
     armL,
     armR,
-    legL,
-    legR,
+    legL: leftLeg.hip,
+    legR: rightLeg.hip,
+    kneeL: leftLeg.knee,
+    kneeR: rightLeg.knee,
+    skirt: skirtGroup,
     dispose() {
       root.removeFromParent();
       root.traverse((c) => {
@@ -669,7 +703,7 @@ export class PersonActor {
   }
 
   update(dt: number, time: number): boolean {
-    const { hips, torso, head, armL, armR, legL, legR } = this.rig;
+    const { hips, torso, head, armL, armR, legL, legR, kneeL, kneeR, skirt } = this.rig;
     let arrived = false;
 
     if (this.action === 'walk' && this.walkTarget) {
@@ -697,13 +731,17 @@ export class PersonActor {
 
     const t = time + this.phaseOffset;
     // Defaults before pose logic.
-    hips.position.y = 0.76;
+    hips.position.set(0, 0.76, 0);
+    hips.rotation.set(0, 0, 0);
     torso.rotation.set(0, 0, 0);
     head.rotation.set(0, 0, 0);
     armL.rotation.set(0, 0, -0.06);
     armR.rotation.set(0, 0, 0.06);
     legL.rotation.set(0, 0, 0);
     legR.rotation.set(0, 0, 0);
+    kneeL.rotation.set(0, 0, 0);
+    kneeR.rotation.set(0, 0, 0);
+    if (skirt) skirt.rotation.set(0, 0, 0);
 
     switch (this.action) {
       case 'idle': {
@@ -727,9 +765,19 @@ export class PersonActor {
         const swing = walkSwingAngle(this.walkPhase);
         legL.rotation.x = swing;
         legR.rotation.x = -swing;
+        kneeL.rotation.x = Math.max(0, -Math.cos(this.walkPhase)) * 0.58;
+        kneeR.rotation.x = Math.max(0, Math.cos(this.walkPhase)) * 0.58;
         armL.rotation.x = -swing * 0.72;
         armR.rotation.x = swing * 0.72;
-        hips.position.y = 0.76 + Math.abs(Math.sin(this.walkPhase)) * 0.03;
+        hips.position.y = 0.76 + Math.abs(Math.cos(this.walkPhase)) * 0.028;
+        hips.position.x = Math.sin(this.walkPhase) * 0.018;
+        hips.rotation.y = -Math.sin(this.walkPhase) * 0.045;
+        torso.rotation.y = Math.sin(this.walkPhase) * 0.115;
+        head.rotation.y = -(hips.rotation.y + torso.rotation.y);
+        if (skirt) {
+          skirt.rotation.z = Math.sin(this.walkPhase) * 0.045;
+          skirt.rotation.x = Math.cos(this.walkPhase) * 0.025;
+        }
         break;
       }
       case 'carry': {
@@ -739,10 +787,13 @@ export class PersonActor {
         const swing = walkSwingAngle(this.walkPhase);
         legL.rotation.x = swing;
         legR.rotation.x = -swing;
+        kneeL.rotation.x = Math.max(0, -Math.cos(this.walkPhase)) * 0.52;
+        kneeR.rotation.x = Math.max(0, Math.cos(this.walkPhase)) * 0.52;
         armL.rotation.x = -0.35;
         armR.rotation.set(-0.95, 0, -0.35);
         torso.rotation.z = 0.06;
-        hips.position.y = 0.75 + Math.abs(Math.sin(this.walkPhase)) * 0.02;
+        hips.position.y = 0.75 + Math.abs(Math.cos(this.walkPhase)) * 0.024;
+        hips.position.x = Math.sin(this.walkPhase) * 0.015;
         break;
       }
       case 'chat': {

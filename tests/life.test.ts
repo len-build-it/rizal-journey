@@ -52,16 +52,26 @@ function partCounts(geo: THREE.BufferGeometry): Map<number, number> {
 
 describe('background life rig part tagging', () => {
   it('tags parts 1..5 for every person role and coat style', () => {
+    const triSummary: string[] = [];
     for (const role of ROLES) {
       for (const winter of [false, true]) {
-        const geo = bakePersonGeometry(rolePreset(role, winter, 0));
-        const counts = partCounts(geo);
-        for (const id of [1, 2, 3, 4, 5]) {
-          expect(counts.get(id) ?? 0, `${role} winter=${winter} part ${id}`).toBeGreaterThan(0);
+        for (const seed of [0, 1, 2]) {
+          const geo = bakePersonGeometry(rolePreset(role, winter, seed));
+          const counts = partCounts(geo);
+          const tris = geo.getAttribute('position').count / 3;
+          if (!winter && seed === 0) triSummary.push(`${role}=${tris}`);
+          expect(tris, `${role} winter=${winter} seed=${seed} triangles`).toBeLessThan(600);
+          for (const id of [1, 2, 3, 4, 5, 11, 12]) {
+            expect(counts.get(id) ?? 0, `${role} winter=${winter} part ${id}`).toBeGreaterThan(0);
+          }
+          if (role === 'lady' || role === 'marketWoman' || role === 'nurse') {
+            expect(counts.get(9) ?? 0, `${role} skirt part 9`).toBeGreaterThan(0);
+          }
+          geo.dispose();
         }
-        geo.dispose();
       }
     }
+    console.log('person-triangles:', triSummary.join(', '));
 
     const styles: PersonOptions[] = [
       { coat: 'frock', hat: 'top' },

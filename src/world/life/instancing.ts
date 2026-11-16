@@ -89,22 +89,62 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
           float amp = aLifeAnim.w * lifeFade;
 
           if (lifeMode < 1.5) {
-            // Walk / stroll / hurry
+            // Walk / stroll / hurry: thigh+knee+shin, skirt sway, hip sway, opposite shoulder turn, level head.
             float swing = (sin(lt) - 0.125 * sin(3.0 * lt) + 0.025 * sin(5.0 * lt)) * 0.338 * amp;
-            if (aLifePart > 0.5 && aLifePart < 1.5) {
+            float swayX = sin(lt) * 0.018 * amp;
+            float hipYaw = -sin(lt) * 0.045 * amp;
+            float shoulderYaw = sin(lt) * 0.07 * amp;
+            if (aLifePart > 10.5 && aLifePart < 11.5) {
+              float kneeY = aLifePivot.y * 0.5263158;
+              float bendL = max(0.0, -cos(lt)) * 0.58 * amp;
+              vec2 rk = lifeRot2(transformed.yz, vec2(kneeY, aLifePivot.z), bendL);
+              vec2 rh = lifeRot2(rk, aLifePivot.yz, swing);
+              transformed.y = rh.x; transformed.z = rh.y;
+              vec2 ry = lifeRot2(transformed.xz, vec2(0.0, 0.0), hipYaw);
+              transformed.x = ry.x + swayX; transformed.z = ry.y;
+            } else if (aLifePart > 0.5 && aLifePart < 1.5) {
               vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, swing);
               transformed.y = r.x; transformed.z = r.y;
+              vec2 ry = lifeRot2(transformed.xz, vec2(0.0, 0.0), hipYaw);
+              transformed.x = ry.x + swayX; transformed.z = ry.y;
+            } else if (aLifePart > 11.5 && aLifePart < 12.5) {
+              float kneeY = aLifePivot.y * 0.5263158;
+              float bendR = max(0.0, cos(lt)) * 0.58 * amp;
+              vec2 rk = lifeRot2(transformed.yz, vec2(kneeY, aLifePivot.z), bendR);
+              vec2 rh = lifeRot2(rk, aLifePivot.yz, -swing);
+              transformed.y = rh.x; transformed.z = rh.y;
+              vec2 ry = lifeRot2(transformed.xz, vec2(0.0, 0.0), hipYaw);
+              transformed.x = ry.x + swayX; transformed.z = ry.y;
             } else if (aLifePart > 1.5 && aLifePart < 2.5) {
               vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -swing);
               transformed.y = r.x; transformed.z = r.y;
+              vec2 ry = lifeRot2(transformed.xz, vec2(0.0, 0.0), hipYaw);
+              transformed.x = ry.x + swayX; transformed.z = ry.y;
             } else if (aLifePart > 2.5 && aLifePart < 3.5) {
               vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -swing * 0.72);
               transformed.y = r.x; transformed.z = r.y;
+              vec2 ry = lifeRot2(transformed.xz, vec2(0.0, 0.0), shoulderYaw);
+              transformed.x = ry.x + swayX; transformed.z = ry.y;
             } else if (aLifePart > 3.5 && aLifePart < 4.5) {
               vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, swing * 0.72);
               transformed.y = r.x; transformed.z = r.y;
+              vec2 ry = lifeRot2(transformed.xz, vec2(0.0, 0.0), shoulderYaw);
+              transformed.x = ry.x + swayX; transformed.z = ry.y;
+            } else if (aLifePart > 8.5 && aLifePart < 9.5) {
+              vec2 rs = lifeRot2(transformed.xy, aLifePivot.xy, sin(lt) * 0.045 * amp);
+              transformed.x = rs.x; transformed.y = rs.y;
+              vec2 rf = lifeRot2(transformed.yz, aLifePivot.yz, cos(lt) * 0.025 * amp);
+              transformed.y = rf.x; transformed.z = rf.y;
+              vec2 ry = lifeRot2(transformed.xz, vec2(0.0, 0.0), hipYaw);
+              transformed.x = ry.x + swayX; transformed.z = ry.y;
+            } else if (aLifePart < 0.5) {
+              float tH = clamp((transformed.y - aLifePivot.y) / 0.52, 0.0, 1.0);
+              vec2 ry = lifeRot2(transformed.xz, vec2(0.0, 0.0), mix(hipYaw, shoulderYaw, tH));
+              transformed.x = ry.x + swayX; transformed.z = ry.y;
+            } else {
+              transformed.x += swayX * 0.4;
             }
-            transformed.y += abs(sin(lt)) * 0.035 * amp;
+            transformed.y += abs(cos(lt)) * 0.028 * amp;
           } else if (lifeMode < 2.5) {
             // Stationary gesture / lookUp / sweep
             if (amp > 1.35 && amp < 2.35) {

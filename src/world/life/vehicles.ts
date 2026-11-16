@@ -156,7 +156,8 @@ function addBakedPerson(
       let partId = 0;
       if (rigPart === 5) partId = 5;
       else if ((rigPart === 3 || rigPart === 4) && !seated && !pushing) partId = rigPart;
-      else if ((rigPart === 1 || rigPart === 2) && pushing) partId = rigPart;
+      else if ((rigPart === 1 || rigPart === 11) && pushing) partId = 1;
+      else if ((rigPart === 2 || rigPart === 12) && pushing) partId = 2;
       pivotMat.multiplyMatrices(offset, personPivotGroup(c, rig).matrixWorld);
       pivotWorld.setFromMatrixPosition(pivotMat);
       parts.push(
