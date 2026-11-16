@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { buildPerson, personPartId, type PersonOptions } from '../../story/figures';
+import {
+  buildPerson,
+  personPartId,
+  personPivotGroup,
+  type PersonOptions,
+} from '../../story/figures';
 import { injectWorldShader } from '../paperShader';
 
 export const LIFE_ANIM_DIST = 45;
@@ -45,7 +50,7 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
   });
   injectWorldShader(m);
   const baseCompile = m.onBeforeCompile;
-  m.customProgramCacheKey = () => 'world-paper-life-v1';
+  m.customProgramCacheKey = () => 'world-paper-life-v2';
   m.onBeforeCompile = (shader, renderer) => {
     baseCompile?.(shader, renderer);
     shader.uniforms.uLifeTime = lifeShaderUniforms.uLifeTime;
@@ -57,6 +62,7 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
         'void main() {',
         `attribute vec4 aLifeAnim;
         attribute float aLifePart;
+        attribute vec3 aLifePivot;
         uniform float uLifeTime;
         uniform vec3 uLifeFocus;
         uniform float uLifeAnimDist;
@@ -86,16 +92,16 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
             // Walk / stroll / hurry
             float swing = sin(lt) * 0.48 * amp;
             if (aLifePart > 0.5 && aLifePart < 1.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.76, 0.0), swing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, swing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 1.5 && aLifePart < 2.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.76, 0.0), -swing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -swing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 2.5 && aLifePart < 3.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(1.28, 0.0), -swing * 0.72);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -swing * 0.72);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 3.5 && aLifePart < 4.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(1.28, 0.0), swing * 0.72);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, swing * 0.72);
               transformed.y = r.x; transformed.z = r.y;
             }
             transformed.y += abs(sin(lt)) * 0.035 * amp;
@@ -103,20 +109,20 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
             // Stationary gesture / lookUp / sweep
             if (amp > 1.35 && amp < 2.35) {
               if (aLifePart > 4.5 && aLifePart < 5.5) {
-                vec2 r = lifeRot2(transformed.yz, vec2(1.36, 0.0), -0.34 + sin(lt * 0.45) * 0.06);
+                vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -0.34 + sin(lt * 0.45) * 0.06);
                 transformed.y = r.x; transformed.z = r.y;
               }
             } else if (amp >= 2.35) {
               if (aLifePart > 2.5 && aLifePart < 4.5) {
-                vec2 r = lifeRot2(transformed.yz, vec2(1.26, 0.0), -0.5 + sin(lt) * 0.32);
+                vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -0.5 + sin(lt) * 0.32);
                 transformed.y = r.x; transformed.z = r.y;
               }
             } else {
               if (aLifePart > 2.5 && aLifePart < 3.5) {
-                vec2 r = lifeRot2(transformed.yz, vec2(1.28, 0.0), -0.22 + sin(lt) * 0.25 * amp);
+                vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -0.22 + sin(lt) * 0.25 * amp);
                 transformed.y = r.x; transformed.z = r.y;
               } else if (aLifePart > 4.5 && aLifePart < 5.5) {
-                vec2 r = lifeRot2(transformed.yz, vec2(1.36, 0.0), sin(lt * 0.8) * 0.1 * amp);
+                vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, sin(lt * 0.8) * 0.1 * amp);
                 transformed.y = r.x; transformed.z = r.y;
               }
             }
@@ -124,33 +130,33 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
             // Flying bird wing flap
             float flap = sin(lt) * 0.62 * amp;
             if (aLifePart > 5.5 && aLifePart < 6.5) {
-              vec2 r = lifeRot2(transformed.xy, vec2(-0.08, 0.22), flap);
+              vec2 r = lifeRot2(transformed.xy, aLifePivot.xy, flap);
               transformed.x = r.x; transformed.y = r.y;
             } else if (aLifePart > 6.5 && aLifePart < 7.5) {
-              vec2 r = lifeRot2(transformed.xy, vec2(0.08, 0.22), -flap);
+              vec2 r = lifeRot2(transformed.xy, aLifePivot.xy, -flap);
               transformed.x = r.x; transformed.y = r.y;
             }
           } else if (lifeMode < 4.5) {
             // Ground bird peck
             if (aLifePart > 4.5 && aLifePart < 5.5) {
               float peck = pow(max(0.0, sin(lt)), 6.0) * 0.48 * amp;
-              vec2 r = lifeRot2(transformed.yz, vec2(0.14, 0.04), -peck);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -peck);
               transformed.y = r.x; transformed.z = r.y;
             }
           } else if (lifeMode < 5.5) {
             // Vehicle / boat / carriage bounce, horse/pusher legs & oars
             float swing = sin(lt) * 0.42 * amp;
             if (aLifePart > 0.5 && aLifePart < 1.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.85, 1.8), swing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, swing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 1.5 && aLifePart < 2.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.85, 1.8), -swing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -swing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 2.5 && aLifePart < 3.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.95, 1.0), -swing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -swing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 3.5 && aLifePart < 4.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.95, 1.0), swing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, swing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 5.5 && aLifePart < 7.5) {
               float stroke = sin(lt) * 0.34 * amp;
@@ -163,20 +169,20 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
             // Quadruped walk / graze
             float qSwing = sin(lt) * 0.38 * amp;
             if (aLifePart > 0.5 && aLifePart < 1.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.24, 0.2), qSwing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, qSwing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 1.5 && aLifePart < 2.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.24, 0.2), -qSwing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -qSwing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 2.5 && aLifePart < 3.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.24, -0.2), -qSwing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, -qSwing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 3.5 && aLifePart < 4.5) {
-              vec2 r = lifeRot2(transformed.yz, vec2(0.24, -0.2), qSwing);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, qSwing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 4.5 && aLifePart < 5.5) {
               float graze = amp < 0.45 ? -0.35 + sin(lt * 0.5) * 0.08 : sin(lt) * 0.08 * amp;
-              vec2 r = lifeRot2(transformed.yz, vec2(0.32, 0.16), graze);
+              vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, graze);
               transformed.y = r.x; transformed.z = r.y;
             }
           } else {
@@ -229,12 +235,35 @@ export function prepareLifeGeometry(
     geo.setAttribute('aLifePart', new THREE.BufferAttribute(parts, 1));
   }
 
+  if (!geo.getAttribute('aLifePivot')) {
+    const pivots = new Float32Array(count * 3);
+    const part = geo.getAttribute('aLifePart');
+    for (let i = 0; i < count; i++) {
+      const pid = part ? Math.round(part.getX(i)) : 0;
+      if (tagMode === 'birdFly') {
+        if (pid === 6) {
+          pivots[i * 3] = -0.08;
+          pivots[i * 3 + 1] = 0.22;
+        } else if (pid === 7) {
+          pivots[i * 3] = 0.08;
+          pivots[i * 3 + 1] = 0.22;
+        }
+      } else if (tagMode === 'birdGround' && pid === 5) {
+        pivots[i * 3 + 1] = 0.14;
+        pivots[i * 3 + 2] = 0.04;
+      }
+    }
+    geo.setAttribute('aLifePivot', new THREE.BufferAttribute(pivots, 3));
+  }
+
   return geo;
 }
 
+const tmpPivot = new THREE.Vector3();
+
 /**
  * Bakes an articulated `buildPerson` rig into a single geometry annotated with `aLifePart`
- * tags so dozens of background pedestrians animate cleanly inside one `InstancedMesh`.
+ * and `aLifePivot` attributes so background pedestrians animate around their scaled rig pivots.
  */
 export function bakePersonGeometry(opts: PersonOptions): THREE.BufferGeometry {
   const rig = buildPerson(opts);
@@ -246,11 +275,19 @@ export function bakePersonGeometry(opts: PersonOptions): THREE.BufferGeometry {
       const g = c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone();
       g.applyMatrix4(c.matrixWorld);
       const partId = personPartId(c, rig);
+      personPivotGroup(c, rig).getWorldPosition(tmpPivot);
 
       const count = g.getAttribute('position').count;
       const partAttr = new Float32Array(count);
       partAttr.fill(partId);
+      const pivotAttr = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        pivotAttr[i * 3] = tmpPivot.x;
+        pivotAttr[i * 3 + 1] = tmpPivot.y;
+        pivotAttr[i * 3 + 2] = tmpPivot.z;
+      }
       g.setAttribute('aLifePart', new THREE.BufferAttribute(partAttr, 1));
+      g.setAttribute('aLifePivot', new THREE.BufferAttribute(pivotAttr, 3));
       g.setAttribute('aPopupAnchor', new THREE.BufferAttribute(new Float32Array(count * 4), 4));
       parts.push(g);
     }

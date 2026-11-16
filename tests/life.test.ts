@@ -104,4 +104,39 @@ describe('background life rig part tagging', () => {
     expect(hcCounts.get(5) ?? 0).toBeGreaterThan(0);
     handcart.dispose();
   });
+
+  it('bakes scaled rig pivots into aLifePivot for people and quadrupeds', () => {
+    const firstPivotY = (geo: THREE.BufferGeometry, partId: number): number => {
+      const part = geo.getAttribute('aLifePart');
+      const pivot = geo.getAttribute('aLifePivot');
+      for (let i = 0; i < part.count; i++) {
+        if (Math.round(part.getX(i)) === partId) return pivot.getY(i);
+      }
+      return NaN;
+    };
+
+    const adult = bakePersonGeometry(rolePreset('gentleman', false, 0));
+    const child = bakePersonGeometry(rolePreset('child', false, 0));
+    const dress = bakePersonGeometry(rolePreset('lady', false, 0));
+    expect(firstPivotY(adult, 1)).toBeCloseTo(0.76, 3);
+    expect(firstPivotY(adult, 3)).toBeCloseTo(1.26, 3);
+    expect(firstPivotY(child, 1)).toBeCloseTo(0.76 * 0.72, 3);
+    expect(firstPivotY(child, 3)).toBeCloseTo(1.26 * 0.72, 3);
+    expect(firstPivotY(dress, 1)).toBeCloseTo(0.76, 3);
+    adult.dispose();
+    child.dispose();
+    dress.dispose();
+
+    const fiacre = prepareLifeGeometry(buildFiacreGeometry());
+    const part = fiacre.getAttribute('aLifePart');
+    const pivot = fiacre.getAttribute('aLifePivot');
+    let frontPivotZ = -Infinity;
+    for (let i = 0; i < part.count; i++) {
+      if (Math.round(part.getX(i)) === 1) {
+        frontPivotZ = Math.max(frontPivotZ, pivot.getZ(i));
+      }
+    }
+    expect(frontPivotZ).toBeGreaterThan(1.8);
+    fiacre.dispose();
+  });
 });

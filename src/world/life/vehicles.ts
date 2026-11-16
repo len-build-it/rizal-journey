@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { buildPerson, personPartId, rolePreset, type PersonOptions } from '../../story/figures';
+import {
+  buildPerson,
+  personPartId,
+  personPivotGroup,
+  rolePreset,
+  type PersonOptions,
+} from '../../story/figures';
 import { mat, paintPart, place, type Placement } from '../kit';
 import { palette } from '../palette';
 import { buildHarnessHorseGeometry } from './animals';
@@ -13,11 +19,34 @@ export type VehicleKind =
   | 'pennyFarthing'
   | 'rowingBoat';
 
-function withLifePart(geo: THREE.BufferGeometry, partId: number): THREE.BufferGeometry {
+function setPivotAttr(
+  geo: THREE.BufferGeometry,
+  px = 0,
+  py = 0,
+  pz = 0,
+): THREE.BufferGeometry {
+  const count = geo.getAttribute('position').count;
+  const pivotAttr = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    pivotAttr[i * 3] = px;
+    pivotAttr[i * 3 + 1] = py;
+    pivotAttr[i * 3 + 2] = pz;
+  }
+  geo.setAttribute('aLifePivot', new THREE.BufferAttribute(pivotAttr, 3));
+  return geo;
+}
+
+function withLifePart(
+  geo: THREE.BufferGeometry,
+  partId: number,
+  pivot?: readonly [number, number, number],
+): THREE.BufferGeometry {
   const count = geo.getAttribute('position').count;
   const partAttr = new Float32Array(count);
   partAttr.fill(partId);
   geo.setAttribute('aLifePart', new THREE.BufferAttribute(partAttr, 1));
+  if (pivot) return setPivotAttr(geo, pivot[0], pivot[1], pivot[2]);
+  if (!geo.getAttribute('aLifePivot')) return setPivotAttr(geo, 0, 0, 0);
   return geo;
 }
 
@@ -30,22 +59,50 @@ function paintTagged(
   return withLifePart(paintPart(geo, color, p), partId);
 }
 
+const tmpV = new THREE.Vector3();
+
+function transformPivotAttr(geo: THREE.BufferGeometry, p: Placement): void {
+  const attr = geo.getAttribute('aLifePivot');
+  if (!attr) return;
+  const m = new THREE.Matrix4().compose(
+    new THREE.Vector3(p.x ?? 0, p.y ?? 0, p.z ?? 0),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(p.rx ?? 0, p.ry ?? 0, p.rz ?? 0)),
+    new THREE.Vector3(p.sx ?? 1, p.sy ?? 1, p.sz ?? 1),
+  );
+  for (let i = 0; i < attr.count; i++) {
+    tmpV.set(attr.getX(i), attr.getY(i), attr.getZ(i)).applyMatrix4(m);
+    attr.setXYZ(i, tmpV.x, tmpV.y, tmpV.z);
+  }
+}
+
 function bakeExistingColors(
   geo: THREE.BufferGeometry,
   p?: Placement,
   partIdOverride?: number,
+  pivot?: readonly [number, number, number],
 ): THREE.BufferGeometry {
   const g = geo.index ? geo.toNonIndexed() : geo.clone();
   const hasPart = Boolean(g.getAttribute('aLifePart'));
   for (const name of Object.keys(g.attributes)) {
-    if (name !== 'position' && name !== 'normal' && name !== 'color' && name !== 'aLifePart') {
+    if (
+      name !== 'position' &&
+      name !== 'normal' &&
+      name !== 'color' &&
+      name !== 'aLifePart' &&
+      name !== 'aLifePivot'
+    ) {
       g.deleteAttribute(name);
     }
   }
   if (!g.getAttribute('color')) {
     return paintTagged(g, palette.bay, p, partIdOverride ?? 0);
   }
-  if (p) place(g, p);
+  if (p) {
+    place(g, p);
+    transformPivotAttr(g, p);
+  }
+  if (pivot) setPivotAttr(g, pivot[0], pivot[1], pivot[2]);
+  else if (!g.getAttribute('aLifePivot')) setPivotAttr(g, 0, 0, 0);
   if (partIdOverride !== undefined || !hasPart) {
     return withLifePart(g, partIdOverride ?? 0);
   }
@@ -88,6 +145,8 @@ function addBakedPerson(
     new THREE.Vector3(placement.sx ?? 1, placement.sy ?? 1, placement.sz ?? 1),
   );
 
+  const pivotWorld = new THREE.Vector3();
+  const pivotMat = new THREE.Matrix4();
   rig.root.traverse((c) => {
     if (c instanceof THREE.Mesh) {
       const m = new THREE.Matrix4().multiplyMatrices(offset, c.matrixWorld);
@@ -98,7 +157,11 @@ function addBakedPerson(
       if (rigPart === 5) partId = 5;
       else if ((rigPart === 3 || rigPart === 4) && !seated && !pushing) partId = rigPart;
       else if ((rigPart === 1 || rigPart === 2) && pushing) partId = rigPart;
-      parts.push(bakeExistingColors(geo, undefined, partId));
+      pivotMat.multiplyMatrices(offset, personPivotGroup(c, rig).matrixWorld);
+      pivotWorld.setFromMatrixPosition(pivotMat);
+      parts.push(
+        bakeExistingColors(geo, undefined, partId, [pivotWorld.x, pivotWorld.y, pivotWorld.z]),
+      );
     }
   });
   rig.dispose();

@@ -4,11 +4,24 @@ import { buildRiderlessHorse, type HorseRig } from '../../player/models';
 import { mat, paintPart, type Placement } from '../kit';
 import { palette } from '../palette';
 
-function withPartId(geo: THREE.BufferGeometry, partId: number): THREE.BufferGeometry {
+function withPartPivot(
+  geo: THREE.BufferGeometry,
+  partId: number,
+  px = 0,
+  py = 0,
+  pz = 0,
+): THREE.BufferGeometry {
   const count = geo.getAttribute('position').count;
   const partAttr = new Float32Array(count);
   partAttr.fill(partId);
+  const pivotAttr = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    pivotAttr[i * 3] = px;
+    pivotAttr[i * 3 + 1] = py;
+    pivotAttr[i * 3 + 2] = pz;
+  }
   geo.setAttribute('aLifePart', new THREE.BufferAttribute(partAttr, 1));
+  geo.setAttribute('aLifePivot', new THREE.BufferAttribute(pivotAttr, 3));
   return geo;
 }
 
@@ -17,8 +30,9 @@ function animalPart(
   color: number,
   placement?: Placement,
   partId = 0,
+  pivot: readonly [number, number, number] = [0, 0, 0],
 ): THREE.BufferGeometry {
-  return withPartId(paintPart(geo, color, placement), partId);
+  return withPartPivot(paintPart(geo, color, placement), partId, pivot[0], pivot[1], pivot[2]);
 }
 
 function isDescendantOf(obj: THREE.Object3D, ancestor: THREE.Object3D): boolean {
@@ -30,14 +44,23 @@ function isDescendantOf(obj: THREE.Object3D, ancestor: THREE.Object3D): boolean 
   return false;
 }
 
-function horsePartId(obj: THREE.Object3D, rig: HorseRig): number {
+function horsePartAndPivot(
+  obj: THREE.Object3D,
+  rig: HorseRig,
+  outPivot: THREE.Vector3,
+): number {
   for (const leg of rig.legs) {
     if (isDescendantOf(obj, leg.hip)) {
+      leg.hip.getWorldPosition(outPivot);
       if (leg.front) return leg.side < 0 ? 1 : 2;
       return leg.side < 0 ? 3 : 4;
     }
   }
-  if (isDescendantOf(obj, rig.neck) || isDescendantOf(obj, rig.head)) return 5;
+  if (isDescendantOf(obj, rig.neck) || isDescendantOf(obj, rig.head)) {
+    rig.neck.getWorldPosition(outPivot);
+    return 5;
+  }
+  rig.body.getWorldPosition(outPivot);
   return 0;
 }
 
@@ -156,10 +179,11 @@ export function buildSeagullGeometry(flying = true): THREE.BufferGeometry {
 }
 
 export function buildDogGeometry(coatColor = palette.ochre): THREE.BufferGeometry {
+  const headPivot: [number, number, number] = [0, 0.44, 0.24];
   const parts: THREE.BufferGeometry[] = [
     animalPart(new THREE.BoxGeometry(0.24, 0.24, 0.56), coatColor, { y: 0.34 }, 0),
-    animalPart(new THREE.IcosahedronGeometry(0.13, 0), coatColor, { y: 0.49, z: 0.31 }, 5),
-    animalPart(new THREE.BoxGeometry(0.1, 0.09, 0.12), palette.doorBrown, { y: 0.46, z: 0.41 }, 5),
+    animalPart(new THREE.IcosahedronGeometry(0.13, 0), coatColor, { y: 0.49, z: 0.31 }, 5, headPivot),
+    animalPart(new THREE.BoxGeometry(0.1, 0.09, 0.12), palette.doorBrown, { y: 0.46, z: 0.41 }, 5, headPivot),
     animalPart(
       new THREE.ConeGeometry(0.045, 0.1, 4),
       palette.doorBrown,
@@ -170,6 +194,7 @@ export function buildDogGeometry(coatColor = palette.ochre): THREE.BufferGeometr
         rz: 0.25,
       },
       5,
+      headPivot,
     ),
     animalPart(
       new THREE.ConeGeometry(0.045, 0.1, 4),
@@ -181,6 +206,7 @@ export function buildDogGeometry(coatColor = palette.ochre): THREE.BufferGeometr
         rz: -0.25,
       },
       5,
+      headPivot,
     ),
     animalPart(
       new THREE.CylinderGeometry(0.025, 0.035, 0.24, 5),
@@ -209,6 +235,7 @@ export function buildDogGeometry(coatColor = palette.ochre): THREE.BufferGeometr
           z: lz,
         },
         partId,
+        [lx, 0.24, lz],
       ),
     );
   }
@@ -216,6 +243,7 @@ export function buildDogGeometry(coatColor = palette.ochre): THREE.BufferGeometr
 }
 
 export function buildCatGeometry(coatColor = palette.crateDark): THREE.BufferGeometry {
+  const headPivot: [number, number, number] = [0, 0.23, 0.14];
   const parts: THREE.BufferGeometry[] = [
     animalPart(
       new THREE.CapsuleGeometry(0.085, 0.24, 3, 6),
@@ -226,7 +254,7 @@ export function buildCatGeometry(coatColor = palette.crateDark): THREE.BufferGeo
       },
       0,
     ),
-    animalPart(new THREE.IcosahedronGeometry(0.085, 0), coatColor, { y: 0.27, z: 0.19 }, 5),
+    animalPart(new THREE.IcosahedronGeometry(0.085, 0), coatColor, { y: 0.27, z: 0.19 }, 5, headPivot),
     animalPart(
       new THREE.ConeGeometry(0.03, 0.075, 4),
       coatColor,
@@ -236,6 +264,7 @@ export function buildCatGeometry(coatColor = palette.crateDark): THREE.BufferGeo
         z: 0.18,
       },
       5,
+      headPivot,
     ),
     animalPart(
       new THREE.ConeGeometry(0.03, 0.075, 4),
@@ -246,6 +275,7 @@ export function buildCatGeometry(coatColor = palette.crateDark): THREE.BufferGeo
         z: 0.18,
       },
       5,
+      headPivot,
     ),
     animalPart(
       new THREE.CylinderGeometry(0.018, 0.024, 0.24, 5),
@@ -274,6 +304,7 @@ export function buildCatGeometry(coatColor = palette.crateDark): THREE.BufferGeo
           z: lz,
         },
         partId,
+        [lx, 0.14, lz],
       ),
     );
   }
@@ -281,6 +312,7 @@ export function buildCatGeometry(coatColor = palette.crateDark): THREE.BufferGeo
 }
 
 export function buildSheepGeometry(): THREE.BufferGeometry {
+  const headPivot: [number, number, number] = [0, 0.58, 0.32];
   const parts: THREE.BufferGeometry[] = [
     animalPart(
       new THREE.IcosahedronGeometry(0.32, 0),
@@ -313,6 +345,7 @@ export function buildSheepGeometry(): THREE.BufferGeometry {
         sz: 1.15,
       },
       5,
+      headPivot,
     ),
     animalPart(
       new THREE.BoxGeometry(0.24, 0.05, 0.06),
@@ -322,6 +355,7 @@ export function buildSheepGeometry(): THREE.BufferGeometry {
         z: 0.4,
       },
       5,
+      headPivot,
     ),
   ];
   for (const [lx, lz, partId] of [
@@ -340,6 +374,7 @@ export function buildSheepGeometry(): THREE.BufferGeometry {
           z: lz,
         },
         partId,
+        [lx, 0.32, lz],
       ),
     );
   }
@@ -399,13 +434,21 @@ export function buildHarnessHorseGeometry(coatTint: number = palette.bay): THREE
   rig.root.updateMatrixWorld(true);
 
   const parts: THREE.BufferGeometry[] = [];
+  const tmpPivot = new THREE.Vector3();
   rig.root.traverse((c) => {
     if (c instanceof THREE.Mesh) {
       const geo = c.geometry.clone();
       geo.applyMatrix4(c.matrixWorld);
       const color =
         c.material instanceof THREE.MeshStandardMaterial ? c.material.color.getHex() : coatTint;
-      parts.push(animalPart(geo, color === palette.bay ? coatTint : color, undefined, horsePartId(c, rig)));
+      const partId = horsePartAndPivot(c, rig, tmpPivot);
+      parts.push(
+        animalPart(geo, color === palette.bay ? coatTint : color, undefined, partId, [
+          tmpPivot.x,
+          tmpPivot.y,
+          tmpPivot.z,
+        ]),
+      );
       c.geometry.dispose();
     }
   });

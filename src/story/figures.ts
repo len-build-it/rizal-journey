@@ -113,6 +113,16 @@ export function personPartId(obj: THREE.Object3D, rig: PersonRig): number {
   return 0;
 }
 
+/** Returns the rig group whose origin is the rotation pivot for a mesh inside a PersonRig. */
+export function personPivotGroup(obj: THREE.Object3D, rig: PersonRig): THREE.Object3D {
+  if (isDescendantOf(obj, rig.legL)) return rig.legL;
+  if (isDescendantOf(obj, rig.legR)) return rig.legR;
+  if (isDescendantOf(obj, rig.armL)) return rig.armL;
+  if (isDescendantOf(obj, rig.armR)) return rig.armR;
+  if (isDescendantOf(obj, rig.head)) return rig.head;
+  return rig.hips;
+}
+
 function mergeParts(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   const merged = mergeGeometries(parts, false);
   for (const p of parts) p.dispose();
