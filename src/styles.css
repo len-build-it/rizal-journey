@@ -239,7 +239,7 @@ button {
   }
 
   .hud-where {
-    max-width: calc(100vw - 236px);
+    max-width: calc(100vw - 246px);
   }
 }
 
@@ -678,23 +678,23 @@ button {
   }
 
   .hud-where {
-    padding: 6px 10px 7px;
+    padding: 6px 9px 7px;
   }
 
   .hud-where-top {
-    gap: 6px;
+    gap: 5px;
   }
 
   .hud-where .k-chip__year {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
   }
 
   .hud-where .k-chip__place {
-    font-size: 0.86rem;
+    font-size: 0.84rem;
   }
 
   .hud-where .k-chip__goal {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
   }
 
   .hud-top-right {
@@ -704,14 +704,14 @@ button {
   }
 
   .hud-stamps {
-    padding: 5px 8px;
-    gap: 4px;
+    padding: 5px 7px;
+    gap: 3px;
   }
 
   .hud-stamps .k-stamp {
-    width: 19px;
-    height: 19px;
-    font-size: 0.68rem;
+    width: 18px;
+    height: 18px;
+    font-size: 0.66rem;
   }
 
   .hud-stamps .k-stamps__count {
@@ -720,8 +720,8 @@ button {
 
   .hud-menu-btn {
     min-height: 32px;
-    padding: 5px 10px;
-    font-size: 0.85rem;
+    padding: 5px 9px;
+    font-size: 0.84rem;
     gap: 5px;
   }
 }

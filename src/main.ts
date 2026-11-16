@@ -580,12 +580,16 @@ async function main(): Promise<void> {
         captured,
         async () => {
           await areaManager.load(dest, visited);
+          preferredTargetId = null;
+          syncHudGoal();
+          syncChecklist();
         },
         (h) => {
           activeTravel = h;
         },
       );
       activeTravel = null;
+      if (introOpen) return;
       if (!reducedMotion && !touch) {
         popupReveal = 0;
         void animatePopupReveal(0, 1, 900);
@@ -594,17 +598,18 @@ async function main(): Promise<void> {
       await areaManager.load(dest, visited);
     }
 
+    if (introOpen) return;
     preferredTargetId = null;
     syncHudGoal();
     syncChecklist();
     persist();
     traveling = false;
-    if (introOpen) return;
     const nextChapter = currentChapter();
     if (nextChapter) {
       syncMenuButton();
       await chapterCard.show(nextChapter);
     }
+    if (introOpen) return;
     syncMenuButton();
     input.enabled = true;
     startAreaOpenPan();
@@ -1178,7 +1183,9 @@ async function main(): Promise<void> {
   };
 
   const returnToDesk = async (): Promise<void> => {
+    introOpen = true;
     menu.hide({ returnFocus: false });
+    syncMenuButton();
     engine.paused = false;
     input.enabled = false;
     input.clearKeys();
@@ -1208,7 +1215,6 @@ async function main(): Promise<void> {
     await openingDesk.ready();
     engine.setOverrideRender(openingDesk.scene, openingDesk.camera);
     document.documentElement.classList.add('is-intro');
-    introOpen = true;
     syncMenuButton();
     openIntro();
   };

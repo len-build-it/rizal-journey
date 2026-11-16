@@ -194,3 +194,43 @@ Per Handoff 6B rules (`src/ui/brochure/*` left unmodified except recaptured `def
 - **Recaptured defaults & `review/handoff7/` proofs**:
   - Recaptured all 13 default brochure snapshots in `src/ui/brochure/defaults/*.jpg`.
   - Saved `1280 x 800` desktop (`desk-*`), `390 x 844` mobile (`mob-*`), 8-frame walk strips (`walk-{man,woman,child,dog,horse}.png`), arrival and 8 px Gaussian-blurred UI-free views (`arrive-<area>.png`, `arrive-<area>-blur.png` for all 6 areas), `stop-signboard-wave.png`, 16 close-up set-piece views (`setpiece-*.png`), print sheets (`desk-print-page1.png`, `desk-print-page2.png`), and 2-page A4 landscape PDF (`desk-brochure-print.pdf`) in `review/handoff7/`.
+
+## Handoff 8 (Game menu and places checklist)
+
+- **Scene completion & leaving early (`src/core/rideLogic.ts`, `src/story/SceneDirector.ts`, `src/story/SceneUI.ts`, `src/main.ts`)**:
+  - Moved stop `visited`, brochure panel stamping, HUD goal sync, and persistence to `onCompleteStop` inside `SceneDirector.captureFinalCaptionSnapshot()`, so stops only count when reaching the final caption or using "Skip to the end".
+  - Added `SceneDirector.leaveEarly()` and `SceneUI.fadeOutAndHide()` to fade the caption band out, restore area look/actors/props/lights, return the camera to Rizal at the stop, record the story in `leftEarly`, and display `"Watch: <story title>"` (without auto-restarting) while other unvisited stops still auto-start.
+  - Guarded `openStoryCard` so inspecting a locked station does not mark it visited.
+- **Game menu & pause (`src/ui/GameMenu.ts`, `src/ui/Hud.ts`, `src/core/Engine.ts`, `src/core/Input.ts`, `src/ui/Travel.ts`, `src/ui/BrochureView.ts`, `src/story/SceneUI.ts`, `src/ui/Intro.ts`, `src/styles.css`, `src/main.ts`)**:
+  - Added the quiet top-right `"Menu"` button (`.k-btn.k-btn--quiet.k-btn--small` with three-line icon) next to the passport stamps, visible during riding, scenes, scene end frames, and travel spreads, and hidden on the desk, in brochure views, and while the menu is open.
+  - Built the accessible `"Paused"` dialog (`role="dialog"`, `aria-modal="true"`, `aria-labelledby`, focus on first button, Tab trapping, Escape toggle returning focus to the Menu button, kit pop-up motion respecting `prefers-reduced-motion`).
+  - Freezes `Engine` simulation steps, `SceneDirector` timelines, `BackgroundLife`, `areaPan`, pop-up reveals, and both `playTrainJourney` and `playTowerTimelapse` while open; supports `"Skip to the end"`, `"Leave this scene"`, `"Skip the journey"`, `"Your brochure so far"`, `"Places"`, inline `"Controls"` (keyboard and touch variants), and `"Back to the desk"` with `"Your progress is saved."`.
+  - Updated caption band and title screen keyboard hints to `"Esc for the menu."`.
+- **Desk updates (`src/ui/Intro.ts`, `src/main.ts`)**:
+  - Shows `"Continue your ride"` and `"Start over"` when saved progress exists, and `"Open the brochure"` when none exists.
+  - Added the `"Start over"` confirmation dialog (`"Start a new ride? Your stamps and snapshots will be cleared."` with `"Start over"` and `"Keep my ride"`), clearing saved progress and restarting from Marseille 1882.
+- **Places checklist & journey overview (`src/core/progress.ts`, `src/core/rideLogic.ts`, `src/world/PathTrail.ts`, `src/ui/Hud.ts`, `src/ui/GameMenu.ts`, `src/ui/StoryCard.ts`, `src/styles.css`)**:
+  - Added the `"Places"` checklist `.k-card` directly under the top-left place chip with story-ordered rows, stamped ticks (animating on visit unless reduced motion), locked station note `"After the others"` in italics, vermilion dot and heavier label for the active trail target, accessible row names, click-to-target trail/arrow/marker emphasis, collapse/expand via header click or `C` key persisted in `ProgressState.checklistCollapsed` (default expanded above `640 px`, collapsed at `<= 640 px`), auto-hiding while `StoryCard` is open, and smart edge-arrow avoidance.
+  - Added the read-only `"Places"` journey overview inside the menu listing all 6 chapters from `CHAPTERS` with counts, stamped ticks when complete, `"You are here"` in italics, and a `"Back"` button.
+- **Verification & `review/handoff8/` screenshots (`tests/ride.test.ts`, `scripts/capture-handoff8.py`)**:
+  - Added 6 unit tests in `tests/ride.test.ts` (21 total tests passing across 4 test files).
+  - Verified `git diff -- src/content/ src/ui/kit/ src/ui/brochure/` is empty, `marseille-1882` draw calls stayed within baseline (`calls=153`, `staticCalls=6`), zero console/page errors on both `1280 x 800` desktop and `390 x 844` mobile, and captured:
+    - `review/handoff8/1-riding-checklist-expanded.png`
+    - `review/handoff8/2a-checklist-station-locked.png`
+    - `review/handoff8/2b-checklist-station-unlocked.png`
+    - `review/handoff8/3-checklist-collapsed.png`
+    - `review/handoff8/4a-menu-riding.png`
+    - `review/handoff8/4b-menu-scene.png`
+    - `review/handoff8/4c-menu-travel.png`
+    - `review/handoff8/5a-menu-controls.png`
+    - `review/handoff8/5b-menu-places.png`
+    - `review/handoff8/6-watch-prompt-after-leave.png`
+    - `review/handoff8/7a-desk-continue.png`
+    - `review/handoff8/7b-desk-start-over-confirm.png`
+    - `review/handoff8/8-brochure-so-far.png`
+    - `review/handoff8/9-mob-1-riding.png`
+    - `review/handoff8/9-mob-4a-menu-riding.png`
+    - `review/handoff8/9-mob-4b-menu-scene.png`
+    - `review/handoff8/9-mob-4c-menu-travel.png`
+    - `review/handoff8/9-mob-7a-desk-continue.png`
+    - `review/handoff8/9-mob-7b-desk-confirm.png`
