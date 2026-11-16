@@ -980,3 +980,69 @@ export function buildCrowd(specs: CrowdSpec[]): {
     },
   };
 }
+
+export interface WaitingFigure {
+  readonly root: THREE.Group;
+  readonly armPivot: THREE.Group | null;
+  dispose: () => void;
+}
+
+/**
+ * Compact 1-to-2 mesh standing figure for stop rings: merges static limbs into one
+ * draw call and keeps `armPivot` free when `waver` is true so it can turn and wave.
+ */
+export function buildWaitingFigure(opts: PersonOptions, waver: boolean): WaitingFigure {
+  const rig = buildPerson(opts);
+  rig.root.updateMatrixWorld(true);
+  const root = new THREE.Group();
+  const bodyParts: THREE.BufferGeometry[] = [];
+  const armParts: THREE.BufferGeometry[] = [];
+  const invArm = new THREE.Matrix4();
+  const shoulder = new THREE.Vector3();
+  if (waver) {
+    rig.armR.getWorldPosition(shoulder);
+    invArm.copy(rig.armR.matrixWorld).invert();
+  }
+  const armRMesh = rig.armR.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh) ?? null;
+
+  rig.root.traverse((c) => {
+    if (!(c instanceof THREE.Mesh)) return;
+    const cloned = c.geometry.clone();
+    if (waver && c === armRMesh) {
+      cloned.applyMatrix4(c.matrixWorld);
+      cloned.applyMatrix4(invArm);
+      armParts.push(cloned);
+    } else {
+      cloned.applyMatrix4(c.matrixWorld);
+      bodyParts.push(cloned);
+    }
+  });
+  rig.dispose();
+
+  const meshes: THREE.Mesh[] = [];
+  const bodyMesh = new THREE.Mesh(mergeParts(bodyParts), mat(0xffffff, { vertexColors: true }));
+  bodyMesh.castShadow = true;
+  root.add(bodyMesh);
+  meshes.push(bodyMesh);
+
+  let armPivot: THREE.Group | null = null;
+  if (waver && armParts.length > 0) {
+    armPivot = new THREE.Group();
+    armPivot.position.copy(shoulder);
+    armPivot.scale.copy(rig.root.scale);
+    const armMesh = new THREE.Mesh(mergeParts(armParts), mat(0xffffff, { vertexColors: true }));
+    armMesh.castShadow = true;
+    armPivot.add(armMesh);
+    root.add(armPivot);
+    meshes.push(armMesh);
+  }
+
+  return {
+    root,
+    armPivot,
+    dispose() {
+      root.removeFromParent();
+      for (const m of meshes) m.geometry.dispose();
+    },
+  };
+}
