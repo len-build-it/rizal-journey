@@ -14,7 +14,7 @@ export function showIntro(
   handlers: IntroHandlers,
 ): HTMLElement {
   const openBtn = el('button', { class: 'intro-start k-btn k-btn--primary', type: 'button' }, [
-    'Open the brochure',
+    handlers.hasContinue ? 'Continue your ride' : 'Open the brochure',
   ]);
   const restartBtn = handlers.hasContinue
     ? el('button', { class: 'intro-secondary k-btn k-btn--quiet', type: 'button' }, ['Start over'])
@@ -51,8 +51,69 @@ export function showIntro(
     void cb();
   };
 
+  const openConfirm = (): void => {
+    if (busy || !restartBtn) return;
+    const confirmBtn = el(
+      'button',
+      { class: 'k-btn k-btn--primary', type: 'button' },
+      ['Start over'],
+    ) as HTMLButtonElement;
+    const keepBtn = el(
+      'button',
+      { class: 'k-btn', type: 'button' },
+      ['Keep my ride'],
+    ) as HTMLButtonElement;
+
+    const card = el(
+      'div',
+      {
+        class: 'intro-confirm k-card',
+        role: 'dialog',
+        'aria-modal': 'true',
+        'aria-labelledby': 'intro-confirm-msg',
+      },
+      [
+        el('p', { class: 'intro-confirm__msg', id: 'intro-confirm-msg' }, [
+          'Start a new ride? Your stamps and snapshots will be cleared.',
+        ]),
+        el('div', { class: 'intro-confirm__actions' }, [confirmBtn, keepBtn]),
+      ],
+    );
+    const overlay = el('div', { class: 'intro-confirm-overlay' }, [card]);
+    parent.append(overlay);
+    requestAnimationFrame(() => overlay.classList.add('is-open'));
+
+    const close = (restoreFocus: boolean): void => {
+      window.removeEventListener('keydown', onKey, true);
+      overlay.remove();
+      if (restoreFocus) restartBtn.focus({ preventScroll: true });
+    };
+
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        close(true);
+        return;
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const next = document.activeElement === confirmBtn ? keepBtn : confirmBtn;
+        next.focus({ preventScroll: true });
+      }
+    };
+
+    window.addEventListener('keydown', onKey, true);
+    keepBtn.addEventListener('click', () => close(true));
+    confirmBtn.addEventListener('click', () => {
+      close(false);
+      trigger(handlers.onRestart);
+    });
+    confirmBtn.focus({ preventScroll: true });
+  };
+
   openBtn.addEventListener('click', () => trigger(handlers.onOpen));
-  restartBtn?.addEventListener('click', () => trigger(handlers.onRestart));
+  restartBtn?.addEventListener('click', openConfirm);
   brochure.addEventListener('click', () => handlers.onBrochure());
 
   requestAnimationFrame(() => openBtn.focus({ preventScroll: true }));

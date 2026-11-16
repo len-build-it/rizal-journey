@@ -400,6 +400,40 @@ button {
   gap: 12px;
 }
 
+.intro-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(32 50 74 / 0.4);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.intro-confirm-overlay.is-open {
+  opacity: 1;
+}
+
+.intro-confirm {
+  width: min(380px, calc(100vw - 32px));
+  padding: 24px 26px;
+}
+
+.intro-confirm__msg {
+  margin: 0 0 18px;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--k-ink);
+}
+
+.intro-confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 /* Touch joystick */
 
 .stick-zone {
