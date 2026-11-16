@@ -24,6 +24,7 @@ import { buildTrain } from '../vessels';
 import { storiesFor, type ParisEra } from '../../content/stories';
 import { BackgroundLife } from '../life/BackgroundLife';
 import { parisDressing } from '../life/dressings';
+import { SignAtlas } from '../storySigns';
 import type { Area, AreaLook } from '../Area';
 
 const TOWER_CENTER = new THREE.Vector3(-34, 0, 0);
@@ -49,6 +50,7 @@ export function buildParis(
   const props = new Props(ctx, scene);
   const signsGroup = new THREE.Group();
   signsGroup.name = 'paris-signs';
+  const storySigns = new SignAtlas();
   const lit = era === '1889';
   const look = parisLook(era);
 
@@ -124,7 +126,7 @@ export function buildParis(
   }
 
   // Grand Paris railway terminus on the west side of the station square, facing +X toward the boulevard.
-  batch.withAnchor(-10.5, 0, -50, () => parisTerminus(batch, ctx, -10.5, -50));
+  batch.withAnchor(-10.5, 0, -50, () => parisTerminus(batch, ctx, -10.5, -50, storySigns));
   // Backdrop Haussmann row behind the northern station tracks so the horizon is enclosed.
   haussmannRow(batch, ctx, -24, 56, -68, 39, { depth: 8, floors: [5] });
 
@@ -178,7 +180,9 @@ export function buildParis(
   });
 
   // Rue de Maubeuge south side (z = -15, facing -Z): Hotel de Paris sits at x = 19, z = -15.
-  batch.withAnchor(19.25, 0, -15, () => hotelDeParis(batch, ctx, 19.25, -15));
+  batch.withAnchor(19.25, 0, -15, () =>
+    hotelDeParis(batch, ctx, 19.25, -15, era === '1883', storySigns),
+  );
   haussmannRow(batch, ctx, 24, 37, -15, 51, {
     flip: true,
     depth: 8,
@@ -202,7 +206,9 @@ export function buildParis(
     startCorner: 'cut',
     endCorner: 'cut',
   });
-  batch.withAnchor(26, 0, -4, () => laennecHospital(batch, ctx, 26, -4));
+  batch.withAnchor(26, 0, -4, () =>
+    laennecHospital(batch, ctx, 26, -4, era === '1883', storySigns),
+  );
   haussmannCol(batch, ctx, 58.5, -10.5, 5.5, 54, {
     faceEast: false,
     depth: 9,
@@ -223,7 +229,9 @@ export function buildParis(
     shop: false,
     plainGround: true,
   });
-  batch.withAnchor(18.7, 0, 18, () => deWeckerClinic(batch, ctx, 18.7, 18));
+  batch.withAnchor(18.7, 0, 18, () =>
+    deWeckerClinic(batch, ctx, 18.7, 18, era === '1885', storySigns),
+  );
   haussmannRow(batch, ctx, 21.8, 42, 18, 55, {
     flip: true,
     depth: 7.5,
@@ -242,14 +250,16 @@ export function buildParis(
   streetSign(batch, ctx, signsGroup, 11.2, 5.8, Math.PI * 0.25, 'Rue du Cherche-Midi');
 
   // Rue des Saints-Peres (z = 26, south side z = 36 facing -Z): bookshop at x = 18.5, Luna's studio at x = 36.
-  batch.withAnchor(18.5, 0, 36, () => bookshop(batch, ctx, 18.5, 36));
+  batch.withAnchor(18.5, 0, 36, () => bookshop(batch, ctx, 18.5, 36, era === '1889', storySigns));
   haussmannRow(batch, ctx, 22.5, 31, 36, 61, {
     flip: true,
     depth: 8,
     floors: [5],
     sideWindows: true,
   });
-  const skylight = batch.withAnchor(36, 0, 36, () => lunaStudio(batch, ctx, 36, 36, scene));
+  const skylight = batch.withAnchor(36, 0, 36, () =>
+    lunaStudio(batch, ctx, 36, 36, scene, era, storySigns),
+  );
   haussmannRow(batch, ctx, 41, 47, 36, 62, {
     flip: true,
     depth: 8,
@@ -456,10 +466,44 @@ export function buildParis(
     }
     staticBox(ctx, -36.5, 0.5, 28.5, 32, 1.2, 0.5);
 
+    // Exposition entrance sign beside the Eiffel Tower stop.
+    batch.withAnchor(-22.2, 0, 2.2, () => {
+      batch.add(palette.lampIron, new THREE.CylinderGeometry(0.06, 0.08, 2.4, 6), {
+        x: -22.2,
+        y: 1.2,
+        z: 2.2,
+      });
+      batch.add(palette.vermilion, new THREE.BoxGeometry(2.3, 0.82, 0.12), {
+        x: -22.2,
+        y: 2.35,
+        z: 2.2,
+        ry: 0.78,
+      });
+      batch.add(
+        palette.gaslight,
+        new THREE.BoxGeometry(0.28, 0.34, 0.28),
+        { x: -22.2, y: 2.95, z: 2.2 },
+        { emissive: palette.gaslight, roughness: 0.3 },
+      );
+    });
+    storySigns.addSign({
+      text: "World's Fair 1889",
+      sub: 'Eiffel Tower',
+      style: 'vermilion',
+      x: -22.2,
+      y: 2.35,
+      z: 2.2,
+      ry: 0.78,
+      width: 2.15,
+      height: 0.72,
+      anchor: [-22.2, 0, 2.2],
+      doubleSided: true,
+    });
+
     // Wild West show open-air arena outside the fair at the south edge.
     const arenaHorsesBatch = new StaticBatch();
     batch.withAnchor(-36, 0, 41.5, () =>
-      wildWestArena(batch, ctx, -36, 41.5, arenaHorsesBatch),
+      wildWestArena(batch, ctx, -36, 41.5, arenaHorsesBatch, storySigns),
     );
     arenaHorsesGroup = arenaHorsesBatch.build('paris-arena-horses');
     scene.add(arenaHorsesGroup);
@@ -494,6 +538,8 @@ export function buildParis(
 
   const staticGroup = batch.build(`paris-${era}-static`);
   scene.add(staticGroup);
+  const storySignsBuilt = storySigns.build(`paris-${era}-story-signs`);
+  scene.add(storySignsBuilt.group);
   scene.add(signsGroup);
 
   const water = new Water(26, 176, 3.5, new THREE.Vector3(-72.5, -1.2, 0), 0.3);
@@ -620,6 +666,7 @@ export function buildParis(
       disposeObject(staticGroup);
       disposeObject(skylight);
       disposeObject(paperSurround);
+      storySignsBuilt.dispose();
       if (arenaHorsesGroup) disposeObject(arenaHorsesGroup);
       train.dispose();
       signsGroup.removeFromParent();
@@ -962,8 +1009,14 @@ function parisLook(era: ParisEra): AreaLook {
   };
 }
 
-/** Paris railway terminus facing +X onto the station square, with arched glass front, clock and locomotive. */
-function parisTerminus(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
+/** Paris railway terminus facing +X onto the station square, with arched glass front, canopy, clock and locomotive. */
+function parisTerminus(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  z: number,
+  signs: SignAtlas,
+): void {
   const w = 20;
   const h = 8.2;
   const d = 8.5;
@@ -973,22 +1026,53 @@ function parisTerminus(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number
     new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)),
     new THREE.Vector3(1, 1, 1),
   );
-  const add = (color: number, geo: THREE.BufferGeometry, px: number, py: number, pz: number): void => {
+  const add = (
+    color: number,
+    geo: THREE.BufferGeometry,
+    px: number,
+    py: number,
+    pz: number,
+    opts?: Parameters<typeof mat>[1],
+  ): void => {
     geo.translate(px, py, pz);
-    batch.addTransformed(color, geo, m);
+    const cloned = geo.index ? geo.toNonIndexed() : geo;
+    cloned.applyMatrix4(m);
+    batch.add(color, cloned, undefined, opts);
   };
 
   add(palette.parisLimestone, new THREE.BoxGeometry(w, h, d), 0, h / 2, 0);
   add(palette.quayStoneDark, new THREE.BoxGeometry(w + 0.3, 0.7, d + 0.3), 0, 0.35, 0);
   add(palette.zincRoofDark, new THREE.BoxGeometry(w + 0.6, 1.4, d + 0.6), 0, h + 0.7, 0);
 
-  // Big arched glass train-shed front in the middle.
+  // Big arched glass train-shed front glowing warmly inside.
   const arch = new THREE.CylinderGeometry(4.6, 4.6, d + 0.3, 12, 1, false, 0, Math.PI);
   arch.rotateZ(Math.PI / 2);
   arch.rotateY(Math.PI / 2);
-  add(palette.parisGlass, arch, 0, 4.2, 0);
-  add(palette.parisGlass, new THREE.BoxGeometry(9.2, 4.2, d + 0.3), 0, 2.1, 0);
+  add(palette.gaslight, arch, 0, 4.2, 0, { emissive: palette.gaslight, roughness: 0.35 });
+  add(palette.gaslight, new THREE.BoxGeometry(9.2, 4.2, d + 0.3), 0, 2.1, 0, {
+    emissive: palette.gaslight,
+    roughness: 0.35,
+  });
   add(palette.lampIron, new THREE.BoxGeometry(9.8, 0.32, d + 0.5), 0, 4.3, 0);
+
+  // Projecting iron station canopy & vermilion city name board facing +X.
+  add(palette.lampIron, new THREE.BoxGeometry(10.6, 0.22, 3.6), 0, 4.35, d / 2 + 1.8, undefined);
+  for (const sx of [-4.8, 4.8]) {
+    add(palette.lampIron, new THREE.CylinderGeometry(0.08, 0.1, 4.2, 6), sx, 2.1, d / 2 + 3.3);
+  }
+  add(palette.vermilion, new THREE.BoxGeometry(4.4, 0.96, 0.14), 0, 5.05, d / 2 + 3.55);
+  signs.addSign({
+    text: 'Paris',
+    sub: 'Station',
+    style: 'vermilion',
+    x: x + d / 2 + 3.66,
+    y: 5.05,
+    z,
+    ry: Math.PI / 2,
+    width: 4.2,
+    height: 0.86,
+    anchor: [x, 0, z],
+  });
 
   // Station clock centered above the arch.
   const clock = new THREE.CylinderGeometry(1.05, 1.05, 0.2, 14);
@@ -999,7 +1083,10 @@ function parisTerminus(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number
 
   // Side windows.
   for (const sx of [-7.5, -5.8, 5.8, 7.5]) {
-    add(palette.parisWindow, new THREE.BoxGeometry(1.2, 4.0, 0.12), sx, 3.2, d / 2 + 0.04);
+    add(palette.gaslight, new THREE.BoxGeometry(1.2, 4.0, 0.12), sx, 3.2, d / 2 + 0.04, {
+      emissive: palette.gaslight,
+      roughness: 0.35,
+    });
   }
   staticBox(ctx, x, h / 2, z, d, h, w);
 
@@ -1010,8 +1097,15 @@ function parisTerminus(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number
   staticBox(ctx, lx, 1.8, lz, 9, 3.6, 2.6);
 }
 
-/** Modest Haussmann hotel facade facing -Z with a small plaque shape beside the door. */
-function hotelDeParis(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
+/** Modest Haussmann hotel facade facing -Z with hanging sign, awning and lit door marked 37. */
+function hotelDeParis(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  z: number,
+  active: boolean,
+  signs: SignAtlas,
+): void {
   haussmannBlock(batch, ctx, {
     x,
     z,
@@ -1024,16 +1118,81 @@ function hotelDeParis(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number)
     corner: 'cut-right',
     sideWindows: true,
   });
-  batch.add(palette.lampIron, new THREE.BoxGeometry(2.4, 0.14, 1.2), { x, y: 2.5, z: z - 4.5 });
+  // Striped entrance awning & door trim.
+  for (let i = 0; i < 4; i++) {
+    batch.add(
+      i % 2 === 0 ? (active ? palette.vermilion : palette.canvasMuted) : palette.awningCream,
+      new THREE.BoxGeometry(0.7, 0.1, 1.45),
+      { x: x - 1.05 + i * 0.7, y: 2.65, z: z - 4.65, rx: -0.22 },
+    );
+  }
+  batch.add(
+    active ? palette.gaslight : palette.doorBrown,
+    new THREE.BoxGeometry(1.25, 2.2, 0.14),
+    { x, y: 1.1, z: z - 4.05 },
+    active ? { emissive: palette.gaslight, roughness: 0.35 } : undefined,
+  );
   batch.add(palette.brass, new THREE.BoxGeometry(0.55, 0.45, 0.08), {
     x: x - 1.15,
     y: 1.7,
     z: z - 4.05,
   });
+  if (active) {
+    // Hanging iron sign projecting perpendicular to the facade + number 37 over the lit door.
+    batch.add(palette.lampIron, new THREE.BoxGeometry(0.08, 0.08, 1.8), {
+      x: x - 1.75,
+      y: 3.55,
+      z: z - 4.85,
+    });
+    batch.add(palette.vermilion, new THREE.BoxGeometry(0.1, 0.85, 1.55), {
+      x: x - 1.75,
+      y: 3.02,
+      z: z - 4.95,
+    });
+    signs.addSign({
+      text: 'Hotel de Paris',
+      sub: '37 Rue de Maubeuge',
+      style: 'vermilion',
+      x: x - 1.75,
+      y: 3.02,
+      z: z - 4.95,
+      ry: -Math.PI / 2,
+      width: 1.45,
+      height: 0.75,
+      anchor: [x, 0, z],
+      doubleSided: true,
+    });
+    signs.addSign({
+      text: '37',
+      style: 'number',
+      x,
+      y: 2.38,
+      z: z - 4.18,
+      ry: Math.PI,
+      width: 0.52,
+      height: 0.38,
+      anchor: [x, 0, z],
+    });
+    for (const sx of [-0.95, 0.95]) {
+      batch.add(
+        palette.gaslight,
+        new THREE.BoxGeometry(0.22, 0.3, 0.22),
+        { x: x + sx, y: 2.05, z: z - 4.16 },
+        { emissive: palette.gaslight, roughness: 0.3 },
+      );
+    }
+  }
 }
 
-/** Long, low institutional hospital building (Laennec) with courtyard and iron gate. */
-function laennecHospital(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
+/** Long, low institutional hospital building (Laennec) with courtyard and arched name gate. */
+function laennecHospital(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  z: number,
+  active: boolean,
+  signs: SignAtlas,
+): void {
   const wallH = 6.4;
   batch.add(palette.parisLimestone, new THREE.BoxGeometry(6, wallH, 22), { x, y: wallH / 2, z });
   batch.add(palette.zincRoofDark, new THREE.BoxGeometry(6.4, 1.6, 22.4), {
@@ -1069,22 +1228,73 @@ function laennecHospital(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: numb
       y: 0.9,
       z: z + gz + Math.sign(gz) * 2.1,
     });
+    if (active) {
+      batch.add(
+        palette.gaslight,
+        new THREE.BoxGeometry(0.28, 0.34, 0.28),
+        { x: x + 11, y: 3.02, z: z + gz },
+        { emissive: palette.gaslight, roughness: 0.3 },
+      );
+    }
+  }
+  // Overhead hospital gate arch + vermilion-trimmed name sign facing +X toward the stop.
+  batch.add(palette.lampIron, new THREE.BoxGeometry(0.24, 0.28, 5.2), {
+    x: x + 11,
+    y: 2.9,
+    z,
+  });
+  if (active) {
+    batch.add(palette.vermilion, new THREE.BoxGeometry(0.2, 0.85, 3.3), {
+      x: x + 11,
+      y: 3.42,
+      z,
+    });
+    signs.addSign({
+      text: 'Laennec Hospital',
+      sub: 'June 1883',
+      style: 'vermilion',
+      x: x + 11.12,
+      y: 3.42,
+      z,
+      ry: Math.PI / 2,
+      width: 3.15,
+      height: 0.76,
+      anchor: [x, 0, z],
+      doubleSided: true,
+    });
   }
   staticBox(ctx, x + 11, 1.0, z - 4.5, 0.6, 2.0, 4.2);
   staticBox(ctx, x + 11, 1.0, z + 4.5, 0.6, 2.0, 4.2);
 
-  batch.add(palette.doorBrown, new THREE.BoxGeometry(0.14, 2.6, 1.8), { x: x + 3.05, y: 1.3, z });
+  batch.add(
+    active ? palette.gaslight : palette.doorBrown,
+    new THREE.BoxGeometry(0.14, 2.6, 1.8),
+    { x: x + 3.05, y: 1.3, z },
+    active ? { emissive: palette.gaslight, roughness: 0.35 } : undefined,
+  );
   for (const wz of [-5, -2.5, 2.5, 5]) {
-    batch.add(palette.parisWindow, new THREE.BoxGeometry(0.12, 1.6, 0.9), {
-      x: x + 3.04,
-      y: 4.2,
-      z: z + wz,
-    });
+    batch.add(
+      active ? palette.gaslight : palette.parisWindow,
+      new THREE.BoxGeometry(0.12, 1.6, 0.9),
+      {
+        x: x + 3.04,
+        y: 4.2,
+        z: z + wz,
+      },
+      active ? { emissive: palette.gaslight, roughness: 0.35 } : undefined,
+    );
   }
 }
 
-/** Doctor's practice on Rue du Cherche-Midi: narrower building facing -Z, brass plate and bench. */
-function deWeckerClinic(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
+/** Doctor's practice on Rue du Cherche-Midi: narrower building facing -Z, brass plate, lit window and bench. */
+function deWeckerClinic(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  z: number,
+  active: boolean,
+  signs: SignAtlas,
+): void {
   haussmannBlock(batch, ctx, {
     x,
     z,
@@ -1096,11 +1306,56 @@ function deWeckerClinic(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: numbe
     shop: false,
     backWindows: true,
   });
-  batch.add(palette.brass, new THREE.BoxGeometry(0.45, 0.35, 0.08), {
-    x: x - 0.95,
-    y: 1.55,
+  batch.add(palette.brass, new THREE.BoxGeometry(0.7, 0.45, 0.08), {
+    x: x - 1.0,
+    y: 1.58,
     z: z - 3.82,
   });
+  if (active) {
+    // Clinic canopy, warm lit clinic window & doorway, and brass name plate.
+    batch.add(palette.vermilion, new THREE.BoxGeometry(2.6, 0.14, 1.2), {
+      x: x - 0.1,
+      y: 2.65,
+      z: z - 4.35,
+      rx: -0.2,
+    });
+    batch.add(
+      palette.gaslight,
+      new THREE.BoxGeometry(1.1, 2.15, 0.12),
+      { x: x - 0.1, y: 1.1, z: z - 3.82 },
+      { emissive: palette.gaslight, roughness: 0.35 },
+    );
+    batch.add(
+      palette.gaslight,
+      new THREE.BoxGeometry(1.3, 1.45, 0.12),
+      { x: x + 1.55, y: 1.55, z: z - 3.82 },
+      { emissive: palette.gaslight, roughness: 0.35 },
+    );
+    signs.addSign({
+      text: 'Dr. Louis de Wecker',
+      sub: 'Eye clinic',
+      style: 'brass',
+      x: x - 1.3,
+      y: 1.68,
+      z: z - 3.92,
+      ry: Math.PI,
+      width: 1.35,
+      height: 0.52,
+      anchor: [x, 0, z],
+    });
+    signs.addSign({
+      text: 'Clinic',
+      sub: 'Rue du Cherche-Midi',
+      style: 'vermilion',
+      x: x - 0.1,
+      y: 2.95,
+      z: z - 4.0,
+      ry: Math.PI,
+      width: 2.2,
+      height: 0.56,
+      anchor: [x, 0, z],
+    });
+  }
   parkBench(batch, ctx, x + 1.6, z - 4.4, Math.PI);
 }
 
@@ -1202,28 +1457,89 @@ function lunaStudio(
   x: number,
   z: number,
   scene: THREE.Scene,
+  era: ParisEra,
+  signs: SignAtlas,
 ): THREE.Mesh {
   const w = 10;
   const d = 8.5;
   const baseH = 9.5;
+  const isStudioStop = era === '1885';
+  const isGodfatherStop = era === '1889';
   batch.add(palette.parisLimestone, new THREE.BoxGeometry(w, baseH, d), { x, y: baseH / 2, z });
   batch.add(palette.quayStoneDark, new THREE.BoxGeometry(w + 0.1, 0.55, d + 0.1), {
     x,
     y: 0.28,
     z,
   });
-  batch.add(palette.doorBrown, new THREE.BoxGeometry(1.3, 2.4, 0.12), {
-    x,
-    y: 1.2,
-    z: z - d / 2 - 0.04,
-  });
+  batch.add(
+    isGodfatherStop ? palette.gaslight : palette.doorBrown,
+    new THREE.BoxGeometry(1.3, 2.4, 0.12),
+    {
+      x,
+      y: 1.2,
+      z: z - d / 2 - 0.04,
+    },
+    isGodfatherStop ? { emissive: palette.gaslight, roughness: 0.35 } : undefined,
+  );
+  if (isStudioStop || isGodfatherStop) {
+    // Warm doorway lantern + street plaque.
+    batch.add(
+      palette.gaslight,
+      new THREE.BoxGeometry(0.24, 0.3, 0.24),
+      { x: x - 1.05, y: 2.15, z: z - d / 2 - 0.16 },
+      { emissive: palette.gaslight, roughness: 0.3 },
+    );
+    signs.addSign({
+      text: isGodfatherStop ? 'Luna Family' : "Juan Luna's Studio",
+      sub: isGodfatherStop ? '1889' : '1885 to 1886',
+      style: 'vermilion',
+      x: x - 1.95,
+      y: 1.85,
+      z: z - d / 2 - 0.12,
+      ry: Math.PI,
+      width: 1.85,
+      height: 0.62,
+      anchor: [x, 0, z],
+    });
+  }
+  if (isGodfatherStop) {
+    // Two flower boxes flanking the lit doorway for the 1889 christening stop.
+    for (const fx of [-1.45, 1.45]) {
+      batch.add(palette.crateDark, new THREE.BoxGeometry(1.05, 0.36, 0.48), {
+        x: x + fx,
+        y: 0.18,
+        z: z - d / 2 - 0.36,
+      });
+      batch.add(palette.hedgeGreen, new THREE.BoxGeometry(0.95, 0.22, 0.38), {
+        x: x + fx,
+        y: 0.42,
+        z: z - d / 2 - 0.36,
+      });
+      for (const bx of [-0.3, 0, 0.3]) {
+        batch.add(
+          bx === 0 ? palette.awningCream : palette.vermilion,
+          new THREE.IcosahedronGeometry(0.11, 0),
+          { x: x + fx + bx, y: 0.56, z: z - d / 2 - 0.36 },
+        );
+      }
+    }
+  }
   for (const wx of [-3.2, 3.2]) {
     for (const fy of [1.5, 4.4, 7.2]) {
-      batch.add(palette.parisWindow, new THREE.BoxGeometry(0.9, 1.5, 0.1), {
-        x: x + wx,
-        y: fy,
-        z: z - d / 2 - 0.04,
-      });
+      batch.add(
+        (isStudioStop || isGodfatherStop) && fy < 2
+          ? palette.gaslight
+          : palette.parisWindow,
+        new THREE.BoxGeometry(0.9, 1.5, 0.1),
+        {
+          x: x + wx,
+          y: fy,
+          z: z - d / 2 - 0.04,
+        },
+        (isStudioStop || isGodfatherStop) && fy < 2
+          ? { emissive: palette.gaslight, roughness: 0.35 }
+          : undefined,
+      );
     }
   }
 
@@ -1294,6 +1610,19 @@ function lunaStudio(
       rx: 0.22,
     });
   }
+  if (isStudioStop) {
+    batch.add(palette.vermilion, new THREE.BoxGeometry(w - 0.8, 0.18, 0.16), {
+      x,
+      y: baseH + 0.08,
+      z: z - d * 0.48,
+    });
+    batch.add(
+      palette.gaslight,
+      new THREE.BoxGeometry(2.8, 0.14, 0.55),
+      { x: x - 1.2, y: baseH + studioH - 0.35, z: z - 1.1 },
+      { emissive: palette.gaslight, roughness: 0.3 },
+    );
+  }
 
   // Main large canvas (left-center, angled toward camera and painter) + smaller easel on right.
   studioEasel(batch, x - 1.6, floorY, z - 1.15, Math.PI + 0.32, 1.85, 1.25, true);
@@ -1353,8 +1682,15 @@ function lunaStudio(
   return skylight;
 }
 
-/** Bookshop on Rue des Saints-Peres facing -Z with books displayed in the ground-floor window. */
-function bookshop(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
+/** Bookshop on Rue des Saints-Peres facing -Z with lit print shop window and stacked books. */
+function bookshop(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  z: number,
+  active: boolean,
+  signs: SignAtlas,
+): void {
   haussmannBlock(batch, ctx, {
     x,
     z,
@@ -1369,27 +1705,70 @@ function bookshop(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): vo
   });
   const front = z - 4.05;
   batch.add(palette.doorBrown, new THREE.BoxGeometry(7.0, 2.8, 0.16), { x, y: 1.4, z: front });
-  batch.add(palette.doorBrown, new THREE.BoxGeometry(1.1, 2.25, 0.2), {
-    x: x + 2.1,
-    y: 1.13,
-    z: front - 0.04,
-  });
-  batch.add(palette.parisWindow, new THREE.BoxGeometry(4.0, 1.7, 0.1), {
+  batch.add(
+    active ? palette.gaslight : palette.doorBrown,
+    new THREE.BoxGeometry(1.1, 2.25, 0.2),
+    {
+      x: x + 2.1,
+      y: 1.13,
+      z: front - 0.04,
+    },
+    active ? { emissive: palette.gaslight, roughness: 0.35 } : undefined,
+  );
+  batch.add(
+    active ? palette.gaslight : palette.parisWindow,
+    new THREE.BoxGeometry(4.0, 1.7, 0.1),
+    {
+      x: x - 0.9,
+      y: 1.32,
+      z: front - 0.06,
+    },
+    active ? { emissive: palette.gaslight, roughness: 0.35 } : undefined,
+  );
+  // Display ledge + stacked books along the print shop window.
+  batch.add(palette.deckWood, new THREE.BoxGeometry(4.1, 0.12, 0.42), {
     x: x - 0.9,
-    y: 1.32,
-    z: front - 0.06,
+    y: 0.48,
+    z: front - 0.22,
   });
-  const bookColors = [palette.iron, palette.gaslight, palette.streetSignBlue, palette.awningCream];
+  const bookColors = [
+    palette.vermilion,
+    palette.gaslight,
+    palette.streetSignBlue,
+    palette.awningCream,
+  ];
   for (let i = 0; i < 6; i++) {
-    batch.add(bookColors[i % bookColors.length]!, new THREE.BoxGeometry(0.32, 0.45, 0.16), {
-      x: x + 0.5 - i * 0.58,
-      y: 0.78,
-      z: front - 0.14,
-    });
+    const stackH = 1 + (i % 3);
+    for (let s = 0; s < stackH; s++) {
+      batch.add(bookColors[(i + s) % bookColors.length]!, new THREE.BoxGeometry(0.36, 0.12, 0.26), {
+        x: x + 0.55 - i * 0.58,
+        y: 0.6 + s * 0.13,
+        z: front - 0.22,
+        ry: (s - 0.5) * 0.14,
+      });
+    }
   }
   const awning = new THREE.BoxGeometry(7.2, 0.12, 1.3);
   awning.rotateX(-0.28);
-  batch.add(palette.awningGreen, awning, { x, y: 2.75, z: front - 0.55 });
+  batch.add(active ? palette.vermilion : palette.canvasMuted, awning, {
+    x,
+    y: 2.75,
+    z: front - 0.55,
+  });
+  if (active) {
+    signs.addSign({
+      text: 'Garnier Hermanos',
+      sub: 'Print shop',
+      style: 'vermilion',
+      x: x - 0.5,
+      y: 3.35,
+      z: front - 0.15,
+      ry: Math.PI,
+      width: 3.4,
+      height: 0.72,
+      anchor: [x, 0, z],
+    });
+  }
 }
 
 /** Large 1889 Exposition Universelle pavilion building with arched roof and flags. */
@@ -1527,13 +1906,14 @@ function arenaGrandstand(
   staticBox(ctx, x, roofH / 2, roofCenterZ, len + 0.6, roofH, 3.8);
 }
 
-/** Open-air Wild West show arena outside the fair with oval track, grandstands, arch and horses. */
+/** Open-air Wild West show arena outside the fair with oval track, grandstands, arch, flags, ticket booth and horses. */
 function wildWestArena(
   batch: StaticBatch,
   ctx: PhysicsCtx,
   x: number,
   z: number,
   horsesBatch: StaticBatch,
+  signs: SignAtlas,
 ): void {
   const rx = 13.8;
   const rz = 6.9;
@@ -1615,27 +1995,27 @@ function wildWestArena(
       z: pz - s * 0.6,
       rx: s * 0.72,
     });
-    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.04, 0.04, 1.8, 5), {
-      x: ax,
-      y: 5.9,
-      z: pz,
-    });
-    batch.add(palette.iron, new THREE.ConeGeometry(0.26, 0.95, 3), {
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.045, 0.055, 3.1, 5), {
       x: ax,
       y: 6.55,
-      z: pz + 0.45,
+      z: pz,
+    });
+    batch.add(palette.vermilion, new THREE.ConeGeometry(0.42, 1.45, 3), {
+      x: ax,
+      y: 7.55,
+      z: pz + 0.72,
       rx: Math.PI / 2,
       sz: 0.25,
     });
     staticBox(ctx, ax, 2.5, pz, 0.9, 5.0, 0.9);
   }
-  // Overhead timber beams and stepped pediment (plain wood + red trim, no text).
+  // Overhead timber beams, stepped pediment, and vermilion Wild West Show sign facing +X.
   batch.add(palette.deckWood, new THREE.BoxGeometry(0.65, 0.75, 6.2), {
     x: ax,
     y: 4.55,
     z,
   });
-  batch.add(palette.iron, new THREE.BoxGeometry(0.72, 0.14, 6.4), {
+  batch.add(palette.vermilion, new THREE.BoxGeometry(0.72, 0.14, 6.4), {
     x: ax,
     y: 4.98,
     z,
@@ -1645,11 +2025,53 @@ function wildWestArena(
     y: 5.38,
     z,
   });
-  batch.add(palette.iron, new THREE.BoxGeometry(0.62, 0.14, 3.4), {
+  batch.add(palette.vermilion, new THREE.BoxGeometry(0.62, 0.14, 3.4), {
     x: ax,
     y: 5.75,
     z,
   });
+  signs.addSign({
+    text: 'Wild West Show',
+    sub: '1889',
+    style: 'vermilion',
+    x: ax + 0.36,
+    y: 4.55,
+    z,
+    ry: Math.PI / 2,
+    width: 3.8,
+    height: 0.78,
+    anchor: [x, 0, z],
+  });
+
+  // Ticket booth beside the east arena gate facing the boulevard stop.
+  const bx = ax + 0.8;
+  const bz = z + 4.9;
+  batch.add(palette.crateDark, new THREE.BoxGeometry(1.75, 2.5, 1.85), { x: bx, y: 1.25, z: bz });
+  batch.add(palette.vermilion, new THREE.BoxGeometry(2.15, 0.28, 2.25), { x: bx, y: 2.64, z: bz });
+  batch.add(palette.vermilion, new THREE.BoxGeometry(0.8, 0.12, 1.45), {
+    x: bx + 1.05,
+    y: 2.05,
+    z: bz,
+    rz: -0.25,
+  });
+  batch.add(
+    palette.gaslight,
+    new THREE.BoxGeometry(0.1, 0.72, 1.05),
+    { x: bx + 0.88, y: 1.42, z: bz },
+    { emissive: palette.gaslight, roughness: 0.35 },
+  );
+  signs.addSign({
+    text: 'Tickets',
+    style: 'vermilion',
+    x: bx + 0.92,
+    y: 2.35,
+    z: bz,
+    ry: Math.PI / 2,
+    width: 1.45,
+    height: 0.44,
+    anchor: [x, 0, z],
+  });
+  staticBox(ctx, bx, 1.25, bz, 1.8, 2.5, 1.9);
 
   // Standing riderless horses inside the ring in calm grazing and resting poses.
   stampIdleHorse(horsesBatch, x + 5.2, z - 1.1, 0.95, 'grazing');

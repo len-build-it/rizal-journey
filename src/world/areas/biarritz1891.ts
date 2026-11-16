@@ -11,6 +11,7 @@ import { StopMarker } from '../StopMarker';
 import { storiesFor } from '../../content/stories';
 import { BackgroundLife } from '../life/BackgroundLife';
 import { biarritzDressing } from '../life/dressings';
+import { SignAtlas } from '../storySigns';
 import type { Area } from '../Area';
 
 const PLATEAU_Y = 2.6;
@@ -40,6 +41,7 @@ interface FoamStrip {
 export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx, mobile = false): Area {
   const batch = new StaticBatch();
   const props = new Props(ctx, scene);
+  const signs = new SignAtlas();
 
   const shoreZ = (x: number): number => 8 + 0.0038 * x * x;
 
@@ -261,13 +263,17 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx, mobile = 
   fishingBoat(batch, -2.5, 13.2, -0.35, palette.shutterBlue, 1.0, 0.08);
 
   // Basque-style Boustead villa: two connected volumes, red timbering, shutters, overhang, walled garden, shrubs, 2 tamarisks.
-  batch.withAnchor(-14, PLATEAU_Y, -26, () => basqueVilla(batch, ctx, -14, PLATEAU_Y, -26));
+  batch.withAnchor(-14, PLATEAU_Y, -26, () => basqueVilla(batch, ctx, -14, PLATEAU_Y, -26, signs));
 
-  // Sea-facing terrace beside the villa, with small writing table and chair for the manuscript stop.
-  batch.withAnchor(-3.5, PLATEAU_Y, -19, () => terraceAndTable(batch, ctx, -3.5, PLATEAU_Y, -19));
+  // Sea-facing terrace beside the villa, with small writing table, lit lamp and manuscript pages.
+  batch.withAnchor(-3.5, PLATEAU_Y, -19, () =>
+    terraceAndTable(batch, ctx, -3.5, PLATEAU_Y, -19, signs),
+  );
 
   // Small inland railway station at the northeast edge.
-  batch.withAnchor(28, PLATEAU_Y, -35, () => biarritzStation(batch, ctx, 28, PLATEAU_Y, -35));
+  batch.withAnchor(28, PLATEAU_Y, -35, () =>
+    biarritzStation(batch, ctx, 28, PLATEAU_Y, -35, signs),
+  );
 
   // Framing pines along outer slopes away from the manicured villa garden.
   for (const [tx, tz] of [
@@ -338,6 +344,8 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx, mobile = 
 
   const staticGroup = batch.build('biarritz-static');
   scene.add(staticGroup);
+  const signsBuilt = signs.build('biarritz-signs');
+  scene.add(signsBuilt.group);
 
   // Rough Atlantic waves meeting the curving sand shoreline.
   const water = new Water(240, 100, 3, new THREE.Vector3(0, WATER_Y, 60), 2.1);
@@ -491,6 +499,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx, mobile = 
     },
     dispose() {
       disposeObject(staticGroup);
+      signsBuilt.dispose();
       disposeObject(paperSurround);
       train.dispose();
       foamMesh.removeFromParent();
@@ -1013,7 +1022,14 @@ function gableRoofX(
  * exposed thin red timber framing, upper wooden balcony under the gable, red shutters, walled garden.
  * Styled as a generic Basque residence (not an accurate picture of Villa Eliada).
  */
-function basqueVilla(batch: StaticBatch, ctx: PhysicsCtx, x: number, y: number, z: number): void {
+function basqueVilla(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  y: number,
+  z: number,
+  signs: SignAtlas,
+): void {
   // Main 2.5-floor volume positioned on the east (+X) side so the gable end & balcony face the camera cleanly.
   const mw = 10.6;
   const mh = 6.2;
@@ -1120,14 +1136,20 @@ function basqueVilla(batch: StaticBatch, ctx: PhysicsCtx, x: number, y: number, 
       y: balcY + 1.1,
       z: z + sz * 0.92,
     });
-    // Flanking upper windows inside the corners + lower ground-floor windows on +X.
+    // Flanking upper windows inside the corners + lower ground-floor windows on +X (writing room lit warmly).
     for (const wy of [y + 1.65, balcY + 1.3]) {
       const wzPos = z + sz * 3.15;
-      batch.add(palette.parisWindow, new THREE.BoxGeometry(0.1, 1.25, 0.85), {
-        x: mainEastX,
-        y: wy,
-        z: wzPos,
-      });
+      const isWritingWin = sz > 0 && wy < y + 2.5;
+      batch.add(
+        isWritingWin ? palette.gaslight : palette.parisWindow,
+        new THREE.BoxGeometry(0.1, 1.25, 0.85),
+        {
+          x: mainEastX,
+          y: wy,
+          z: wzPos,
+        },
+        isWritingWin ? { emissive: palette.gaslight, roughness: 0.35 } : undefined,
+      );
       for (const s2 of [-1, 1]) {
         batch.add(palette.basqueRed, new THREE.BoxGeometry(0.08, 1.25, 0.32), {
           x: mainEastX + 0.02,
@@ -1224,6 +1246,12 @@ function basqueVilla(batch: StaticBatch, ctx: PhysicsCtx, x: number, y: number, 
       z: gateZ,
       ry: Math.PI / 4,
     });
+    batch.add(
+      palette.gaslight,
+      new THREE.BoxGeometry(0.24, 0.3, 0.24),
+      { x: px, y: y + 2.45, z: gateZ },
+      { emissive: palette.gaslight, roughness: 0.3 },
+    );
     batch.add(palette.basqueRed, new THREE.BoxGeometry(1.15, 1.2, 0.08), {
       x: px - sx * 0.35,
       y: y + 0.7,
@@ -1232,6 +1260,17 @@ function basqueVilla(batch: StaticBatch, ctx: PhysicsCtx, x: number, y: number, 
     });
     staticBox(ctx, x + sx * 6.3, y + 0.55, gateZ, 8.6, 1.1, 0.6);
   }
+  signs.addSign({
+    text: 'Villa Eliada',
+    sub: 'February 1891',
+    style: 'brass',
+    x: x + 2.05,
+    y: y + 1.25,
+    z: gateZ + 0.45,
+    width: 1.15,
+    height: 0.46,
+    anchor: [x, y, z],
+  });
   // West garden side wall connecting back toward the house.
   batch.add(palette.quayStone, new THREE.BoxGeometry(0.5, 1.05, 13.5), {
     x: x - 10.4,
@@ -1259,13 +1298,14 @@ function basqueVilla(batch: StaticBatch, ctx: PhysicsCtx, x: number, y: number, 
   tamariskTree(batch, x + 7.5, y, gateZ - 2.2, -0.09);
 }
 
-/** Stone garden terrace with a small writing table, chair and manuscript pages. */
+/** Stone garden terrace with a small writing table, lamp, chair and manuscript pages. */
 function terraceAndTable(
   batch: StaticBatch,
   ctx: PhysicsCtx,
   x: number,
   y: number,
   z: number,
+  signs: SignAtlas,
 ): void {
   batch.add(palette.quayStone, new THREE.BoxGeometry(8, 0.25, 7), { x, y: y + 0.125, z });
   batch.add(palette.quayStoneDark, new THREE.BoxGeometry(8.2, 0.6, 0.4), {
@@ -1293,10 +1333,27 @@ function terraceAndTable(
     z: tz,
     ry: 0.12,
   });
-  batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.06, 0.08, 6), {
-    x: tx + 0.35,
-    y: y + 1.04,
-    z: tz - 0.15,
+  batch.add(palette.brass, new THREE.CylinderGeometry(0.05, 0.07, 0.24, 6), {
+    x: tx + 0.46,
+    y: y + 1.12,
+    z: tz + 0.18,
+  });
+  batch.add(
+    palette.gaslight,
+    new THREE.ConeGeometry(0.16, 0.14, 8),
+    { x: tx + 0.46, y: y + 1.28, z: tz + 0.18 },
+    { emissive: palette.gaslight, roughness: 0.3 },
+  );
+  signs.addSign({
+    text: 'Writing terrace',
+    sub: 'El Filibusterismo',
+    style: 'card',
+    x: x + 2.4,
+    y: y + 0.46,
+    z: z + 3.63,
+    width: 1.55,
+    height: 0.46,
+    anchor: [x, y, z],
   });
   batch.add(palette.deckWood, new THREE.BoxGeometry(0.55, 0.08, 0.55), {
     x: tx,
@@ -1311,13 +1368,14 @@ function terraceAndTable(
   staticBox(ctx, tx, y + 0.5, tz - 0.3, 1.6, 1.0, 2.0);
 }
 
-/** Small provincial railway station at the inland edge of Biarritz. */
+/** Small provincial railway station at the inland edge of Biarritz with canopy, clock and name board. */
 function biarritzStation(
   batch: StaticBatch,
   ctx: PhysicsCtx,
   x: number,
   y: number,
   z: number,
+  signs: SignAtlas,
 ): void {
   const w = 16;
   const h = 4.6;
@@ -1332,23 +1390,74 @@ function biarritzStation(
     y: y + h + 0.7,
     z,
   });
-  batch.add(palette.canvasMuted, new THREE.BoxGeometry(w - 1, 0.12, 2.2), {
+  // Projecting canopy with iron posts, clock, and vermilion city name board.
+  batch.add(palette.lampIron, new THREE.BoxGeometry(w - 1, 0.16, 2.8), {
     x,
-    y: y + 3.0,
-    z: z + 4.2,
-    rx: 0.25,
+    y: y + 3.1,
+    z: z + 4.5,
+    rx: 0.15,
   });
-  batch.add(palette.doorBrown, new THREE.BoxGeometry(1.4, 2.3, 0.12), {
-    x,
-    y: y + 1.15,
-    z: z + 3.28,
-  });
-  for (const wx of [-5, -2.5, 2.5, 5]) {
-    batch.add(palette.parisWindow, new THREE.BoxGeometry(1.1, 1.5, 0.1), {
-      x: x + wx,
-      y: y + 1.7,
-      z: z + 3.28,
+  for (const px of [-6.5, 6.5]) {
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.07, 0.09, 2.9, 6), {
+      x: x + px,
+      y: y + 1.45,
+      z: z + 5.7,
     });
+  }
+  // Station clock centered on the gable above the canopy.
+  batch.add(palette.shirt, new THREE.CylinderGeometry(0.75, 0.75, 0.14, 14), {
+    x,
+    y: y + h + 0.6,
+    z: z + 3.85,
+    rx: Math.PI / 2,
+  });
+  batch.add(palette.hat, new THREE.BoxGeometry(0.06, 0.5, 0.04), {
+    x,
+    y: y + h + 0.78,
+    z: z + 3.94,
+  });
+  batch.add(palette.hat, new THREE.BoxGeometry(0.36, 0.06, 0.04), {
+    x: x + 0.15,
+    y: y + h + 0.6,
+    z: z + 3.94,
+  });
+  batch.add(palette.vermilion, new THREE.BoxGeometry(4.0, 0.88, 0.14), {
+    x,
+    y: y + 3.65,
+    z: z + 5.8,
+  });
+  signs.addSign({
+    text: 'Biarritz',
+    sub: 'October 1891',
+    style: 'vermilion',
+    x,
+    y: y + 3.65,
+    z: z + 5.9,
+    width: 3.8,
+    height: 0.78,
+    anchor: [x, y, z],
+  });
+  batch.add(
+    palette.gaslight,
+    new THREE.BoxGeometry(1.4, 2.3, 0.12),
+    {
+      x,
+      y: y + 1.15,
+      z: z + 3.28,
+    },
+    { emissive: palette.gaslight, roughness: 0.35 },
+  );
+  for (const wx of [-5, -2.5, 2.5, 5]) {
+    batch.add(
+      palette.gaslight,
+      new THREE.BoxGeometry(1.1, 1.5, 0.1),
+      {
+        x: x + wx,
+        y: y + 1.7,
+        z: z + 3.28,
+      },
+      { emissive: palette.gaslight, roughness: 0.35 },
+    );
   }
   staticBox(ctx, x, y + h / 2, z, w, h, 6.5);
 

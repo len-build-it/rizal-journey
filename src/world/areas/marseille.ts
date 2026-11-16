@@ -11,6 +11,7 @@ import { StopMarker } from '../StopMarker';
 import { storiesFor } from '../../content/stories';
 import { BackgroundLife } from '../life/BackgroundLife';
 import { marseilleDressing } from '../life/dressings';
+import { SignAtlas } from '../storySigns';
 import type { Area } from '../Area';
 
 /**
@@ -29,6 +30,7 @@ export function buildMarseille(
 ): Area {
   const batch = new StaticBatch();
   const props = new Props(ctx, scene);
+  const signs = new SignAtlas();
 
   // Ground: the land block ends in a stone quay wall at z = 12.
   const QUAY_Z = 12;
@@ -93,7 +95,7 @@ export function buildMarseille(
   }
 
   // The railway station closes the plaza to the north.
-  batch.withAnchor(10, 0, -51, () => station(batch, ctx, 10, -51));
+  batch.withAnchor(10, 0, -51, () => station(batch, ctx, 10, -51, year === 1882, signs));
 
   // Plaza: plane trees, a fountain and cafe tables under awnings.
   const rnd = seeded(7);
@@ -124,18 +126,91 @@ export function buildMarseille(
 
   // Steamer alongside the quay: Djemnah in 1882, slightly larger Melbourne in 1891 (movable for departure).
   const shipBatch = new StaticBatch();
+  const shipX = year === 1891 ? 16 : 14;
+  const shipLen = year === 1891 ? 33 : 28;
+  steamer(shipBatch, ctx, shipX, QUAY_Z + 4.4, shipLen, year === 1891 ? palette.funnel : palette.hull);
+  // Warm lit portholes along the quay-facing hull & deckhouse so the steamer glows by day or night.
+  for (let i = -3; i <= 3; i++) {
+    shipBatch.add(
+      palette.gaslight,
+      new THREE.CylinderGeometry(0.16, 0.16, 0.08, 8),
+      { x: shipX + i * 2.2, y: 0.45, z: QUAY_Z + 2.08, rx: Math.PI / 2 },
+      { emissive: palette.gaslight, roughness: 0.3 },
+    );
+  }
   if (year === 1891) {
-    steamer(shipBatch, ctx, 16, QUAY_Z + 4.4, 33, palette.funnel);
-  } else {
-    steamer(shipBatch, ctx, 14, QUAY_Z + 4.4, 28, palette.hull);
+    // Rising steam/smoke puffs drifting back from the Melbourne's funnel.
+    for (let i = 0; i < 6; i++) {
+      shipBatch.add(palette.canvasMuted, new THREE.IcosahedronGeometry(0.55 + i * 0.22, 0), {
+        x: shipX - 0.8 - i * 1.15,
+        y: 6.4 + i * 0.85,
+        z: QUAY_Z + 4.4 + (i % 2 === 0 ? 0.15 : -0.15),
+        sy: 0.72,
+      });
+    }
   }
   const shipGroup = shipBatch.build('marseille-steamer');
   scene.add(shipGroup);
-  batch.add(palette.deckWood, new THREE.BoxGeometry(1.4, 0.12, 3.4), {
-    x: 10.5,
-    y: 0.55,
-    z: QUAY_Z + 0.6,
-    rx: -0.3,
+
+  // Gangway with timber handrails, glowing boarding lanterns, and steamer name sign.
+  batch.withAnchor(10.5, 0, QUAY_Z, () => {
+    batch.add(palette.deckWood, new THREE.BoxGeometry(1.4, 0.12, 3.4), {
+      x: 10.5,
+      y: 0.55,
+      z: QUAY_Z + 0.6,
+      rx: -0.3,
+    });
+    for (const sx of [-0.72, 0.72]) {
+      batch.add(palette.crateDark, new THREE.BoxGeometry(0.08, 0.08, 3.4), {
+        x: 10.5 + sx,
+        y: 1.15,
+        z: QUAY_Z + 0.6,
+        rx: -0.3,
+      });
+      // Boarding lantern posts at foot and head of the gangway.
+      batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.06, 2.2, 6), {
+        x: 10.5 + sx * 1.4,
+        y: 1.1,
+        z: QUAY_Z - 0.9,
+      });
+      batch.add(
+        palette.gaslight,
+        new THREE.BoxGeometry(0.28, 0.36, 0.28),
+        { x: 10.5 + sx * 1.4, y: 2.35, z: QUAY_Z - 0.9 },
+        { emissive: palette.gaslight, roughness: 0.3 },
+      );
+      batch.add(palette.vermilion, new THREE.ConeGeometry(0.24, 0.16, 4), {
+        x: 10.5 + sx * 1.4,
+        y: 2.6,
+        z: QUAY_Z - 0.9,
+        ry: Math.PI / 4,
+      });
+    }
+    // Quay-side boarding sign naming the steamer.
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.06, 2.2, 6), {
+      x: 12.6,
+      y: 1.1,
+      z: QUAY_Z - 1.2,
+    });
+    batch.add(palette.vermilion, new THREE.BoxGeometry(1.75, 0.72, 0.1), {
+      x: 12.6,
+      y: 2.15,
+      z: QUAY_Z - 1.2,
+      ry: -0.25,
+    });
+  });
+  signs.addSign({
+    text: year === 1891 ? 'Melbourne' : 'Djemnah',
+    sub: year === 1891 ? 'Bound for Hong Kong' : 'Arrived June 12, 1882',
+    style: 'vermilion',
+    x: 12.57,
+    y: 2.15,
+    z: QUAY_Z - 1.26,
+    ry: Math.PI - 0.25,
+    width: 1.62,
+    height: 0.62,
+    anchor: [10.5, 0, QUAY_Z],
+    doubleSided: true,
   });
 
   // Cargo waiting on the quay: knock it over.
@@ -157,22 +232,69 @@ export function buildMarseille(
   fishingBoat(batch, -16, QUAY_Z + 3.0, -0.08, palette.ochre);
   fishingBoat(batch, -22, QUAY_Z + 3.4, 0.05, palette.crateDark);
 
-  // Lookout at the west end of the quay, with an iron rail and a bench.
-  for (let x = -31; x <= -25; x += 1.5) {
-    batch.add(palette.lampIron, new THREE.BoxGeometry(0.07, 1.0, 0.07), {
-      x,
-      y: 0.5,
+  // Lookout at the west end of the quay: harbor rail, bench, brass spyglass and pointing island sign.
+  batch.withAnchor(-27, 0, QUAY_Z - 1.2, () => {
+    for (let x = -31; x <= -23.5; x += 1.5) {
+      batch.add(palette.lampIron, new THREE.BoxGeometry(0.07, 1.0, 0.07), {
+        x,
+        y: 0.5,
+        z: QUAY_Z - 0.6,
+      });
+    }
+    batch.add(palette.lampIron, new THREE.BoxGeometry(7.7, 0.07, 0.07), {
+      x: -27.25,
+      y: 1.0,
       z: QUAY_Z - 0.6,
     });
-  }
-  batch.add(palette.lampIron, new THREE.BoxGeometry(6.2, 0.07, 0.07), {
-    x: -28,
-    y: 1.0,
-    z: QUAY_Z - 0.6,
+    // Harbor bench facing the island.
+    batch.add(palette.deckWood, new THREE.BoxGeometry(2.2, 0.12, 0.6), { x: -28.6, y: 0.55, z: 10.1 });
+    batch.add(palette.lampIron, new THREE.BoxGeometry(2.2, 0.52, 0.08), { x: -28.6, y: 0.82, z: 9.8 });
+    // Brass harbor spyglass aimed toward Chateau d'If (-30, 40).
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.07, 1.35, 6), {
+      x: -26.8,
+      y: 0.68,
+      z: QUAY_Z - 0.9,
+    });
+    batch.add(palette.brass, new THREE.CylinderGeometry(0.05, 0.075, 0.72, 8), {
+      x: -26.8,
+      y: 1.38,
+      z: QUAY_Z - 0.85,
+      rx: Math.PI * 0.48,
+      ry: -0.1,
+    });
+    // Pointing sign post on the lookout corner.
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.06, 2.2, 6), {
+      x: -24.8,
+      y: 1.1,
+      z: QUAY_Z - 1.1,
+    });
+    batch.add(palette.vermilion, new THREE.BoxGeometry(1.85, 0.68, 0.1), {
+      x: -24.8,
+      y: 2.05,
+      z: QUAY_Z - 1.1,
+      ry: 0.25,
+    });
+    batch.add(
+      palette.gaslight,
+      new THREE.BoxGeometry(0.24, 0.3, 0.24),
+      { x: -24.8, y: 2.55, z: QUAY_Z - 1.1 },
+      { emissive: palette.gaslight, roughness: 0.3 },
+    );
   });
-  batch.add(palette.deckWood, new THREE.BoxGeometry(2.2, 0.12, 0.6), { x: -21, y: 0.55, z: 4.5 });
-  batch.add(palette.lampIron, new THREE.BoxGeometry(2.2, 0.55, 0.08), { x: -21, y: 0.85, z: 4.2 });
-  staticBox(ctx, -21, 0.4, 4.4, 2.2, 0.8, 0.8);
+  signs.addSign({
+    text: "Chateau d'If",
+    sub: year === 1891 ? '1882 to 1891' : 'Island fortress ->',
+    style: 'vermilion',
+    x: -24.8,
+    y: 2.05,
+    z: QUAY_Z - 1.1,
+    ry: Math.PI + 0.25,
+    width: 1.72,
+    height: 0.58,
+    anchor: [-27, 0, QUAY_Z - 1.2],
+    doubleSided: true,
+  });
+  staticBox(ctx, -28.6, 0.4, 10.0, 2.2, 0.8, 0.8);
 
   // The Chateau d'If on its rock in the bay.
   chateauDIf(batch, -30, 40);
@@ -206,6 +328,8 @@ export function buildMarseille(
 
   const staticGroup = batch.build('marseille-static');
   scene.add(staticGroup);
+  const signsBuilt = signs.build('marseille-signs');
+  scene.add(signsBuilt.group);
 
   const water = new Water(240, 90, 3, new THREE.Vector3(0, -1.2, QUAY_Z + 44));
   scene.add(water.mesh);
@@ -334,6 +458,7 @@ export function buildMarseille(
     dispose() {
       disposeObject(staticGroup);
       disposeObject(shipGroup);
+      signsBuilt.dispose();
       disposeObject(paperSurround);
       train.dispose();
       water.dispose();
@@ -369,8 +494,15 @@ function awning(batch: StaticBatch, x: number, z: number, ry: number): void {
   }
 }
 
-/** Gare Saint-Charles style terminus: a long hall with tall arched windows and a clock. */
-function station(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): void {
+/** Gare Saint-Charles style terminus: a long hall with tall arched windows, canopy and clock. */
+function station(
+  batch: StaticBatch,
+  ctx: PhysicsCtx,
+  x: number,
+  z: number,
+  isStoryStop: boolean,
+  signs: SignAtlas,
+): void {
   const w = 30;
   const h = 7;
   batch.add(palette.limestone, new THREE.BoxGeometry(w, h, 8), { x, y: h / 2, z });
@@ -391,16 +523,58 @@ function station(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): voi
     y: h + 1.7,
     z: z + 4.35,
   });
-  // Tall windows and a wide entrance.
-  for (let i = -5; i <= 5; i++) {
-    if (Math.abs(i) <= 1) continue;
-    batch.add(0x3b4a57, new THREE.BoxGeometry(1.3, 3.8, 0.1), {
-      x: x + i * 2.4,
-      y: 3.3,
-      z: z + 4.03,
+  // Projecting iron & glass station canopy with vermilion city name board.
+  batch.add(palette.lampIron, new THREE.BoxGeometry(10.2, 0.22, 3.6), {
+    x,
+    y: 4.35,
+    z: z + 5.7,
+    rx: 0.1,
+  });
+  for (const px of [-4.6, 4.6]) {
+    batch.add(palette.lampIron, new THREE.CylinderGeometry(0.08, 0.1, 4.2, 6), {
+      x: x + px,
+      y: 2.1,
+      z: z + 7.2,
     });
   }
-  batch.add(0x3b4a57, new THREE.BoxGeometry(5, 4.2, 0.1), { x, y: 2.1, z: z + 4.03 });
+  if (isStoryStop) {
+    batch.add(palette.vermilion, new THREE.BoxGeometry(4.4, 0.95, 0.14), {
+      x,
+      y: 5.0,
+      z: z + 7.45,
+    });
+    signs.addSign({
+      text: 'Marseille',
+      sub: 'Train to Spain',
+      style: 'vermilion',
+      x,
+      y: 5.0,
+      z: z + 7.55,
+      width: 4.2,
+      height: 0.86,
+      anchor: [x, 0, z],
+    });
+  }
+  // Tall windows and a wide lit entrance.
+  for (let i = -5; i <= 5; i++) {
+    if (Math.abs(i) <= 1) continue;
+    batch.add(
+      isStoryStop ? palette.gaslight : palette.parisWindow,
+      new THREE.BoxGeometry(1.3, 3.8, 0.1),
+      {
+        x: x + i * 2.4,
+        y: 3.3,
+        z: z + 4.03,
+      },
+      isStoryStop ? { emissive: palette.gaslight, roughness: 0.35 } : undefined,
+    );
+  }
+  batch.add(
+    isStoryStop ? palette.gaslight : palette.parisWindow,
+    new THREE.BoxGeometry(5, 4.2, 0.1),
+    { x, y: 2.1, z: z + 4.03 },
+    isStoryStop ? { emissive: palette.gaslight, roughness: 0.35 } : undefined,
+  );
   batch.add(palette.limestone, new THREE.BoxGeometry(31, 0.3, 0.3), { x, y: 6.2, z: z + 4.1 });
   staticBox(ctx, x, h / 2, z, w, h, 8);
 
