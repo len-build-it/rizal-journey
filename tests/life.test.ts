@@ -14,7 +14,11 @@ import {
   buildHarnessHorseGeometry,
   buildSheepGeometry,
 } from '../src/world/life/animals';
-import { bakePersonGeometry, prepareLifeGeometry } from '../src/world/life/instancing';
+import {
+  LIFE_ANIM_DIST,
+  bakePersonGeometry,
+  prepareLifeGeometry,
+} from '../src/world/life/instancing';
 import {
   buildCartGeometry,
   buildFiacreGeometry,
@@ -171,5 +175,6 @@ describe('background life rig part tagging', () => {
       expect(maxZ - minZ, `${label} planted foot slide`).toBeLessThanOrEqual(0.05);
       expect(stride / stepDuration).toBeCloseTo(2 * speed, 4);
     }
+    expect(LIFE_ANIM_DIST).toBeGreaterThanOrEqual(80);
   });
 });

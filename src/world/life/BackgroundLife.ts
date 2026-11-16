@@ -694,7 +694,7 @@ export class BackgroundLife {
       }
 
       const distFocus = Math.hypot(p.x - focusPos.x, p.z - focusPos.z);
-      if (distFocus > LIFE_ANIM_DIST + 8 && !p.steppingAside) {
+      if (distFocus > LIFE_ANIM_DIST && !p.steppingAside) {
         if (p.body && !excluded) {
           p.body.setNextKinematicTranslation({ x: p.x, y: p.y + 0.85, z: p.z });
         }
@@ -775,6 +775,12 @@ export class BackgroundLife {
       v.hidden = this.isExcluded(v.x, v.z, v.x, v.z, excludeCenters, excludeRadius);
       if (v.hidden) {
         this.parkBody(v.body);
+        continue;
+      }
+      if (Math.hypot(v.x - focusPos.x, v.z - focusPos.z) > LIFE_ANIM_DIST) {
+        if (v.body) {
+          v.body.setNextKinematicTranslation({ x: v.x, y: v.y + 0.9, z: v.z });
+        }
         continue;
       }
 
@@ -863,6 +869,13 @@ export class BackgroundLife {
       a.hidden = this.isExcluded(a.homeX, a.homeZ, a.x, a.z, excludeCenters, excludeRadius);
       if (a.hidden) {
         this.parkBody(a.body);
+        continue;
+      }
+      if (Math.hypot(a.x - focusPos.x, a.z - focusPos.z) > LIFE_ANIM_DIST) {
+        if (a.body) {
+          const rad = a.species === 'horse' ? 0.65 : a.species === 'sheep' ? 0.42 : 0.28;
+          a.body.setNextKinematicTranslation({ x: a.x, y: a.y + rad, z: a.z });
+        }
         continue;
       }
 

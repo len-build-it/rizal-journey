@@ -8,7 +8,7 @@ import {
 } from '../../story/figures';
 import { injectWorldShader } from '../paperShader';
 
-export const LIFE_ANIM_DIST = 45;
+export const LIFE_ANIM_DIST = 95;
 
 export const lifeShaderUniforms = {
   uLifeTime: { value: 0 },
@@ -84,7 +84,7 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
             lifeInstPos = (modelMatrix * vec4(instanceMatrix[3].xyz, 1.0)).xyz;
           #endif
           float distLife = length(lifeInstPos.xz - uLifeFocus.xz);
-          float lifeFade = 1.0 - smoothstep(uLifeAnimDist * 0.84, uLifeAnimDist, distLife);
+          float lifeFade = 1.0 - smoothstep(uLifeAnimDist, uLifeAnimDist + 10.0, distLife);
           float lt = uLifeTime * aLifeAnim.z + aLifeAnim.y;
           float amp = aLifeAnim.w * lifeFade;
 
