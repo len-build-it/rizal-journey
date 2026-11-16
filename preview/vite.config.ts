@@ -7,7 +7,8 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, '../dist-preview'),
     emptyOutDir: true,
-    assetsInlineLimit: (file: string) => (file.endsWith('.woff2') ? true : undefined),
+    assetsInlineLimit: (file: string) =>
+      file.endsWith('.woff2') || file.includes('/brochure/defaults/') ? true : undefined,
     rollupOptions: {
       input: { kit: resolve(__dirname, 'kit.html'), brochure: resolve(__dirname, 'brochure.html') },
     },

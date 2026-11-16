@@ -99,11 +99,13 @@ def run(label, width, height, mobile):
 
         # Check "Read as a brochure" fallback from title screen.
         page.click(".intro-link")
-        page.wait_for_selector(".brochure-view.is-fallback", timeout=5000)
+        page.wait_for_selector(".brochure-view.is-fallback .b-brochure[data-route-ready='true']", timeout=10000)
         page.wait_for_timeout(750)
         fallback_overflow = page.evaluate("window.__rizal.overflowingPanels()")
         print(f"[{label}] fallback overflow={fallback_overflow}")
         assert not fallback_overflow, f"Fallback brochure panels overflowed: {fallback_overflow}"
+        page.locator(".b-sheet--a").scroll_into_view_if_needed()
+        page.wait_for_timeout(200)
         page.screenshot(path=str(OUT / f"{label}-brochure-fallback.png"))
         page.click(".brochure-actions .k-btn:not(.k-btn--primary)")
         page.wait_for_timeout(300)
@@ -197,7 +199,7 @@ def run(label, width, height, mobile):
                 elif stop_id == "marseille-1891-lessons":
                     # Advance through finale action button.
                     page.click(".scene-actions .k-btn--primary")
-                    page.wait_for_selector(".brochure-view.is-finale", timeout=15000)
+                    page.wait_for_selector(".brochure-view.is-finale .b-brochure[data-route-ready='true']", timeout=15000)
                     page.wait_for_timeout(900)
                     finale_overflow = page.evaluate("window.__rizal.overflowingPanels()")
                     print(f"[{label}] finale overflow={finale_overflow}")

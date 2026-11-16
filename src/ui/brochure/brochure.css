@@ -1,15 +1,32 @@
 /*
  * Finished brochure. Uses the soft cardstock kit tokens (kit.css).
  * Sheets are sized in real millimetres so print matches the screen exactly.
+ *
+ * Pieces: taped-in ink prints, travel stubs for journeys, city postmarks,
+ * and one vermilion route drawn through every panel by layoutBrochure().
  */
 
 .b-brochure {
+  --b-paper: #efe6d1;
+  --b-print-border: #faf5ea;
+  --b-tape: rgb(236 224 196 / 0.8);
+  --b-shadow: rgb(20 25 35 / 0.22);
+
   display: flex;
   flex-direction: column;
   gap: 14mm;
   align-items: center;
   zoom: var(--b-scale, 1);
 }
+
+.b-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Sheet and paper */
 
 .b-sheet {
   position: relative;
@@ -18,8 +35,22 @@
   width: 297mm;
   height: 210mm;
   overflow: hidden;
-  background: #efe6d1;
   color: var(--k-ink);
+  background-color: var(--b-paper);
+  /*
+   * Paper, drawn in SVG so it prints sharp: fine grain, sparse flecks,
+   * uneven tone, and edges a little darker where the sheet has been handled.
+   */
+  background-image:
+    radial-gradient(ellipse 75% 70% at 50% 48%, transparent 55%, rgb(120 88 40 / 0.16) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.33 0 0 0 0 0.25 0 0 0 0 0.13 0 0 0 0.2 -0.02'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url%28%23n%29'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='1' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.22 0 0 0 0 0.1 0 0 0 9 -6.7'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url%28%23f%29'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='640'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006' numOctaves='4' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.42 0 0 0 0 0.2 0 0 0 0.75 -0.3'/%3E%3C/filter%3E%3Crect width='640' height='640' filter='url%28%23m%29'/%3E%3C/svg%3E");
+  background-size:
+    100% 100%,
+    180px 180px,
+    420px 420px,
+    640px 640px;
   border-radius: 3mm;
   box-shadow:
     0 1.2mm 0 var(--k-card-edge),
@@ -31,6 +62,7 @@
 .b-sheet::after {
   content: '';
   position: absolute;
+  z-index: 3;
   top: 0;
   bottom: 0;
   width: 0.6mm;
@@ -46,6 +78,8 @@
   left: 198mm;
 }
 
+/* Panels */
+
 .b-panel {
   position: relative;
   display: flex;
@@ -55,130 +89,514 @@
   overflow: hidden;
 }
 
-/* Panel heading */
-
-.b-panel__head {
-  margin-bottom: 4.5mm;
-  padding-bottom: 3.5mm;
-  border-bottom: 0.5mm solid var(--k-vermilion);
+.b-panel > :not(.b-route) {
+  position: relative;
+  z-index: 1;
 }
 
-.b-panel__label {
-  margin: 0;
-  font-family: var(--k-text);
-  font-style: italic;
-  font-size: 8.5pt;
-  color: var(--k-vermilion);
+.b-panel__head {
+  margin-bottom: 5.5mm;
 }
 
 .b-panel__title {
-  margin: 0.5mm 0 0.6mm;
+  margin: 0;
   font-family: var(--k-display);
   font-variation-settings: var(--k-display-axes);
   font-optical-sizing: auto;
-  font-weight: 580;
-  font-size: 19pt;
-  line-height: 1.02;
+  font-weight: 600;
+  font-size: 21pt;
+  line-height: 1;
+  letter-spacing: -0.005em;
 }
 
 .b-panel__place {
-  margin: 0;
+  margin: 1.2mm 0 0;
   font-family: var(--k-text);
+  font-style: italic;
   font-size: 8.5pt;
   color: var(--k-ink-soft);
 }
 
-/* Story entries */
-
-.b-entries {
+.b-flow {
   display: flex;
-  flex: none;
+  flex: 0 1 auto;
   flex-direction: column;
-  gap: 3.4mm;
+  gap: 3.9mm;
+  min-height: 0;
+  overflow: hidden;
+  /* Room for tilted prints and tape so they are not clipped by the overflow guard. */
+  margin: -2mm -2mm 0;
+  padding: 2mm 2mm 2mm;
 }
 
-.b-entry {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2.4mm;
-  align-items: start;
+/* The route */
+
+.b-route {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
-.b-entry.has-picture {
-  grid-template-columns: 27mm 1fr;
-}
-
-.b-picture {
-  margin: 0;
-  padding: 1mm;
-  background: var(--k-card);
-  border-radius: 1.6mm;
-  box-shadow: 0 0.6mm 0 var(--k-card-edge);
-}
-
-.b-picture img {
+.b-route svg {
   display: block;
   width: 100%;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
-  border-radius: 0.8mm;
-  outline: 0.25mm solid rgb(32 50 74 / 0.6);
-  outline-offset: -0.25mm;
+  height: 100%;
+}
+
+.b-route__line {
+  fill: none;
+  stroke: var(--k-vermilion);
+  stroke-width: 0.6;
+  stroke-dasharray: 1.7 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.b-route__end {
+  fill: var(--k-vermilion);
+}
+
+/* Story text */
+
+.b-text {
+  min-width: 0;
 }
 
 .b-date {
   margin: 0;
   font-family: var(--k-text);
   font-style: italic;
-  font-size: 7.4pt;
+  font-size: 7.2pt;
   line-height: 1.2;
   color: var(--k-vermilion);
 }
 
 .b-title {
-  margin: 0.2mm 0 0.6mm;
+  margin: 0.3mm 0 0.8mm;
   font-family: var(--k-display);
   font-variation-settings: var(--k-display-axes);
   font-optical-sizing: auto;
-  font-weight: 560;
+  font-weight: 580;
   font-size: 10.5pt;
-  line-height: 1.12;
+  line-height: 1.1;
 }
 
 .b-summary {
   margin: 0;
   font-family: var(--k-text);
-  font-size: 7.4pt;
-  line-height: 1.38;
-}
-
-.b-entry.is-unseen .b-title,
-.b-entry.is-unseen .b-summary {
-  color: var(--k-ink-soft);
+  font-size: 7.3pt;
+  line-height: 1.4;
 }
 
 .b-unseen-note {
-  margin: 0.6mm 0 0;
+  margin: 0.8mm 0 0;
   font-family: var(--k-text);
   font-style: italic;
-  font-size: 6.8pt;
+  font-size: 6.6pt;
   color: var(--k-ink-soft);
+}
+
+/* Full-width stories leave a lane on the left for the route. */
+.b-lane > .b-text {
+  padding-left: 6.4mm;
+}
+
+/* Prints: ink snapshots taped onto the page */
+
+.b-print {
+  position: relative;
+  margin: 0;
+  transform: rotate(var(--tilt, 0deg));
+}
+
+.b-print__frame {
+  padding: 1.1mm;
+  background: var(--b-print-border);
+  box-shadow:
+    0 0.35mm 0 rgb(150 125 85 / 0.45),
+    0 1.2mm 2.4mm var(--b-shadow);
+}
+
+.b-print img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  /* Lift the night scenes first, then print everything in the same two inks. */
+  filter: brightness(1.35) contrast(1.04) url('#b-ink');
+}
+
+/* A strip of tape across the top edge. */
+.b-print::before {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: -1.9mm;
+  left: 50%;
+  width: 12mm;
+  height: 4.2mm;
+  background: var(--b-tape);
+  box-shadow: 0 0.2mm 0.5mm rgb(60 45 20 / 0.12);
+  transform: translateX(-50%) rotate(-2.5deg);
+}
+
+.b-print.is-empty .b-print__frame {
+  background: var(--k-card-sunk);
+}
+
+.b-print__empty {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 2;
+  padding: 2mm;
+  border: 0.3mm dashed rgb(32 50 74 / 0.45);
+  font-family: var(--k-text);
+  font-style: italic;
+  font-size: 6.6pt;
+  text-align: center;
+  color: var(--k-ink-soft);
+}
+
+/* City postmarks, inked over the corner of the first print in each city. */
+.b-postmark {
+  position: absolute;
+  z-index: 3;
+  right: -3.5mm;
+  bottom: -5.5mm;
+  width: 17mm;
+  height: 17mm;
+  color: var(--k-vermilion);
+  opacity: 0.9;
+  transform: rotate(-11deg);
+  mix-blend-mode: multiply;
+}
+
+.b-postmark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.b-postmark__city {
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-weight: 600;
+  font-size: 8.4px;
+  letter-spacing: 0.03em;
+}
+
+.b-postmark__year {
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-weight: 650;
+  font-size: 11.5px;
+}
+
+/* Stops: a small print beside the text, alternating sides */
+
+.b-story--stop {
+  display: grid;
+  grid-template-columns: 27mm 1fr;
+  gap: 3.6mm;
+  align-items: start;
+}
+
+.b-story--stop.is-right {
+  grid-template-columns: 1fr 27mm;
+}
+
+.b-story--stop.is-right .b-print {
+  order: 2;
+}
+
+.b-story--stop .b-print {
+  margin-top: 1mm;
+}
+
+.b-story--stop .b-postmark {
+  width: 14mm;
+  height: 14mm;
+  right: auto;
+  left: -3mm;
+  bottom: -6mm;
+}
+
+/* Feature: a full-width print with the text below */
+
+.b-story--feature .b-print {
+  margin-bottom: 3mm;
+}
+
+.b-story--feature .b-print img {
+  aspect-ratio: 1.9 / 1;
+}
+
+/* Bleed: the opening picture runs off the top and sides of the panel */
+
+.b-story--bleed .b-text {
+  margin-top: 3mm;
+}
+
+.b-bleed {
+  position: relative;
+  margin: -10mm -9mm 0;
+}
+
+.b-print--bleed {
+  transform: none;
+}
+
+.b-print--bleed::before {
+  display: none;
+}
+
+.b-print--bleed .b-print__frame {
+  padding: 0;
+  box-shadow: none;
+}
+
+.b-print--bleed img {
+  aspect-ratio: 99 / 46;
+}
+
+.b-print--bleed .b-postmark {
+  right: 5mm;
+  bottom: -7mm;
+  width: 19mm;
+  height: 19mm;
+}
+
+.b-bleed__head {
+  position: relative;
+  display: inline-block;
+  margin: -11mm 0 0 7mm;
+  padding: 2.6mm 4mm 2.8mm;
+  background: var(--k-card);
+  border-radius: 1.4mm;
+  box-shadow:
+    0 0.5mm 0 var(--k-card-edge),
+    0 1.4mm 2.6mm var(--b-shadow);
+  transform: rotate(-1.2deg);
+}
+
+/* Tall: one big picture with its year set large across the corner */
+
+.b-tall {
+  position: relative;
+  margin-bottom: 8mm;
+}
+
+.b-print--tall img {
+  aspect-ratio: 1 / 0.86;
+  object-position: 50% 30%;
+}
+
+.b-bigyear {
+  position: absolute;
+  z-index: 4;
+  left: -1mm;
+  bottom: -9mm;
+  font-family: var(--k-display);
+  font-variation-settings:
+    'SOFT' 100,
+    'WONK' 1;
+  font-optical-sizing: auto;
+  font-weight: 760;
+  font-size: 56pt;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--k-vermilion);
+  -webkit-text-stroke: 1.6mm var(--b-paper);
+  paint-order: stroke fill;
+}
+
+.b-story--tall .b-postmark {
+  right: -3mm;
+  bottom: auto;
+  top: -5mm;
+}
+
+/* Tickets: travel stubs for the journeys between cities */
+
+.b-ticket {
+  display: grid;
+  grid-template-columns: 25mm 1fr;
+  align-items: stretch;
+  background: var(--b-print-border);
+  border-radius: 1.4mm;
+  box-shadow:
+    0 0.35mm 0 rgb(150 125 85 / 0.45),
+    0 1.2mm 2.4mm var(--b-shadow);
+}
+
+.b-ticket__stub {
+  position: relative;
+  padding: 2.4mm 2.6mm 2.4mm 3mm;
+  background: var(--k-vermilion);
+  border-radius: 1.4mm 0 0 1.4mm;
+  color: var(--k-on-vermilion);
+}
+
+/* Perforation between stub and ticket, with notches cut from top and bottom. */
+.b-ticket__stub::after {
+  content: '';
+  position: absolute;
+  top: 1.4mm;
+  bottom: 1.4mm;
+  right: -0.2mm;
+  border-right: 0.45mm dotted var(--b-paper);
+}
+
+.b-ticket::before,
+.b-ticket::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  left: calc(25mm - 1.3mm);
+  width: 2.6mm;
+  height: 2.6mm;
+  border-radius: 50%;
+  background: var(--b-paper);
+}
+
+.b-ticket {
+  position: relative;
+}
+
+.b-ticket::before {
+  top: -1.3mm;
+}
+
+.b-ticket::after {
+  bottom: -1.3mm;
+}
+
+.b-ticket__from,
+.b-ticket__to {
+  margin: 0;
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 10pt;
+  line-height: 1.08;
+}
+
+.b-ticket__to {
+  font-family: var(--k-text);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 8.4pt;
+  margin-top: 0.4mm;
+}
+
+.b-ticket__date {
+  margin: 1.6mm 0 0;
+  font-family: var(--k-text);
+  font-size: 6.6pt;
+  line-height: 1.25;
+  opacity: 0.92;
+}
+
+.b-ticket__body {
+  padding: 2.2mm 3.2mm 2.4mm 3.8mm;
+}
+
+.b-ticket .b-title {
+  font-size: 9.5pt;
+}
+
+.b-ticket .b-summary {
+  font-size: 7pt;
+}
+
+.b-ticket.is-unseen .b-ticket__stub {
+  background: var(--k-ink-soft);
+}
+
+/* Closing: the last story, set on a dark card */
+
+.b-closing {
+  padding: 3.4mm 4.2mm 3.2mm;
+  background: var(--k-ink);
+  color: var(--k-card);
+  border-radius: 2mm;
+  box-shadow:
+    0 0.6mm 0 var(--k-ink-deep),
+    0 1.6mm 3mm var(--b-shadow);
+}
+
+.b-closing .b-date {
+  color: var(--k-sage);
+}
+
+.b-closing__title {
+  margin: 0.4mm 0 1.6mm;
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 13pt;
+  line-height: 1.05;
+}
+
+.b-closing__lessons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--k-text);
+  font-size: 6.6pt;
+  line-height: 1.32;
+}
+
+.b-closing__lessons li {
+  padding: 0.75mm 0;
+  border-top: 0.25mm solid rgb(242 234 216 / 0.22);
+}
+
+.b-closing__lessons strong {
+  font-family: var(--k-display);
+  font-variation-settings: var(--k-display-axes);
+  font-weight: 600;
+  font-size: 7.6pt;
+  color: var(--k-sage);
+}
+
+.b-closing .b-unseen-note {
+  color: var(--k-sage);
 }
 
 /* References at the foot of panel 6 */
 
 .b-refs {
   margin-top: auto;
-  padding-top: 2.6mm;
-  border-top: 0.3mm solid rgb(32 50 74 / 0.35);
+  padding-top: 1.6mm;
 }
 
 .b-refs__title {
   margin: 0 0 1mm;
   font-family: var(--k-display);
   font-variation-settings: var(--k-display-axes);
-  font-weight: 560;
+  font-weight: 600;
   font-size: 8.5pt;
+}
+
+.b-refs__list {
+  margin: 0;
+  padding-left: 3.2mm;
+  columns: 2;
+  column-gap: 4mm;
+  font-family: var(--k-text);
+  font-size: 5.6pt;
+  line-height: 1.22;
+  color: var(--k-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.b-refs__list li {
+  break-inside: avoid;
+  margin-bottom: 0.35mm;
 }
 
 .b-refs__list a {
@@ -198,51 +616,43 @@
   color: var(--k-ink-soft);
 }
 
-.b-refs__list li {
-  break-inside: avoid;
-  margin-bottom: 0.5mm;
-}
-
-.b-refs__list {
-  margin: 0;
-  padding-left: 3.2mm;
-  columns: 2;
-  column-gap: 4mm;
-  font-family: var(--k-text);
-  font-size: 5.8pt;
-  line-height: 1.3;
-  color: var(--k-ink-soft);
-  overflow-wrap: anywhere;
-}
-
 /* Cover */
 
-.b-cover {
-  align-items: stretch;
-  background: radial-gradient(circle at 50% 38%, rgb(255 255 255 / 0.35), transparent 60%), #efe6d1;
+.b-cover__block {
+  margin: -8mm -7mm 0;
+  padding: 11mm 7mm 17mm;
+  background-color: var(--k-ink);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.96 0 0 0 0 0.88 0 0 0 0.16 -0.02'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url%28%23n%29'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  color: var(--k-card);
 }
 
 .b-cover__title {
-  margin: 2mm 0 1mm;
+  margin: 0;
   font-family: var(--k-display);
-  font-variation-settings: var(--k-display-axes);
+  font-variation-settings:
+    'SOFT' 100,
+    'WONK' 1;
   font-optical-sizing: auto;
-  font-weight: 600;
-  font-size: 30pt;
-  line-height: 0.98;
-  letter-spacing: -0.01em;
+  font-weight: 640;
+  font-size: 34pt;
+  line-height: 0.95;
+  letter-spacing: -0.015em;
 }
 
 .b-cover__sub {
-  margin: 0;
+  margin: 3mm 0 0;
+  padding-top: 2.6mm;
+  border-top: 0.8mm solid var(--k-vermilion);
+  width: max-content;
   font-family: var(--k-text);
   font-style: italic;
   font-size: 11pt;
-  color: var(--k-vermilion);
+  color: var(--k-card-sunk);
 }
 
 .b-map {
-  margin: 5mm -1mm 3mm;
+  margin: -13mm -5mm 5mm;
 }
 
 .b-map svg {

@@ -1,5 +1,10 @@
 import { STORIES } from '../content/stories';
-import { fitBrochure, renderBrochure } from './brochure/renderBrochure';
+import {
+  defaultSnapshots,
+  fitBrochure,
+  layoutBrochure,
+  renderBrochure,
+} from './brochure/renderBrochure';
 import { el } from './dom';
 
 export interface BrochureViewOpts {
@@ -22,7 +27,7 @@ export function showBrochureView(parent: HTMLElement, opts: BrochureViewOpts): H
   const visited = isFinale ? (opts.visited ?? new Set<string>()) : new Set(STORIES.map((s) => s.id));
   const snapshots = isFinale
     ? new Map(Object.entries(opts.snapshots ?? {}))
-    : new Map<string, string>();
+    : defaultSnapshots();
 
   const printNote = el('p', {
     class: 'brochure-print-note',
@@ -96,6 +101,9 @@ export function showBrochureView(parent: HTMLElement, opts: BrochureViewOpts): H
     fitBrochure(brochure, Math.min(window.innerWidth - 48, 1240));
   };
   fit();
+  void layoutBrochure(brochure).then(() => {
+    brochure.dataset.routeReady = 'true';
+  });
   window.addEventListener('resize', fit);
 
   backBtn?.addEventListener('click', () => {

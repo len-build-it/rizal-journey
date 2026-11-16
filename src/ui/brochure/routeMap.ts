@@ -28,12 +28,12 @@ export function routeMapSvg(): string {
   </g>
   <g font-family="var(--k-display)" font-size="9.5" fill="var(--k-ink)" style="font-variation-settings: var(--k-display-axes)">
     <text x="116" y="58">Paris</text>
-    <text x="156" y="170">Marseille</text>
+    <text x="150" y="189">Marseille</text>
     <text x="14" y="160">Biarritz</text>
-    <text x="22" y="182">Hendaye</text>
+    <text x="16" y="186">Hendaye</text>
   </g>
   <g font-family="var(--k-text)" font-style="italic" font-size="7.4" fill="var(--k-vermilion)">
-    <text x="118" y="206">1882, to Spain</text>
+    <text x="122" y="209">1882, to Spain</text>
     <text x="40" y="118" transform="rotate(-52 70 112)">1883</text>
     <text x="12" y="150">early 1891</text>
     <text x="139" y="110">Oct. 1891</text>
