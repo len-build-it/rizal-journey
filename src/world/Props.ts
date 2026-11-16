@@ -106,7 +106,7 @@ function buildFlowerCartGeo(): THREE.BufferGeometry {
       p: { x: 0.1, y: -0.05, z: s * 0.5, rx: Math.PI / 2 },
     });
   }
-  const flowerColors = [palette.iron, palette.gaslight, palette.awningCream, palette.shutterBlue];
+  const flowerColors = [palette.awningMutedRose, palette.gaslight, palette.awningCream, palette.shutterBlue];
   for (let i = 0; i < 4; i++) {
     parts.push({
       geo: new THREE.IcosahedronGeometry(0.24, 0),
@@ -206,7 +206,7 @@ export class Props {
     );
   }
 
-  beachChair(x: number, z: number, ry = 0, stripe: number = palette.awningRed, baseY = 0): void {
+  beachChair(x: number, z: number, ry = 0, stripe: number = palette.canvasMuted, baseY = 0): void {
     this.add(
       `beachChair-${stripe}`,
       () => buildBeachChairGeo(stripe),

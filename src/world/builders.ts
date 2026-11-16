@@ -41,12 +41,12 @@ export function townHouse(batch: StaticBatch, ctx: PhysicsCtx, o: TownHouseOpts)
   // Cornice under the roof.
   add(palette.limestone, new THREE.BoxGeometry(o.width + 0.3, 0.22, o.depth + 0.3), 0, h + 0.05, 0);
 
-  // Low hipped roof: a squashed four-sided pyramid.
+  // Low hipped roof: a squashed four-sided pyramid in muted dusty terracotta or slate.
   const roofH = 1.3 + rnd() * 0.5;
   const roof = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1);
   roof.rotateY(Math.PI / 4);
   roof.scale(o.width + 0.5, roofH, o.depth + 0.5);
-  add(rnd() > 0.5 ? palette.roofTile : palette.roofTileDark, roof, 0, h + 0.16 + roofH / 2, 0);
+  add(rnd() > 0.5 ? palette.roofTerracotta : palette.roofSlate, roof, 0, h + 0.16 + roofH / 2, 0);
 
   // Windows with open shutters on the front facade, a door on the ground floor.
   const cols = Math.max(2, Math.floor(o.width / 1.9));
@@ -213,7 +213,7 @@ export interface HaussmannOpts {
 }
 
 const AWNING_PALETTE = [
-  palette.awningRed,
+  palette.canvasMuted,
   palette.awningBlue,
   palette.awningGreen,
   palette.awningOchre,
@@ -388,7 +388,7 @@ export function haussmannBlock(batch: StaticBatch, ctx: PhysicsCtx, o: Haussmann
       0,
     );
     add(
-      palette.roofTile,
+      palette.roofTerracotta,
       new THREE.CylinderGeometry(0.11, 0.13, 0.42, 5),
       cx,
       wallH + mansardH + 1.25,

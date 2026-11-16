@@ -257,7 +257,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx, mobile = 
 
   // Striped wooden bathing cabins along the beach + two rowing boats pulled up on the sand.
   bathingCabins(batch, ctx, shoreZ);
-  fishingBoat(batch, -8.5, 13.9, 0.38, palette.basqueRed, 1.0, 0.08);
+  fishingBoat(batch, -8.5, 13.9, 0.38, palette.awningMutedRose, 1.0, 0.08);
   fishingBoat(batch, -2.5, 13.2, -0.35, palette.shutterBlue, 1.0, 0.08);
 
   // Basque-style Boustead villa: two connected volumes, red timbering, shutters, overhang, walled garden, shrubs, 2 tamarisks.
@@ -291,10 +291,10 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx, mobile = 
   }
 
   // Beach and station props.
-  props.beachChair(-9.6, 10.6, 0.12, palette.awningRed, -0.2);
+  props.beachChair(-9.6, 10.6, 0.12, palette.canvasMuted, -0.2);
   props.beachChair(-7.9, 10.6, -0.08, palette.shutterBlue, -0.2);
-  props.beachChair(5.6, 10.6, 0.15, palette.awningRed, -0.2);
-  props.beachChair(-3.5, 6.2, 0.1, palette.awningRed, PROM_Y);
+  props.beachChair(5.6, 10.6, 0.15, palette.canvasMuted, -0.2);
+  props.beachChair(-3.5, 6.2, 0.1, palette.canvasMuted, PROM_Y);
   props.barrel(18, -27, 0.2, true, PLATEAU_Y);
   props.barrel(18.9, -26.4, 0.6, true, PLATEAU_Y);
   props.crate(19.6, -27.2, 0.85, 0.3, PLATEAU_Y + 0.43);
@@ -551,7 +551,7 @@ function headlandAndLighthouse(
     y: 4.3,
     z: lz,
   });
-  batch.add(palette.basqueRed, new THREE.CylinderGeometry(0.95, 1.02, 0.65, 10), {
+  batch.add(palette.roofTerracotta, new THREE.CylinderGeometry(0.95, 1.02, 0.65, 10), {
     x: lx,
     y: 5.4,
     z: lz,
@@ -567,7 +567,7 @@ function headlandAndLighthouse(
     { x: lx, y: 6.88, z: lz },
     { emissive: palette.gaslight, roughness: 0.35 },
   );
-  batch.add(palette.iron, new THREE.ConeGeometry(0.9, 0.8, 8), {
+  batch.add(palette.roofSlate, new THREE.ConeGeometry(0.9, 0.8, 8), {
     x: lx,
     y: 7.62,
     z: lz,
@@ -617,8 +617,8 @@ function seasidePromenadeHotels(batch: StaticBatch, ctx: PhysicsCtx): void {
       d: 6.0,
       floors: 2,
       wall: palette.limestone,
-      roof: palette.roofTile,
-      shutter: palette.basqueRed,
+      roof: palette.roofTerracotta,
+      shutter: palette.awningMutedRose,
       bay: false,
     },
     {
@@ -639,7 +639,7 @@ function seasidePromenadeHotels(batch: StaticBatch, ctx: PhysicsCtx): void {
       d: 6.0,
       floors: 2,
       wall: palette.limestone,
-      roof: palette.roofTileDark,
+      roof: palette.roofSlate,
       shutter: palette.shutterGreen,
       bay: false,
     },
@@ -734,10 +734,10 @@ function seasidePromenadeHotels(batch: StaticBatch, ctx: PhysicsCtx): void {
 /** Row of colorful striped wooden bathing cabins sitting along the curving dry sand. */
 function bathingCabins(batch: StaticBatch, ctx: PhysicsCtx, shoreZ: (x: number) => number): void {
   const stripes = [
-    palette.awningRed,
+    palette.awningMutedRose,
     palette.awningBlue,
     palette.awningGreen,
-    palette.awningOchre,
+    palette.canvasMuted,
   ];
   const xs = [-12.2, -9.0, -5.8, -2.6, 0.6];
   xs.forEach((cx, i) => {
@@ -1327,12 +1327,12 @@ function biarritzStation(
     z: z + 5,
   });
   batch.add(palette.basqueWhite, new THREE.BoxGeometry(w, h, 6.5), { x, y: y + h / 2, z });
-  batch.add(palette.roofTile, new THREE.BoxGeometry(w + 1.2, 1.4, 7.6), {
+  batch.add(palette.roofSlate, new THREE.BoxGeometry(w + 1.2, 1.4, 7.6), {
     x,
     y: y + h + 0.7,
     z,
   });
-  batch.add(palette.awningRed, new THREE.BoxGeometry(w - 1, 0.12, 2.2), {
+  batch.add(palette.canvasMuted, new THREE.BoxGeometry(w - 1, 0.12, 2.2), {
     x,
     y: y + 3.0,
     z: z + 4.2,

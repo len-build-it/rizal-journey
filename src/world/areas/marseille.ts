@@ -153,9 +153,9 @@ export function buildMarseille(
   props.crate(-15.6, 8.8, 0.9, 0.3);
 
   // Little fishing boats moored further west.
-  fishingBoat(batch, -10, QUAY_Z + 3.2, 0.1, 0x3f6f8c);
-  fishingBoat(batch, -16, QUAY_Z + 3.0, -0.08, 0xc9a34a);
-  fishingBoat(batch, -22, QUAY_Z + 3.4, 0.05, 0x9c3b2a);
+  fishingBoat(batch, -10, QUAY_Z + 3.2, 0.1, palette.shutterBlue);
+  fishingBoat(batch, -16, QUAY_Z + 3.0, -0.08, palette.ochre);
+  fishingBoat(batch, -22, QUAY_Z + 3.4, 0.05, palette.crateDark);
 
   // Lookout at the west end of the quay, with an iron rail and a bench.
   for (let x = -31; x <= -25; x += 1.5) {
@@ -178,7 +178,7 @@ export function buildMarseille(
   chateauDIf(batch, -30, 40);
   // In 1891, a small boat is tied at the Chateau d'If landing (opened to visitors in 1890).
   if (year === 1891) {
-    fishingBoat(batch, -25.5, 31.8, 0.35, 0x3f6f8c);
+    fishingBoat(batch, -25.5, 31.8, 0.35, palette.shutterBlue);
   }
 
   // Distant headland across the bay, to close the horizon.
@@ -356,7 +356,7 @@ function fountain(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): vo
 function awning(batch: StaticBatch, x: number, z: number, ry: number): void {
   for (let i = 0; i < 6; i++) {
     batch.add(
-      i % 2 ? palette.awningRed : palette.awningCream,
+      i % 2 ? palette.canvasMuted : palette.awningCream,
       new THREE.BoxGeometry(1.1, 0.06, 2.4),
       {
         x: x + Math.sin(ry) * 1.2 + Math.cos(ry) * (i - 2.5) * 1.1,
@@ -376,8 +376,8 @@ function station(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number): voi
   batch.add(palette.limestone, new THREE.BoxGeometry(w, h, 8), { x, y: h / 2, z });
   batch.add(palette.quayStoneDark, new THREE.BoxGeometry(w + 0.2, 0.7, 8.2), { x, y: 0.35, z });
   batch.add(palette.limestone, new THREE.BoxGeometry(8, 3.2, 8.4), { x, y: h + 1.6, z });
-  batch.add(palette.roofTileDark, new THREE.BoxGeometry(w + 0.6, 0.4, 8.6), { x, y: h + 0.2, z });
-  batch.add(palette.roofTileDark, new THREE.BoxGeometry(8.6, 0.4, 9), { x, y: h + 3.3, z });
+  batch.add(palette.roofSlate, new THREE.BoxGeometry(w + 0.6, 0.4, 8.6), { x, y: h + 0.2, z });
+  batch.add(palette.roofSlate, new THREE.BoxGeometry(8.6, 0.4, 9), { x, y: h + 3.3, z });
   // Clock.
   batch.add(palette.shirt, new THREE.CylinderGeometry(1.0, 1.0, 0.15, 16), {
     x,

@@ -1411,7 +1411,7 @@ function fairPavilion(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number,
     z,
     ry,
   });
-  const flagColors = [palette.streetSignBlue, palette.shirt, palette.iron];
+  const flagColors = [palette.streetSignBlue, palette.shirt, palette.canvasMuted];
   for (let i = -2; i <= 2; i++) {
     const fx = x + i * 4.5;
     batch.add(palette.lampIron, new THREE.CylinderGeometry(0.05, 0.05, 2.2, 5), {
@@ -1430,7 +1430,7 @@ function fairPavilion(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number,
 
 function fairStall(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: number, ry: number): void {
   batch.add(palette.deckWood, new THREE.BoxGeometry(3.2, 1.0, 1.6), { x, y: 0.5, z, ry });
-  batch.add(palette.awningRed, new THREE.BoxGeometry(3.5, 0.15, 2.1), { x, y: 2.5, z, ry });
+  batch.add(palette.canvasMuted, new THREE.BoxGeometry(3.5, 0.15, 2.1), { x, y: 2.5, z, ry });
   staticBox(ctx, x, 1.0, z, 3.4, 2.0, 1.8, ry);
 }
 
@@ -1500,13 +1500,13 @@ function arenaGrandstand(
     z: roofCenterZ,
     rx: -dirZ * 0.12,
   });
-  batch.add(palette.iron, new THREE.BoxGeometry(len + 0.9, 0.18, 0.12), {
+  batch.add(palette.crateDark, new THREE.BoxGeometry(len + 0.9, 0.18, 0.12), {
     x,
     y: roofH + 0.22,
     z: zFront - dirZ * 0.15,
   });
 
-  const pennants = [palette.iron, palette.streetSignBlue, palette.gaslight, palette.shirt];
+  const pennants = [palette.awningMutedRose, palette.streetSignBlue, palette.gaslight, palette.shirt];
   for (let i = 0; i < 4; i++) {
     const fx = x - 6.9 + i * 4.6;
     const fz = roofCenterZ;

@@ -193,7 +193,7 @@ export function buildTrain(
     rz: Math.PI / 2,
   });
   batch.add(palette.hull, new THREE.BoxGeometry(2.2, 2.55, 2.3), { x: -2.4, y: 2.28, z: 0 });
-  batch.add(palette.iron, new THREE.BoxGeometry(2.4, 0.24, 2.5), { x: -2.4, y: 3.65, z: 0 });
+  batch.add(palette.roofSlate, new THREE.BoxGeometry(2.4, 0.24, 2.5), { x: -2.4, y: 3.65, z: 0 });
   batch.add(palette.hull, new THREE.CylinderGeometry(0.28, 0.4, 1.3, 8), { x: 2.8, y: 3.15, z: 0 });
   batch.add(palette.funnel, new THREE.CylinderGeometry(0.3, 0.3, 0.45, 8), {
     x: 0.8,
@@ -202,7 +202,7 @@ export function buildTrain(
   });
   for (const wx of [-2.4, -0.6, 1.2, 2.9]) {
     for (const s of [-1, 1]) {
-      batch.add(palette.iron, new THREE.CylinderGeometry(0.58, 0.58, 0.14, 10), {
+      batch.add(palette.lampIron, new THREE.CylinderGeometry(0.58, 0.58, 0.14, 10), {
         x: wx,
         y: 0.72,
         z: s * 1.05,
@@ -221,7 +221,7 @@ export function buildTrain(
   });
   for (const wx of [-9.6, -5.6]) {
     for (const s of [-1, 1]) {
-      batch.add(palette.iron, new THREE.CylinderGeometry(0.45, 0.45, 0.14, 8), {
+      batch.add(palette.lampIron, new THREE.CylinderGeometry(0.45, 0.45, 0.14, 8), {
         x: wx,
         y: 0.58,
         z: s * 1.05,

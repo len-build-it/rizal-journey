@@ -91,4 +91,8 @@ export const palette = {
   sandWet: 0xc9b082,
   brass: 0xcfa44e,
   bottleGreen: 0x1e4330,
+  roofTerracotta: 0x9b7060,
+  roofSlate: 0x5c6672,
+  canvasMuted: 0xcabaa0,
+  awningMutedRose: 0x966e64,
 } as const;
