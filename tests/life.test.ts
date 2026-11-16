@@ -1,6 +1,13 @@
 import type * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { rolePreset, type PersonOptions, type PersonRole } from '../src/story/figures';
+import {
+  PERSON_LEG_LENGTH,
+  rolePreset,
+  strideOmega,
+  walkSwingAngle,
+  type PersonOptions,
+  type PersonRole,
+} from '../src/story/figures';
 import {
   buildCatGeometry,
   buildDogGeometry,
@@ -138,5 +145,31 @@ describe('background life rig part tagging', () => {
     }
     expect(frontPivotZ).toBeGreaterThan(1.8);
     fiacre.dispose();
+  });
+
+  it('matches cadence to speed so a planted foot slides at most 5 cm during a step', () => {
+    for (const [label, legLength, speed] of [
+      ['adult', PERSON_LEG_LENGTH, 1.22],
+      ['hurry', PERSON_LEG_LENGTH, 1.85],
+      ['child', PERSON_LEG_LENGTH * 0.72, 1.22],
+      ['dog', 0.24, 1.2],
+      ['horse', 1.06, 3.2],
+    ] as const) {
+      const stride = 1.6 * legLength;
+      const omega = strideOmega(speed, legLength);
+      const stepDuration = Math.PI / omega;
+      let minZ = Infinity;
+      let maxZ = -Infinity;
+      for (let i = 0; i <= 100; i++) {
+        const t = -stepDuration / 2 + (stepDuration * i) / 100;
+        const phase = omega * t;
+        const bodyZ = speed * t;
+        const footWorldZ = bodyZ - legLength * Math.sin(walkSwingAngle(phase));
+        minZ = Math.min(minZ, footWorldZ);
+        maxZ = Math.max(maxZ, footWorldZ);
+      }
+      expect(maxZ - minZ, `${label} planted foot slide`).toBeLessThanOrEqual(0.05);
+      expect(stride / stepDuration).toBeCloseTo(2 * speed, 4);
+    }
   });
 });

@@ -90,7 +90,7 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
 
           if (lifeMode < 1.5) {
             // Walk / stroll / hurry
-            float swing = sin(lt) * 0.48 * amp;
+            float swing = (sin(lt) - 0.125 * sin(3.0 * lt) + 0.025 * sin(5.0 * lt)) * 0.338 * amp;
             if (aLifePart > 0.5 && aLifePart < 1.5) {
               vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, swing);
               transformed.y = r.x; transformed.z = r.y;
@@ -145,7 +145,7 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
             }
           } else if (lifeMode < 5.5) {
             // Vehicle / boat / carriage bounce, horse/pusher legs & oars
-            float swing = sin(lt) * 0.42 * amp;
+            float swing = (sin(lt) - 0.125 * sin(3.0 * lt) + 0.025 * sin(5.0 * lt)) * 0.338 * amp;
             if (aLifePart > 0.5 && aLifePart < 1.5) {
               vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, swing);
               transformed.y = r.x; transformed.z = r.y;
@@ -167,7 +167,8 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
             }
           } else if (lifeMode < 6.5) {
             // Quadruped walk / graze
-            float qSwing = sin(lt) * 0.38 * amp;
+            float walkFade = smoothstep(0.5, 0.75, amp);
+            float qSwing = (sin(lt) - 0.125 * sin(3.0 * lt) + 0.025 * sin(5.0 * lt)) * 0.338 * walkFade;
             if (aLifePart > 0.5 && aLifePart < 1.5) {
               vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, qSwing);
               transformed.y = r.x; transformed.z = r.y;
@@ -181,7 +182,7 @@ export function getLifeMaterial(): THREE.MeshStandardMaterial {
               vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, qSwing);
               transformed.y = r.x; transformed.z = r.y;
             } else if (aLifePart > 4.5 && aLifePart < 5.5) {
-              float graze = amp < 0.45 ? -0.35 + sin(lt * 0.5) * 0.08 : sin(lt) * 0.08 * amp;
+              float graze = amp < 0.45 ? -0.35 + sin(lt * 0.5) * 0.08 : sin(lt) * 0.08 * walkFade;
               vec2 r = lifeRot2(transformed.yz, aLifePivot.yz, graze);
               transformed.y = r.x; transformed.z = r.y;
             }

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {
+  PERSON_LEG_LENGTH,
   rolePreset,
+  strideOmega,
   type PersonAction,
   type PersonRole,
 } from '../../story/figures';
@@ -198,6 +200,7 @@ interface PersonEntity {
   mode: number;
   amp: number;
   phase: number;
+  animPhase: number;
   tint: number;
   dodge: number;
   dodgeDir: number;
@@ -215,6 +218,7 @@ interface VehicleEntity {
   yieldFactor: number;
   bobWater: boolean;
   phase: number;
+  animPhase: number;
   x: number;
   y: number;
   z: number;
@@ -252,6 +256,8 @@ interface AnimalEntity {
   ry: number;
   roamRadius: number;
   phase: number;
+  animPhase: number;
+  speed: number;
   graze: boolean;
   followTimer: number;
   hidden: boolean;
@@ -359,8 +365,9 @@ export class BackgroundLife {
           homeRy: Math.atan2(tmpDir.x, tmpDir.z),
           scale: role === 'child' ? 0.98 + rnd() * 0.04 : 0.96 + rnd() * 0.06,
           mode: AnimMode.Walk,
-          amp: w.action === 'hurry' ? 1.25 : 0.95,
+          amp: 1.0,
           phase: rnd() * Math.PI * 2,
+          animPhase: rnd() * Math.PI * 2,
           tint: PERSON_TINTS[Math.floor(rnd() * PERSON_TINTS.length)]!,
           dodge: 0,
           dodgeDir: 1,
@@ -397,6 +404,7 @@ export class BackgroundLife {
         mode,
         amp,
         phase: rnd() * Math.PI * 2,
+        animPhase: rnd() * Math.PI * 2,
         tint: PERSON_TINTS[Math.floor(rnd() * PERSON_TINTS.length)]!,
         dodge: 0,
         dodgeDir: 1,
@@ -444,6 +452,7 @@ export class BackgroundLife {
       if (existing) existing.count += 1;
       else vehicleGroups.set(key, { kind: v.kind, cargo: v.cargo, color: v.bodyColor, count: 1 });
 
+      const vPhase = rnd() * Math.PI * 2;
       this.vehicles.push({
         poolKey: key,
         kind: v.kind,
@@ -452,7 +461,8 @@ export class BackgroundLife {
         speed: v.speed,
         yieldFactor: 1,
         bobWater: Boolean(v.bobWater || v.kind === 'rowingBoat'),
-        phase: rnd() * Math.PI * 2,
+        phase: vPhase,
+        animPhase: vPhase,
         x: tmpPos.x,
         y: tmpPos.y,
         z: tmpPos.z,
@@ -557,6 +567,7 @@ export class BackgroundLife {
         const ax = a.x + Math.cos(ang) * dist;
         const az = a.z + Math.sin(ang) * dist;
         const ay = a.yAt ? a.yAt(ax, az) : a.y;
+        const aPhase = rnd() * Math.PI * 2;
         this.animals.push({
           species: a.species,
           homeX: ax,
@@ -567,7 +578,9 @@ export class BackgroundLife {
           z: az,
           ry: a.ry ?? rnd() * Math.PI * 2,
           roamRadius: a.roamRadius ?? 1.4,
-          phase: rnd() * Math.PI * 2,
+          phase: aPhase,
+          animPhase: aPhase,
+          speed: 0,
           graze: Boolean(a.graze),
           followTimer: 0,
           hidden: false,
@@ -697,9 +710,11 @@ export class BackgroundLife {
         }
       }
 
+      let walkSpeed = 0;
       if (!p.stationary && p.path && !hideWalking) {
         const speedMul = p.steppingAside ? 0.15 : 1.0;
-        p.distance += p.baseSpeed * speedMul * safeDt;
+        walkSpeed = p.baseSpeed * speedMul;
+        p.distance += walkSpeed * safeDt;
         samplePath(p.path, p.distance, tmpPos, tmpDir);
         const pathRightX = -tmpDir.z;
         const pathRightZ = tmpDir.x;
@@ -708,6 +723,14 @@ export class BackgroundLife {
         p.homeZ = tmpPos.z + pathRightZ * p.lateralOffset;
         p.homeRy = Math.atan2(tmpDir.x, tmpDir.z);
       }
+
+      const legLen = PERSON_LEG_LENGTH * (p.role === 'child' ? 0.72 : 1) * p.scale;
+      const activeMode = p.steppingAside ? AnimMode.Gesture : p.mode;
+      const omega =
+        activeMode === AnimMode.Walk && !hideWalking
+          ? strideOmega(walkSpeed, legLen)
+          : 2.1;
+      p.animPhase += omega * safeDt;
 
       if (this.reactionReady && !hideWalking) {
         const dx = p.homeX - playerPos.x;
@@ -769,12 +792,19 @@ export class BackgroundLife {
         }
       }
       v.yieldFactor = THREE.MathUtils.lerp(v.yieldFactor, wantYield, safeDt * 4.5);
-      v.distance += v.speed * v.yieldFactor * safeDt;
+      const vSpeed = v.speed * v.yieldFactor;
+      v.distance += vSpeed * safeDt;
       samplePath(v.path, v.distance, tmpPos, tmpDir);
       v.x = tmpPos.x;
       v.y = tmpPos.y + (v.bobWater ? Math.sin(time * 2.1 + v.phase) * 0.04 : 0);
       v.z = tmpPos.z;
       v.ry = Math.atan2(tmpDir.x, tmpDir.z);
+
+      const vOmega =
+        v.kind === 'rowingBoat'
+          ? 2.4
+          : strideOmega(vSpeed, v.kind === 'handcart' ? PERSON_LEG_LENGTH : 1.06);
+      v.animPhase += vOmega * safeDt;
 
       if (v.body) {
         v.body.setNextKinematicTranslation({ x: v.x, y: v.y + 0.9, z: v.z });
@@ -849,6 +879,8 @@ export class BackgroundLife {
         continue;
       }
 
+      const prevX = a.x;
+      const prevZ = a.z;
       if (a.species === 'dog' && this.reactionReady) {
         const dPlayer = Math.hypot(a.x - playerPos.x, a.z - playerPos.z);
         if (dPlayer < 5.8 && Math.hypot(playerPos.x - a.homeX, playerPos.z - a.homeZ) < 16) {
@@ -861,6 +893,8 @@ export class BackgroundLife {
           a.ry = Math.atan2(tx - a.x, tz - a.z);
           a.x = THREE.MathUtils.lerp(a.x, tx, safeDt * 2.4);
           a.z = THREE.MathUtils.lerp(a.z, tz, safeDt * 2.4);
+          a.speed = safeDt > 1e-5 ? Math.hypot(a.x - prevX, a.z - prevZ) / safeDt : 0;
+          a.animPhase += strideOmega(a.speed, 0.24) * safeDt;
           a.body?.setNextKinematicTranslation({ x: a.x, y: a.y + 0.28, z: a.z });
           continue;
         }
@@ -877,6 +911,18 @@ export class BackgroundLife {
           a.y = a.homeY + Math.sin(time * 2.2 + a.phase) * 0.03;
         }
       }
+      a.speed = safeDt > 1e-5 ? Math.hypot(a.x - prevX, a.z - prevZ) / safeDt : 0;
+      const aLegLen =
+        a.species === 'dog'
+          ? 0.24
+          : a.species === 'cat'
+            ? 0.14
+            : a.species === 'sheep'
+              ? 0.32
+              : a.species === 'horse'
+                ? 1.06
+                : 0.2;
+      a.animPhase += (a.graze ? 2.0 : strideOmega(a.speed, aLegLen)) * safeDt;
 
       if (a.body) {
         const rad = a.species === 'horse' ? 0.65 : a.species === 'sheep' ? 0.42 : 0.28;
@@ -900,7 +946,6 @@ export class BackgroundLife {
       if (!pool) continue;
       const slot = personCounts.get(p.role) ?? 0;
       const activeMode = p.steppingAside ? AnimMode.Gesture : p.mode;
-      const speed = activeMode === AnimMode.Walk ? p.baseSpeed * 3.4 : 2.1;
       const amp = p.steppingAside ? 0.65 : p.amp;
       pool.setSlot(
         slot,
@@ -910,8 +955,8 @@ export class BackgroundLife {
         p.ry,
         p.scale,
         activeMode,
-        p.phase,
-        speed,
+        p.animPhase,
+        0,
         amp,
         this.colorsDirty ? p.tint : undefined,
       );
@@ -939,8 +984,8 @@ export class BackgroundLife {
         v.ry,
         1.0,
         moving ? AnimMode.Vehicle : AnimMode.Still,
-        v.phase,
-        v.kind === 'rowingBoat' ? 2.4 : v.speed * 1.4,
+        v.animPhase,
+        0,
         v.yieldFactor,
       );
       vehCounts.set(v.poolKey, slot + 1);
@@ -990,8 +1035,12 @@ export class BackgroundLife {
           : a.species === 'duck'
             ? AnimMode.BirdGround
             : AnimMode.Quad;
-      const amp = a.graze ? 0.35 : a.followTimer > 0 ? 1.25 : 0.75;
-      pool.setSlot(slot, a.x, a.y, a.z, a.ry, 1.0, mode, a.phase, 4.2, amp);
+      const amp = a.graze
+        ? 0.35
+        : a.species === 'fish' || a.species === 'duck'
+          ? 1.0
+          : 0.48 + 0.52 * THREE.MathUtils.smoothstep(a.speed, 0.05, 0.25);
+      pool.setSlot(slot, a.x, a.y, a.z, a.ry, 1.0, mode, a.animPhase, 0, amp);
       animalCounts.set(a.species, slot + 1);
     }
     for (const [s, pool] of this.animalPools) pool.commit(animalCounts.get(s) ?? 0);

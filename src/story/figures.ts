@@ -617,6 +617,20 @@ export function buildPerson(opts: PersonOptions = {}): PersonRig {
   };
 }
 
+/** Base hip-to-sole leg length at scale 1. */
+export const PERSON_LEG_LENGTH = 0.76;
+
+/** Angular frequency (rad/s) for a gait with stride = 1.6 * legLength so planted feet do not slide. */
+export function strideOmega(speed: number, legLength: number): number {
+  const stride = Math.max(0.05, 1.6 * legLength);
+  return (2 * Math.PI * Math.max(0, speed)) / stride;
+}
+
+/** Stance-flattened swing angle (radians) matching stride = 1.6 * legLength with <= 4 cm foot slide. */
+export function walkSwingAngle(phase: number): number {
+  return (Math.sin(phase) - 0.125 * Math.sin(3 * phase) + 0.025 * Math.sin(5 * phase)) * 0.338;
+}
+
 /** Wraps a PersonRig with smooth procedural actions for scene timelines. */
 export class PersonActor {
   readonly rig: PersonRig;
@@ -624,6 +638,7 @@ export class PersonActor {
   private walkTarget: THREE.Vector3 | null = null;
   private walkSpeed = 1.65;
   private phaseOffset = Math.random() * Math.PI * 2;
+  private walkPhase = this.phaseOffset;
 
   constructor(opts: PersonOptions, x = 0, y = 0, z = 0, ry = 0) {
     this.rig = buildPerson(opts);
@@ -699,26 +714,35 @@ export class PersonActor {
       case 'walk':
       case 'stroll':
       case 'hurry': {
-        const rate = this.action === 'hurry' ? 8.6 : this.action === 'stroll' ? 4.8 : 6.4;
-        const amp = this.action === 'stroll' ? 0.32 : 0.45;
-        const s = t * rate;
-        const swing = Math.sin(s) * amp;
+        const speed = this.walkTarget
+          ? this.walkSpeed
+          : this.action === 'hurry'
+            ? 1.85
+            : this.action === 'stroll'
+              ? 0.9
+              : 1.22;
+        const legLen = PERSON_LEG_LENGTH * (this.rig.root.scale.y || 1);
+        const omega = strideOmega(speed, legLen);
+        this.walkPhase += omega * dt;
+        const swing = walkSwingAngle(this.walkPhase);
         legL.rotation.x = swing;
         legR.rotation.x = -swing;
-        armL.rotation.x = -swing * 0.7;
-        armR.rotation.x = swing * 0.7;
-        hips.position.y = 0.76 + Math.abs(Math.cos(s)) * 0.03;
+        armL.rotation.x = -swing * 0.72;
+        armR.rotation.x = swing * 0.72;
+        hips.position.y = 0.76 + Math.abs(Math.sin(this.walkPhase)) * 0.03;
         break;
       }
       case 'carry': {
-        const s = t * 5.6;
-        const swing = Math.sin(s) * 0.34;
+        const speed = this.walkTarget ? this.walkSpeed : 1.15;
+        const legLen = PERSON_LEG_LENGTH * (this.rig.root.scale.y || 1);
+        this.walkPhase += strideOmega(speed, legLen) * dt;
+        const swing = walkSwingAngle(this.walkPhase);
         legL.rotation.x = swing;
         legR.rotation.x = -swing;
         armL.rotation.x = -0.35;
         armR.rotation.set(-0.95, 0, -0.35);
         torso.rotation.z = 0.06;
-        hips.position.y = 0.75 + Math.abs(Math.cos(s)) * 0.02;
+        hips.position.y = 0.75 + Math.abs(Math.sin(this.walkPhase)) * 0.02;
         break;
       }
       case 'chat': {
