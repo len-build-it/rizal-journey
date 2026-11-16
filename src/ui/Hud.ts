@@ -20,6 +20,8 @@ export class Hud {
   private readonly promptLabel: HTMLElement;
   private readonly toastEl: HTMLElement;
   private readonly arrow: HTMLElement;
+  private readonly arrowIcon: SVGElement;
+  private readonly arrowLabel: HTMLElement;
   private toastTimer = 0;
   onPrompt: (() => void) | null = null;
 
@@ -55,17 +57,23 @@ export class Hud {
 
     const svgNS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 'hud-arrow__icon');
     svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('width', '20');
-    svg.setAttribute('height', '20');
+    svg.setAttribute('width', '16');
+    svg.setAttribute('height', '16');
     const poly = document.createElementNS(svgNS, 'polygon');
-    poly.setAttribute('points', '5,5 20,12 5,19 9,12');
+    poly.setAttribute('points', '4,5 20,12 4,19 8,12');
     poly.setAttribute('fill', 'currentColor');
     poly.setAttribute('stroke', 'var(--k-ink)');
     poly.setAttribute('stroke-width', '1.4');
     poly.setAttribute('stroke-linejoin', 'round');
     svg.append(poly);
-    this.arrow = el('div', { class: 'hud-arrow k-card', 'aria-hidden': 'true', hidden: '' }, [svg]);
+    this.arrowIcon = svg;
+    this.arrowLabel = el('span', { class: 'hud-arrow__title' });
+    this.arrow = el('div', { class: 'hud-arrow k-chip', 'aria-hidden': 'true', hidden: '' }, [
+      this.arrowIcon,
+      this.arrowLabel,
+    ]);
 
     this.root = el('div', { class: 'hud' }, [
       where,
@@ -80,6 +88,7 @@ export class Hud {
 
   updateArrow(
     targetWorld: THREE.Vector3 | null,
+    targetTitle: string | null,
     camera: THREE.Camera,
     hidden: boolean,
   ): void {
@@ -106,17 +115,21 @@ export class Hud {
       dy = 1;
     }
 
-    const limitX = Math.max(40, w * 0.5 - 30);
-    const limitY = Math.max(40, h * 0.5 - 30);
+    const marginX = Math.min(110, w * 0.24);
+    const marginY = 34;
+    const limitX = Math.max(40, w * 0.5 - marginX);
+    const limitY = Math.max(40, h * 0.5 - marginY);
     const scale = Math.max(Math.abs(dx) / limitX, Math.abs(dy) / limitY) || 1;
     const px = w * 0.5 + dx / scale;
     let py = h * 0.5 + dy / scale;
-    if (px < 260 && py < 108) py = 108;
-    else if (px > w - 260 && py < 80) py = 80;
+    if (px < 280 && py < 108) py = 108;
+    else if (px > w - 280 && py < 88) py = 88;
     const angle = Math.atan2(dy, dx);
 
     this.arrow.hidden = false;
-    this.arrow.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) translate(-50%, -50%) rotate(${angle.toFixed(3)}rad)`;
+    this.arrowLabel.textContent = targetTitle ?? '';
+    this.arrow.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) translate(-50%, -50%)`;
+    this.arrowIcon.style.transform = `rotate(${angle.toFixed(3)}rad)`;
   }
 
   setPlace(year: string, place: string): void {

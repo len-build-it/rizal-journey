@@ -144,11 +144,29 @@ async function main(): Promise<void> {
 
   let current: StopMarker | null = null;
   let focusOverride: THREE.Vector3 | null = null;
+  let areaPan: { target: THREE.Vector3; elapsed: number } | null = null;
   let cinematic = false;
   let traveling = false;
   let resettingEdge = false;
   let popupReveal = 1;
   const camTarget = new THREE.Vector3();
+
+  const cancelAreaPan = (): void => {
+    if (!areaPan) return;
+    areaPan = null;
+    if (reducedMotion) cam.snap(player.position);
+  };
+  const startAreaOpenPan = (): void => {
+    const first = areaManager.current?.stops.find((s) => !visited.has(s.story.id));
+    if (!first) return;
+    const focusPt = first.focus
+      ? first.position.clone().lerp(first.focus, 0.35)
+      : first.position.clone();
+    areaPan = { target: focusPt, elapsed: 0 };
+    if (reducedMotion) cam.snap(focusPt);
+  };
+  window.addEventListener('keydown', cancelAreaPan);
+  window.addEventListener('pointerdown', cancelAreaPan);
 
   const animatePopupReveal = (from: number, to: number, ms: number): Promise<void> => {
     if (reducedMotion || touch || ms <= 0) {
@@ -344,6 +362,7 @@ async function main(): Promise<void> {
       await chapterCard.show(nextChapter);
     }
     input.enabled = true;
+    startAreaOpenPan();
     canvas.focus({ preventScroll: true });
   };
 
@@ -380,7 +399,7 @@ async function main(): Promise<void> {
         s.update(dt, time, player.position);
       }
       pathTrail.update(area, player.position, visited, true, time);
-      hud.updateArrow(null, engine.camera, true);
+      hud.updateArrow(null, null, engine.camera, true);
       setPopupFocus(director.focusTarget ?? cam.focusPosition);
       setPopupRange(48, 62);
       return;
@@ -438,12 +457,23 @@ async function main(): Promise<void> {
         }
       }
 
-      camTarget.copy(focusOverride ?? player.position);
+      if (areaPan) {
+        if (input.x !== 0 || input.y !== 0 || input.interactPressed) {
+          cancelAreaPan();
+        } else {
+          areaPan.elapsed += dt;
+          if (areaPan.elapsed >= (reducedMotion ? 0.9 : 1.15)) {
+            cancelAreaPan();
+          }
+        }
+      }
+      const panFocus = focusOverride ?? (areaPan ? areaPan.target : null);
+      camTarget.copy(panFocus ?? player.position);
       cam.update(
         dt,
         camTarget,
-        focusOverride ? 0 : player.heading,
-        focusOverride ? 0 : player.speed,
+        panFocus ? 0 : player.heading,
+        panFocus ? 0 : player.speed,
       );
     } else {
       for (const s of area.stops) s.update(dt, time, player.position);
@@ -451,7 +481,7 @@ async function main(): Promise<void> {
 
     const nextTarget = pathTrail.update(area, player.position, visited, hideGuides, time);
     engine.camera.updateMatrixWorld();
-    hud.updateArrow(nextTarget?.position ?? null, engine.camera, hideGuides);
+    hud.updateArrow(nextTarget?.position ?? null, nextTarget?.story.title ?? null, engine.camera, hideGuides);
     setPopupFocus(cam.focusPosition);
     if (popupReveal <= 0.001) {
       setPopupRange(-1, 0);
@@ -511,6 +541,7 @@ async function main(): Promise<void> {
           return areaManager.current;
         },
         loadArea: async (dest: AreaDestination) => {
+          cancelAreaPan();
           director.cleanup();
           chapterCard.hide();
           cinematic = false;
@@ -824,6 +855,7 @@ async function main(): Promise<void> {
     const ch = currentChapter();
     if (ch) await chapterCard.show(ch);
     input.enabled = true;
+    startAreaOpenPan();
     canvas.focus({ preventScroll: true });
   };
 

@@ -24,7 +24,7 @@ import { buildTrain } from '../vessels';
 import { storiesFor, type ParisEra } from '../../content/stories';
 import { BackgroundLife } from '../life/BackgroundLife';
 import { parisDressing } from '../life/dressings';
-import { SignAtlas } from '../storySigns';
+import { SignAtlas, buildLampPools } from '../storySigns';
 import type { Area, AreaLook } from '../Area';
 
 const TOWER_CENTER = new THREE.Vector3(-34, 0, 0);
@@ -541,6 +541,23 @@ export function buildParis(
   const storySignsBuilt = storySigns.build(`paris-${era}-story-signs`);
   scene.add(storySignsBuilt.group);
   scene.add(signsGroup);
+  const lampPools = buildLampPools(
+    era === '1889'
+      ? [
+          { x: -21, z: 4.8, r: 3.0 },
+          { x: -21, z: 41.5, r: 3.0 },
+          { x: 36, z: 29.6, r: 2.8 },
+          { x: 18.5, z: 29.6, r: 3.0 },
+          { x: -4.5, z: -48.5, r: 3.0 },
+          { x: 5.5, z: -48.5, r: 3.0 },
+        ]
+      : [
+          { x: -4.5, z: -48.5, r: 2.6 },
+          { x: 5.5, z: -48.5, r: 2.6 },
+        ],
+    era === '1889' ? 0.68 : 0.42,
+  );
+  scene.add(lampPools.mesh);
 
   const water = new Water(26, 176, 3.5, new THREE.Vector3(-72.5, -1.2, 0), 0.3);
   scene.add(water.mesh);
@@ -667,6 +684,7 @@ export function buildParis(
       disposeObject(skylight);
       disposeObject(paperSurround);
       storySignsBuilt.dispose();
+      lampPools.dispose();
       if (arenaHorsesGroup) disposeObject(arenaHorsesGroup);
       train.dispose();
       signsGroup.removeFromParent();

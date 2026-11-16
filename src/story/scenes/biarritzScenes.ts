@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mat } from '../../world/kit';
 import { palette } from '../../world/palette';
+import { buildLampPools } from '../../world/storySigns';
 import { makeTrainDepartureScene } from './marseilleScenes';
 import type { SceneScript } from './types';
 
@@ -86,6 +87,10 @@ const biarritzManuscript: SceneScript = {
     lampShade.position.set(tx - 0.42, tableTopY + 0.36, tz - 0.12);
     const deskLight = new THREE.PointLight(0xffebb8, 1.15, 3.2, 1.8);
     deskLight.position.set(tx - 0.32, tableTopY + 0.22, tz - 0.06);
+
+    const terracePool = buildLampPools([{ x: tx - 0.2, y: terraceY, z: tz + 0.1, r: 3.4 }], 0.8);
+    ctx.prop(terracePool.mesh);
+    ctx.onDispose(terracePool.dispose);
 
     const stack = new THREE.Mesh(pageGeo, mat(palette.shirt));
     stack.position.set(tx + 0.05, tableTopY + 0.045, tz);

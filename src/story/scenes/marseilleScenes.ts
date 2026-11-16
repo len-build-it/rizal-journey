@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { palette } from '../../world/palette';
+import { buildLampPools } from '../../world/storySigns';
 import type { PersonActor } from '../figures';
 import { createLitPortholes, createSailingBoat, createSteamPlume } from './props';
 import type { SceneScript } from './types';
@@ -41,7 +42,18 @@ export function makeTrainDepartureScene(opts: {
     storyId: opts.storyId,
     duration: 11,
     setup(ctx) {
-      if (opts.nightLook) ctx.setLook(opts.nightLook);
+      if (opts.nightLook) {
+        ctx.setLook(opts.nightLook);
+        const pools = buildLampPools(
+          [
+            { x: opts.boardStart.x - 1.2, y: opts.boardStart.y, z: opts.boardStart.z + 1.5, r: 3.4 },
+            { x: opts.boardEnd.x + 1.4, y: opts.boardStart.y, z: opts.boardEnd.z + 1.2, r: 3.4 },
+          ],
+          0.78,
+        );
+        ctx.prop(pools.mesh);
+        ctx.onDispose(pools.dispose);
+      }
       boarded = false;
       ctx.rizal.setPose(opts.boardStart.x, opts.boardStart.y, opts.boardStart.z, 0, 'idle');
       ctx.rizal.walkTo(opts.boardEnd, 1.85);
@@ -111,6 +123,16 @@ const marseilleLanding: SceneScript = {
     const quayFill = new THREE.PointLight(0xffe1ad, 2.2, 24, 1.0);
     quayFill.position.set(8.6, 4.5, 8.8);
     ctx.prop(quayFill);
+
+    const quayPools = buildLampPools(
+      [
+        { x: 9.6, y: 0, z: 7.9, r: 3.8 },
+        { x: 12.2, y: 0, z: 7.9, r: 3.4 },
+      ],
+      0.82,
+    );
+    ctx.prop(quayPools.mesh);
+    ctx.onDispose(quayPools.dispose);
 
     // Porters carrying trunks down the gangway from Djemnah onto the quay.
     const porter1 = ctx.actor({ coat: 'work', hat: 'bowler' }, 10.2, 0.95, 13.8, Math.PI);

@@ -191,3 +191,68 @@ export class SignAtlas {
     };
   }
 }
+
+export interface LampPoolPoint {
+  x: number;
+  y?: number;
+  z: number;
+  r?: number;
+}
+
+/**
+ * Merges soft warm ground pools of lamp light into one translucent mesh (+1 draw call).
+ */
+export function buildLampPools(
+  points: readonly LampPoolPoint[],
+  opacity = 0.62,
+): { mesh: THREE.Mesh; dispose: () => void } {
+  const geos: THREE.BufferGeometry[] = [];
+  for (const p of points) {
+    const g = new THREE.CircleGeometry(p.r ?? 2.4, 18);
+    g.rotateX(-Math.PI / 2);
+    g.translate(p.x, (p.y ?? 0) + 0.04, p.z);
+    geos.push(g);
+  }
+  const merged = mergeGeometries(geos, false) ?? new THREE.BufferGeometry();
+  for (const g of geos) g.dispose();
+
+  let tex: THREE.CanvasTexture | null = null;
+  if (typeof document !== 'undefined') {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const grad = ctx.createRadialGradient(64, 64, 2, 64, 64, 62);
+      grad.addColorStop(0.0, 'rgba(255, 224, 148, 0.85)');
+      grad.addColorStop(0.45, 'rgba(255, 212, 128, 0.42)');
+      grad.addColorStop(1.0, 'rgba(255, 200, 110, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+      tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+    }
+  }
+
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    map: tex,
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+  });
+  const mesh = new THREE.Mesh(merged, material);
+  mesh.renderOrder = 2;
+  return {
+    mesh,
+    dispose: () => {
+      mesh.removeFromParent();
+      merged.dispose();
+      material.dispose();
+      tex?.dispose();
+    },
+  };
+}

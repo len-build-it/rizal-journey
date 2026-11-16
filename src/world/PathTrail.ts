@@ -22,13 +22,17 @@ export function findTargetStop(area: Area, visited: Set<string>): StopMarker | n
   return null;
 }
 
+const BASE_DOT_COLOR = new THREE.Color(palette.vermilion);
+const NEAR_DOT_COLOR = new THREE.Color(palette.gaslight).lerp(new THREE.Color(0xff7d4f), 0.35);
+
 /**
- * Gold ink trail along an area's road graph leading toward the next unread stop.
+ * Vermilion ink trail along an area's road graph leading toward the next unread stop.
  */
 export class PathTrail {
   readonly mesh: THREE.InstancedMesh;
   private readonly mat: THREE.MeshBasicMaterial;
   private readonly dummy = new THREE.Object3D();
+  private readonly color = new THREE.Color();
   private cachedKey = '';
   private cachedSamples: { pos: THREE.Vector3; arc: number; distToStop: number }[] = [];
 
@@ -36,9 +40,9 @@ export class PathTrail {
     const geo = new THREE.CircleGeometry(0.18, 12);
     geo.rotateX(-Math.PI / 2);
     this.mat = new THREE.MeshBasicMaterial({
-      color: palette.vermilion,
+      color: 0xffffff,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.92,
       depthWrite: false,
       polygonOffset: true,
       polygonOffsetFactor: -2,
@@ -48,6 +52,7 @@ export class PathTrail {
     this.mesh.frustumCulled = false;
     this.mesh.count = 0;
     this.mesh.renderOrder = 3;
+    for (let i = 0; i < MAX_DOTS; i++) this.mesh.setColorAt(i, BASE_DOT_COLOR);
     scene.add(this.mesh);
   }
 
@@ -89,19 +94,26 @@ export class PathTrail {
         1,
         (sample.distToStop - STOP_CLEAR_RADIUS) / (FADE_OUT_RADIUS - STOP_CLEAR_RADIUS),
       );
+      const near = Math.pow(THREE.MathUtils.clamp(1 - sample.distToStop / 24, 0, 1), 1.3);
       const pulse = 0.5 + 0.5 * Math.sin(sample.arc * 0.5 - time * 3.0);
-      const scale = (0.68 + 0.52 * pulse) * stopFade;
+      const scale = (0.68 + 0.52 * pulse) * (1 + 0.65 * near) * stopFade;
       if (scale <= 0.04) continue;
 
       this.dummy.position.set(sample.pos.x, sample.pos.y + 0.08, sample.pos.z);
       this.dummy.scale.setScalar(scale);
       this.dummy.updateMatrix();
-      this.mesh.setMatrixAt(count++, this.dummy.matrix);
+      this.mesh.setMatrixAt(count, this.dummy.matrix);
+      this.color.copy(BASE_DOT_COLOR).lerp(NEAR_DOT_COLOR, near * 0.85 + pulse * 0.15 * near);
+      this.mesh.setColorAt(count, this.color);
+      count++;
     }
 
     this.mesh.count = count;
     this.mesh.visible = count > 0;
-    if (count > 0) this.mesh.instanceMatrix.needsUpdate = true;
+    if (count > 0) {
+      this.mesh.instanceMatrix.needsUpdate = true;
+      if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+    }
     return target;
   }
 

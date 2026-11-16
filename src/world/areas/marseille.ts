@@ -11,7 +11,7 @@ import { StopMarker } from '../StopMarker';
 import { storiesFor } from '../../content/stories';
 import { BackgroundLife } from '../life/BackgroundLife';
 import { marseilleDressing } from '../life/dressings';
-import { SignAtlas } from '../storySigns';
+import { SignAtlas, buildLampPools } from '../storySigns';
 import type { Area } from '../Area';
 
 /**
@@ -330,6 +330,21 @@ export function buildMarseille(
   scene.add(staticGroup);
   const signsBuilt = signs.build('marseille-signs');
   scene.add(signsBuilt.group);
+  const lampPools = buildLampPools(
+    [
+      { x: 8.6, z: 7.4, r: 3.1 },
+      { x: 12.6, z: 7.4, r: 3.1 },
+      { x: -27, z: 7.4, r: 2.7 },
+      ...(year === 1882
+        ? [
+            { x: 5.8, z: -44.2, r: 2.8 },
+            { x: 14.2, z: -44.2, r: 2.8 },
+          ]
+        : []),
+    ],
+    year === 1882 ? 0.56 : 0.64,
+  );
+  scene.add(lampPools.mesh);
 
   const water = new Water(240, 90, 3, new THREE.Vector3(0, -1.2, QUAY_Z + 44));
   scene.add(water.mesh);
@@ -459,6 +474,7 @@ export function buildMarseille(
       disposeObject(staticGroup);
       disposeObject(shipGroup);
       signsBuilt.dispose();
+      lampPools.dispose();
       disposeObject(paperSurround);
       train.dispose();
       water.dispose();

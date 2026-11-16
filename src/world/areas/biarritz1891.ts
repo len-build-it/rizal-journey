@@ -11,7 +11,7 @@ import { StopMarker } from '../StopMarker';
 import { storiesFor } from '../../content/stories';
 import { BackgroundLife } from '../life/BackgroundLife';
 import { biarritzDressing } from '../life/dressings';
-import { SignAtlas } from '../storySigns';
+import { SignAtlas, buildLampPools } from '../storySigns';
 import type { Area } from '../Area';
 
 const PLATEAU_Y = 2.6;
@@ -346,6 +346,17 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx, mobile = 
   scene.add(staticGroup);
   const signsBuilt = signs.build('biarritz-signs');
   scene.add(signsBuilt.group);
+  const lampPools = buildLampPools(
+    [
+      { x: -15.9, y: PLATEAU_Y, z: -16.6, r: 2.4 },
+      { x: -12.1, y: PLATEAU_Y, z: -16.6, r: 2.4 },
+      { x: -3.5, y: PLATEAU_Y + 0.25, z: -18.8, r: 2.8 },
+      { x: 25.8, y: PLATEAU_Y, z: -26.8, r: 2.6 },
+      { x: 30.2, y: PLATEAU_Y, z: -26.8, r: 2.6 },
+    ],
+    0.58,
+  );
+  scene.add(lampPools.mesh);
 
   // Rough Atlantic waves meeting the curving sand shoreline.
   const water = new Water(240, 100, 3, new THREE.Vector3(0, WATER_Y, 60), 2.1);
@@ -500,6 +511,7 @@ export function buildBiarritz1891(scene: THREE.Scene, ctx: PhysicsCtx, mobile = 
     dispose() {
       disposeObject(staticGroup);
       signsBuilt.dispose();
+      lampPools.dispose();
       disposeObject(paperSurround);
       train.dispose();
       foamMesh.removeFromParent();
