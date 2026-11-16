@@ -100,26 +100,30 @@ const marseilleLanding: SceneScript = {
     const portholes = createLitPortholes(14, 0.42, 14.08, 7);
     ctx.prop(portholes);
 
-    const gangwayLight = new THREE.PointLight(0xffcd82, 4.2, 14, 1.4);
-    gangwayLight.position.set(10.6, 2.5, 11.6);
+    const gangwayLight = new THREE.PointLight(0xffcd82, 4.2, 18, 1.0);
+    gangwayLight.position.set(10.6, 3.2, 11.4);
     ctx.prop(gangwayLight);
 
-    const shipLight = new THREE.PointLight(0xffc878, 2.8, 14, 1.4);
-    shipLight.position.set(14.8, 2.9, 13.0);
+    const shipLight = new THREE.PointLight(0xffd28c, 4.2, 22, 1.0);
+    shipLight.position.set(13.5, 4.8, 12.6);
     ctx.prop(shipLight);
+
+    const quayFill = new THREE.PointLight(0xffe1ad, 2.2, 24, 1.0);
+    quayFill.position.set(8.6, 4.5, 8.8);
+    ctx.prop(quayFill);
 
     // Porters carrying trunks down the gangway from Djemnah onto the quay.
     const porter1 = ctx.actor({ coat: 'work', hat: 'bowler' }, 10.2, 0.95, 13.8, Math.PI);
     const trunk1 = trunkBox();
     trunk1.position.set(0.28, 1.05, 0.18);
     porter1.root.add(trunk1);
-    porter1.walkTo(new THREE.Vector3(7.5, 0, 8.8), 1.4);
+    porter1.walkTo(new THREE.Vector3(8.2, 0, 10.7), 1.35);
 
     const porter2 = ctx.actor({ coat: 'work', hat: 'none' }, 11.0, 0.75, 12.8, Math.PI);
     const trunk2 = trunkBox();
     trunk2.position.set(-0.28, 1.02, 0.18);
     porter2.root.add(trunk2);
-    porter2.walkTo(new THREE.Vector3(13.6, 0, 9.4), 1.3);
+    porter2.walkTo(new THREE.Vector3(12.8, 0, 10.9), 1.25);
 
     // Rizal steps off the gangway with a small travel bag.
     const handBag = new THREE.Mesh(
@@ -129,9 +133,9 @@ const marseilleLanding: SceneScript = {
     handBag.position.set(0.06, -0.62, 0.02);
     ctx.rizal.rig.armR.add(handBag);
     ctx.rizal.setPose(10.5, 0.85, 13.4, Math.PI, 'idle');
-    ctx.rizal.walkTo(new THREE.Vector3(10.5, 0, 8.8), 1.25);
+    ctx.rizal.walkTo(new THREE.Vector3(10.6, 0, 10.4), 1.1);
 
-    ctx.cutCamera(new THREE.Vector3(21, 6.2, 3.8), new THREE.Vector3(11.5, 1.2, 13.0));
+    ctx.cutCamera(new THREE.Vector3(4.8, 2.45, 4.2), new THREE.Vector3(10.6, 1.55, 13.2));
     ctx.onDispose(() => {
       handBag.removeFromParent();
       handBag.geometry.dispose();
@@ -145,14 +149,14 @@ const marseilleLanding: SceneScript = {
   update(ctx, elapsed, dt) {
     const u = THREE.MathUtils.clamp(elapsed / ctx.duration, 0, 1);
     tmpPos.lerpVectors(
-      new THREE.Vector3(21, 6.2, 3.8),
-      new THREE.Vector3(16.5, 4.0, 3.2),
+      new THREE.Vector3(4.8, 2.45, 4.2),
+      new THREE.Vector3(5.8, 2.35, 4.6),
       THREE.MathUtils.smoothstep(u, 0, 1),
     );
     tmpTarget.lerpVectors(
-      new THREE.Vector3(11.5, 1.2, 13.0),
-      new THREE.Vector3(10.5, 1.1, 9.6),
-      THREE.MathUtils.smoothstep(u, 0.25, 0.9),
+      new THREE.Vector3(10.6, 1.55, 13.2),
+      new THREE.Vector3(10.2, 1.5, 12.6),
+      THREE.MathUtils.smoothstep(u, 0.2, 0.9),
     );
     ctx.moveCamera(tmpPos, tmpTarget, dt, 2.6);
   },

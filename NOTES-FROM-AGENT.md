@@ -136,3 +136,27 @@ Summary of implementation choices, environment workarounds, and observations fro
 - `git diff src/content/ src/ui/kit/ src/ui/brochure/`: empty.
 - `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`, `npm run preview`: all passed cleanly.
 - `python -I scripts/review.py "http://localhost:4173/?review" review/handoff6 mobile` (desktop `1280x800` + mobile `390x844` via headless Edge SwiftShader): exit code 0, zero console/page errors, `fallback overflow=[]` and `finale overflow=[]` on both desktop and mobile, and `desk-brochure-print.pdf` verified as 2 A4 landscape pages.
+
+## Handoff 6B (Redesigned brochure, route layout & recaptured snapshots)
+
+- **Redesigned brochure integration (`src/ui/brochure/*`, `src/ui/BrochureView.ts`, `vite.config.ts`, `preview/*`, `scripts/capture-brochure-defaults.py`)**: Installed the redesigned brochure files (`renderBrochure.ts`, `brochure.css`, `routeMap.ts`, `postmark.ts`, `defaults/*.jpg`), updated `BrochureView.ts` to call `layoutBrochure(brochure)` after mounting and pass `defaultSnapshots()` in fallback mode (keeping player snapshots in finale mode), and updated `vite.config.ts` (`assetsInlineLimit`) to inline `/brochure/defaults/` photos alongside `.woff2` fonts (verified zero external `.jpg` files emitted in `dist/assets/`). Added cross-platform Chrome/Edge discovery in `scripts/capture-brochure-defaults.py` for Windows Playwright runs.
+- **Snapshot camera, bench orientation, and horse visibility fixes (`src/player/Player.ts`, `src/story/SceneDirector.ts`, `src/world/areas/paris.ts`, `src/story/scenes/marseilleScenes.ts`, `src/story/scenes/parisScenes.ts`)**:
+  - Added `Player.setSceneVisible(false)` during active stop scenes (`SceneDirector.play()` / `cleanup()`) so the parked horse no longer blocks close-up story shots or snapshots.
+  - `marseille-landing`: Moved camera to `(4.8, 2.45, 4.2)` -> `(5.8, 2.35, 4.6)` looking at `(10.2, 1.5, 12.6)` with softened lantern fill (`decay = 1.0`) so Rizal, the porters, gangway, lit portholes, and Djemnah deckhouse/funnel fill the bleed frame cleanly.
+  - `paris-1885-clinic`: Rotated `deWeckerClinic` bench to `ry = Math.PI` so the seated bandaged patients face Rue du Cherche-Midi instead of sitting backward through the backrest, separated Dr. de Wecker and Rizal beside the bench, and framed the full group cleanly from `(22.6, 2.0, 9.2)`.
+  - `paris-1889-godfather`: Pulled the camera back onto Rue des Saints-Peres (`(33.2, 2.25, 24.8)` -> `(33.8, 2.1, 25.6)`) and arranged all five figures facing 3/4 toward the street in front of Luna's studio doorway so every face and the baby read clearly.
+  - `paris-1889-morga`: Added a lit bookstall display desk with cream cloth, brass lamp, stacked books, and an upright cream-and-crimson *Sucesos* volume outside the bookshop, adjusted `ctx.setLook` sun angle (`(-0.35, 0.55, -0.75)`) plus gentle overhead fill to eliminate dark shadows and point-light banding, and placed Rizal in 3/4 profile beside the desk.
+- **Recaptured defaults & review screenshots (`src/ui/brochure/defaults/*.jpg`, `review/handoff6/`)**: Rebuilt and recaptured all 13 default snapshots via `scripts/capture-brochure-defaults.py`, then ran `scripts/review.py` (`1280x800` desktop and `390x844` mobile) saving `desk-brochure-fallback.png`, `desk-brochure-fallback-side-b.png`, `desk-finale-side-a.png`, `desk-finale-side-b.png`, `desk-print-page1.png`, `desk-print-page2.png`, `desk-brochure-print.pdf` (verified 2 A4 landscape pages), and mobile counterparts.
+
+### Observations on Unmodified Brochure Files (Proposal)
+
+Per Handoff 6B rules (`src/ui/brochure/*` left unmodified except recaptured `defaults/*.jpg`):
+1. **Mobile zoomed `Panel 6` `.b-flow` measurement**: At `390x844` (`--b-scale: 0.3047`), `.b-panel--6` itself stays at `scrollHeight === clientHeight` (`794 === 794`), while `.b-panel--6 .b-flow` reports `scrollHeight = 421 > clientHeight = 405` due to Chromium minimum font/line-box rounding under CSS `zoom`. Visually nothing overlaps `.b-refs` on mobile (`mob-finale-side-b.png`). Desktop (`1280x800`) reports `overflow = []` on both fallback and finale.
+2. **Unvisited `.b-print__empty` / `.b-unseen-note` height when many stops are skipped**: `brochure.css` gives `.b-print__empty` `aspect-ratio: 3 / 2`, whereas `.b-print--bleed img` (`99 / 46`) and `.b-print--feature .b-print img` (`1.9 / 1`) are shorter; combined with `.b-unseen-note`, skipping all 13 photo stops (`openFinale(true)` at start) triggers overflow in Panels 2, 3, and 6, while skipping a single stop (verified on `dist-preview/brochure.html`, skipping `paris-1889-godfather`) renders `'Not visited'` with `overflow = []`. Consider adding `.b-print--bleed .b-print__empty { aspect-ratio: 99 / 46; }` and `.b-print--feature .b-print__empty { aspect-ratio: 1.9 / 1; }` in a future brochure CSS update.
+
+### Verification (Handoff 6B)
+
+- `git diff d424394 -- src/content/ src/ui/kit/ src/ui/brochure/renderBrochure.ts src/ui/brochure/brochure.css src/ui/brochure/routeMap.ts src/ui/brochure/postmark.ts`: empty.
+- `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`, `npm run preview`: all passed cleanly.
+- `scripts/review.py` desktop (`1280x800`): exit code 0, zero console/page errors, `fallback overflow=[]`, `finale overflow=[]`, route SVGs verified on panels 2 to 6, and `desk-brochure-print.pdf` verified as 2 A4 landscape pages.
+- `preview/brochure.html` (`1280x800`): `overflow=[]`, unvisited `paris-1889-godfather` displays `'Not visited'`.

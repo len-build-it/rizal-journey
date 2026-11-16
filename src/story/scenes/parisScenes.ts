@@ -140,27 +140,27 @@ const paris1885Clinic: SceneScript = {
       hemiIntensity: 1.15,
     });
 
-    // Two patients seated on the clinic bench (20.3, 0, 13.6) wearing eye bandages.
+    // Two patients seated on the clinic bench (20.3, 0, 13.6) facing the street, wearing eye bandages.
     const p1 = ctx.actor({ coat: 'frock', hat: 'bowler', eyeBandage: true }, 19.9, 0, 13.55, Math.PI);
     p1.setAction('sit');
     const p2 = ctx.actor({ coat: 'dress', hat: 'small', skirt: true, eyeBandage: true }, 20.75, 0, 13.55, Math.PI);
     p2.setAction('sit');
 
-    // Dr. de Wecker in a clinic smock outside the practice entrance.
-    const doctor = ctx.actor({ coat: 'smock', hat: 'none' }, 18.2, 0, 14.1, Math.PI * 0.85);
+    // Dr. de Wecker in a clinic smock leaning in to check the seated patients, with Rizal beside him.
+    const doctor = ctx.actor({ coat: 'smock', hat: 'none' }, 19.35, 0, 12.85, Math.PI * 0.35);
     doctor.setAction('gesture');
 
-    ctx.rizal.setPose(19.2, 0, 12.2, -Math.PI * 0.8, 'idle');
-    ctx.rizal.walkTo(new THREE.Vector3(18.5, 0, 13.5), 1.0);
+    ctx.rizal.setPose(18.3, 0, 11.9, Math.PI * 0.42, 'idle');
+    ctx.rizal.walkTo(new THREE.Vector3(18.55, 0, 12.55), 0.9);
 
-    // Shoot from the east street so the clinic bench patients and entrance stay unoccluded.
-    ctx.cutCamera(new THREE.Vector3(24.6, 2.8, 9.8), new THREE.Vector3(19.4, 1.25, 13.7));
+    // Frame from the east carriageway so Rizal, de Wecker, and the seated patients fill the shot cleanly.
+    ctx.cutCamera(new THREE.Vector3(23.4, 2.25, 8.4), new THREE.Vector3(19.7, 1.1, 13.2));
   },
   update(ctx, elapsed, dt) {
     const u = THREE.MathUtils.clamp(elapsed / ctx.duration, 0, 1);
     const camU = THREE.MathUtils.smoothstep(u, 0.05, 0.95);
-    tmpPos.lerpVectors(new THREE.Vector3(24.6, 2.8, 9.8), new THREE.Vector3(22.5, 2.15, 11.1), camU);
-    tmpTarget.lerpVectors(new THREE.Vector3(19.4, 1.25, 13.7), new THREE.Vector3(19.5, 1.15, 13.7), camU);
+    tmpPos.lerpVectors(new THREE.Vector3(23.4, 2.25, 8.4), new THREE.Vector3(22.6, 2.0, 9.2), camU);
+    tmpTarget.lerpVectors(new THREE.Vector3(19.7, 1.1, 13.2), new THREE.Vector3(19.7, 1.05, 13.3), camU);
     ctx.moveCamera(tmpPos, tmpTarget, dt, 2.4);
   },
 };
@@ -383,26 +383,26 @@ const paris1889Godfather: SceneScript = {
   duration: 10.5,
   setup(ctx) {
     // Outside Luna's studio on Rue des Saints-Peres (x = 36, z = 30.8 facing north -Z).
-    const mother = ctx.actor({ coat: 'dress', hat: 'small', skirt: true, baby: true }, 35.2, 0, 30.8, Math.PI);
+    const mother = ctx.actor({ coat: 'dress', hat: 'small', skirt: true, baby: true }, 35.15, 0, 30.8, Math.PI);
     mother.setAction('hold');
-    const father = ctx.actor({ coat: 'frock', hat: 'bowler' }, 36.15, 0, 30.8, Math.PI);
+    const father = ctx.actor({ coat: 'frock', hat: 'bowler' }, 36.05, 0, 30.8, Math.PI);
     father.setAction('idle');
 
-    const f1 = ctx.actor({ coat: 'frock', hat: 'top' }, 34.1, 0, 29.9, 0.35);
-    const f2 = ctx.actor({ coat: 'frock', hat: 'bowler' }, 37.1, 0, 29.8, -0.4);
-    f1.setAction('gesture');
+    const f1 = ctx.actor({ coat: 'frock', hat: 'top' }, 36.85, 0, 30.1, -Math.PI * 0.72);
+    const f2 = ctx.actor({ coat: 'frock', hat: 'bowler' }, 33.75, 0, 30.5, Math.PI * 0.75);
+    f1.setAction('idle');
     f2.setAction('idle');
 
-    ctx.rizal.setPose(35.65, 0, 29.2, 0, 'gesture');
+    ctx.rizal.setPose(34.45, 0, 29.9, Math.PI * 0.65, 'gesture');
 
-    // Frame along the facade sidewalk south of z = 29.8 so the parked horse at z = 28.5 is completely out of view.
-    ctx.cutCamera(new THREE.Vector3(31.2, 2.3, 29.9), new THREE.Vector3(35.8, 1.25, 30.5));
+    // Frame from Rue des Saints-Peres so the full group and faces read clearly.
+    ctx.cutCamera(new THREE.Vector3(33.2, 2.25, 24.8), new THREE.Vector3(35.5, 1.1, 30.4));
   },
   update(ctx, elapsed, dt) {
     const u = THREE.MathUtils.clamp(elapsed / ctx.duration, 0, 1);
     const camU = THREE.MathUtils.smoothstep(u, 0, 0.95);
-    tmpPos.lerpVectors(new THREE.Vector3(31.2, 2.3, 29.9), new THREE.Vector3(32.8, 2.05, 30.1), camU);
-    tmpTarget.lerpVectors(new THREE.Vector3(35.8, 1.25, 30.5), new THREE.Vector3(35.7, 1.2, 30.55), camU);
+    tmpPos.lerpVectors(new THREE.Vector3(33.2, 2.25, 24.8), new THREE.Vector3(33.8, 2.1, 25.6), camU);
+    tmpTarget.lerpVectors(new THREE.Vector3(35.5, 1.1, 30.4), new THREE.Vector3(35.5, 1.08, 30.45), camU);
     ctx.moveCamera(tmpPos, tmpTarget, dt, 2.4);
   },
 };
@@ -411,40 +411,112 @@ const paris1889Morga: SceneScript = {
   storyId: 'paris-1889-morga',
   duration: 11.0,
   setup(ctx) {
-    // Bookseller setting new Morga editions in the bookshop window (x = 17.6, front z = 31.95).
-    const seller = ctx.actor({ coat: 'work', hat: 'none' }, 16.9, 0, 31.35, 0.3);
+    // Soften north-side facade shadows evenly without harsh close point-light rings.
+    ctx.setLook({
+      sunDirection: new THREE.Vector3(-0.35, 0.55, -0.75).normalize(),
+      sunIntensity: 2.9,
+      hemiIntensity: 1.45,
+    });
+
+    // Bookstall display desk outside the bookshop on Rue des Saints-Peres (x = 17.5, front z = 31.95).
+    const stallGroup = new THREE.Group();
+    const deskTop = new THREE.Mesh(
+      new THREE.BoxGeometry(1.75, 0.08, 0.9),
+      mat(palette.deckWood),
+    );
+    deskTop.position.set(17.5, 0.86, 31.0);
+    stallGroup.add(deskTop);
+
+    const cloth = new THREE.Mesh(
+      new THREE.BoxGeometry(1.45, 0.03, 0.72),
+      mat(palette.sail),
+    );
+    cloth.position.set(17.5, 0.91, 31.0);
+    stallGroup.add(cloth);
+
+    for (const lx of [-0.75, 0.75]) {
+      for (const lz of [-0.36, 0.36]) {
+        const leg = new THREE.Mesh(
+          new THREE.BoxGeometry(0.08, 0.86, 0.08),
+          mat(palette.crateDark),
+        );
+        leg.position.set(17.5 + lx, 0.43, 31.0 + lz);
+        stallGroup.add(leg);
+      }
+    }
+
+    // Small brass lamp on the corner of the desk lighting the Morga edition.
+    const lampBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.11, 0.24, 8),
+      mat(palette.brass),
+    );
+    lampBase.position.set(16.9, 1.04, 31.1);
+    stallGroup.add(lampBase);
+    const lampShadeMat = new THREE.MeshBasicMaterial({ color: palette.gaslight });
+    const lampShade = new THREE.Mesh(
+      new THREE.ConeGeometry(0.18, 0.14, 8),
+      lampShadeMat,
+    );
+    lampShade.position.set(16.9, 1.22, 31.1);
+    stallGroup.add(lampShade);
+
+    // Neat stack of books beside the featured Morga volume.
+    for (let i = 0; i < 3; i++) {
+      const stackBook = new THREE.Mesh(
+        new THREE.BoxGeometry(0.32, 0.08, 0.24),
+        mat(i === 1 ? palette.awningRed : palette.streetSignBlue),
+      );
+      stackBook.position.set(18.0, 0.96 + i * 0.082, 31.02);
+      stackBook.rotation.y = i * 0.14;
+      stallGroup.add(stackBook);
+    }
+    ctx.prop(stallGroup);
+
+    const windowLight = new THREE.PointLight(0xffe1ad, 2.0, 16, 1.0);
+    windowLight.position.set(17.2, 3.2, 29.4);
+    ctx.prop(windowLight);
+
+    const seller = ctx.actor({ coat: 'work', hat: 'none' }, 18.25, 0, 31.35, -0.45);
     seller.setAction('gesture');
 
-    const bookGeo = new THREE.BoxGeometry(0.32, 0.44, 0.16);
-    const bookMat = mat(palette.streetSignBlue);
-    const morgaBook = new THREE.Mesh(bookGeo, bookMat);
-    morgaBook.position.set(17.1, 0.95, 31.65);
-    ctx.prop(morgaBook);
-    (ctx as { morgaBook?: THREE.Mesh }).morgaBook = morgaBook;
+    // Cream-and-ink featured copy of Sucesos de las Islas Filipinas placed upright on the lit desk.
+    const bookGroup = new THREE.Group();
+    const coverGeo = new THREE.BoxGeometry(0.36, 0.48, 0.12);
+    const pagesGeo = new THREE.BoxGeometry(0.32, 0.44, 0.14);
+    const cover = new THREE.Mesh(coverGeo, mat(palette.sail));
+    const spine = new THREE.Mesh(pagesGeo, mat(palette.awningRed));
+    spine.position.z = -0.01;
+    bookGroup.add(cover, spine);
+    bookGroup.position.set(17.7, 1.15, 31.05);
+    bookGroup.rotation.set(-0.25, -0.35, 0);
+    ctx.prop(bookGroup);
+    (ctx as { morgaBook?: THREE.Group }).morgaBook = bookGroup;
 
-    ctx.rizal.setPose(16.2, 0, 30.3, Math.PI * 0.72, 'idle');
+    ctx.rizal.setPose(16.15, 0, 30.8, Math.PI * 0.42, 'idle');
 
-    // Frame from the west sidewalk so the waiting horse stays clear of the bookshop window.
-    ctx.cutCamera(new THREE.Vector3(13.6, 2.4, 27.6), new THREE.Vector3(17.5, 1.15, 31.6));
+    // Frame Rizal, the bookseller, the lit desk, and the Morga volume cleanly from the west sidewalk.
+    ctx.cutCamera(new THREE.Vector3(14.1, 2.05, 27.5), new THREE.Vector3(17.4, 1.05, 31.0));
     ctx.onDispose(() => {
-      bookGeo.dispose();
-      delete (ctx as { morgaBook?: THREE.Mesh }).morgaBook;
+      coverGeo.dispose();
+      pagesGeo.dispose();
+      lampShadeMat.dispose();
+      delete (ctx as { morgaBook?: THREE.Group }).morgaBook;
     });
   },
   update(ctx, elapsed, dt) {
     const u = THREE.MathUtils.clamp(elapsed / ctx.duration, 0, 1);
-    const book = (ctx as { morgaBook?: THREE.Mesh }).morgaBook;
+    const book = (ctx as { morgaBook?: THREE.Group }).morgaBook;
     if (book) {
       const placeU = THREE.MathUtils.smoothstep(u, 0.15, 0.55);
       book.position.set(
-        THREE.MathUtils.lerp(17.0, 17.7, placeU),
-        THREE.MathUtils.lerp(0.95, 1.24, placeU),
-        THREE.MathUtils.lerp(31.45, 31.8, placeU),
+        THREE.MathUtils.lerp(17.95, 17.5, placeU),
+        THREE.MathUtils.lerp(1.1, 1.16, placeU),
+        THREE.MathUtils.lerp(31.18, 30.95, placeU),
       );
     }
     const camU = THREE.MathUtils.smoothstep(u, 0.2, 0.95);
-    tmpPos.lerpVectors(new THREE.Vector3(13.6, 2.4, 27.6), new THREE.Vector3(16.6, 1.65, 29.3), camU);
-    tmpTarget.lerpVectors(new THREE.Vector3(17.5, 1.15, 31.6), new THREE.Vector3(17.6, 1.18, 31.85), camU);
+    tmpPos.lerpVectors(new THREE.Vector3(14.1, 2.05, 27.5), new THREE.Vector3(14.6, 1.92, 27.9), camU);
+    tmpTarget.lerpVectors(new THREE.Vector3(17.4, 1.05, 31.0), new THREE.Vector3(17.4, 1.05, 31.05), camU);
     ctx.moveCamera(tmpPos, tmpTarget, dt, 2.4);
   },
 };

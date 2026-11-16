@@ -104,6 +104,7 @@ export class SceneDirector {
 
     this.hud.showPrompt(null);
     this.player.setRiderMounted(false);
+    this.player.setSceneVisible(false);
     for (const s of area.stops) s.group.visible = false;
 
     const actors: PersonActor[] = [];
@@ -357,6 +358,7 @@ export class SceneDirector {
     for (const s of a.area.stops) s.group.visible = true;
     this.cam.seedFocus(a.lastTarget);
     this.player.setRiderMounted(true);
+    this.player.setSceneVisible(true);
   }
 }
 

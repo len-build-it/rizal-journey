@@ -2,7 +2,7 @@
 Usage: npm run build && npx vite preview --port 4317, then
   python scripts/capture-brochure-defaults.py "http://localhost:4317/?review"
 Writes src/ui/brochure/defaults/<story-id>.jpg. Station stories and the closing card are skipped: they have no picture in the brochure."""
-import sys, json, base64
+import os, sys, json, base64
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 URL = sys.argv[1]
@@ -16,8 +16,18 @@ AREAS = [
  ("{area:'marseille-1891'}", ["marseille-1891-melbourne"]),
 ]
 OUT.mkdir(parents=True, exist_ok=True)
+kwargs = {"args": ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]}
+for candidate in [
+    "/usr/bin/google-chrome",
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+]:
+    if os.path.exists(candidate):
+        kwargs["executable_path"] = candidate
+        break
 with sync_playwright() as p:
-    b = p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--use-gl=angle","--use-angle=swiftshader","--enable-unsafe-swiftshader"])
+    b = p.chromium.launch(**kwargs)
     page = b.new_page(viewport={"width":1280,"height":800})
     page.goto(URL); page.wait_for_selector(".intro-start", timeout=60000); page.wait_for_timeout(1500)
     page.click(".intro-start"); page.wait_for_timeout(7000)

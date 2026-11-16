@@ -94,6 +94,11 @@ export class Player {
     this.heading = wrapAngle(this.heading + THREE.MathUtils.clamp(diff, -maxStep, maxStep));
   }
 
+  /** Shows or hides the entire player horse+rider during stop scenes. */
+  setSceneVisible(visible: boolean): void {
+    this.rig.root.visible = visible;
+  }
+
   /** Shows or hides the seated rider (when Rizal dismounts during a scene, the horse stands alone). */
   setRiderMounted(mounted: boolean): void {
     this.rig.rider.root.visible = mounted;

@@ -1101,7 +1101,7 @@ function deWeckerClinic(batch: StaticBatch, ctx: PhysicsCtx, x: number, z: numbe
     y: 1.55,
     z: z - 3.82,
   });
-  parkBench(batch, ctx, x + 1.6, z - 4.4, 0);
+  parkBench(batch, ctx, x + 1.6, z - 4.4, Math.PI);
 }
 
 /** Helper to add a canvas painting onto an easel group or back wall. */
