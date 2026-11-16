@@ -1,3 +1,4 @@
+import { CHAPTERS, type Chapter } from '../content/narrative';
 import { storiesFor, type Story } from '../content/stories';
 import type { AreaDestination } from './progress';
 
@@ -127,4 +128,36 @@ export function buildAreaChecklist(
     totalCount: items.length,
     allOtherVisited,
   };
+}
+
+export interface JourneyChapterOverview {
+  chapter: Chapter;
+  visitedCount: number;
+  totalCount: number;
+  complete: boolean;
+  isCurrent: boolean;
+}
+
+/**
+ * Builds the read-only chapter-by-chapter overview of the entire journey for the menu's Places view.
+ */
+export function buildJourneyOverview(
+  dest: AreaDestination,
+  visited: ReadonlySet<string>,
+): JourneyChapterOverview[] {
+  return CHAPTERS.map((chapter) => {
+    const stories = storiesFor(chapter.area, chapter.era);
+    const visitedCount = stories.filter((s) => visited.has(s.id)).length;
+    const totalCount = stories.length;
+    const isCurrent =
+      chapter.area === dest.area &&
+      (chapter.era === undefined || (dest.area === 'paris' && chapter.era === dest.era));
+    return {
+      chapter,
+      visitedCount,
+      totalCount,
+      complete: totalCount > 0 && visitedCount === totalCount,
+      isCurrent,
+    };
+  });
 }

@@ -11,6 +11,7 @@ import {
 } from '../src/core/progress';
 import {
   buildAreaChecklist,
+  buildJourneyOverview,
   completeStopScene,
   leaveStopSceneEarly,
   stopEntryAction,
@@ -182,5 +183,40 @@ describe('saved progress and checklist collapse persistence', () => {
     expect(resolveChecklistCollapsed(undefined, 1280)).toBe(false);
     expect(resolveChecklistCollapsed(undefined, 640)).toBe(true);
     expect(resolveChecklistCollapsed(undefined, 390)).toBe(true);
+  });
+});
+
+describe('journey overview', () => {
+  it('lists all 6 chapters with counts, completion state, and current chapter marker', () => {
+    const visited = new Set([
+      'marseille-landing',
+      'marseille-chateau-dif',
+      'marseille-station',
+      'paris-1883-hotel',
+    ]);
+    const overview = buildJourneyOverview({ area: 'paris', era: '1883' }, visited);
+    expect(overview).toHaveLength(6);
+
+    expect(overview[0]).toMatchObject({
+      visitedCount: 3,
+      totalCount: 3,
+      complete: true,
+      isCurrent: false,
+    });
+    expect(overview[0]?.chapter.title).toBe('First steps');
+    expect(overview[0]?.chapter.place).toBe('Marseille, June 1882');
+
+    expect(overview[1]).toMatchObject({
+      visitedCount: 1,
+      totalCount: 3,
+      complete: false,
+      isCurrent: true,
+    });
+    expect(overview[2]).toMatchObject({
+      visitedCount: 0,
+      totalCount: 3,
+      complete: false,
+      isCurrent: false,
+    });
   });
 });

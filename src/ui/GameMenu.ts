@@ -1,3 +1,4 @@
+import type { JourneyChapterOverview } from '../core/rideLogic';
 import { el } from './dom';
 
 export type MenuContext = 'riding' | 'scene' | 'scene-end' | 'travel';
@@ -90,6 +91,49 @@ export class GameMenu {
     if (focusSelector) {
       this.card.querySelector<HTMLElement>(focusSelector)?.focus({ preventScroll: true });
     }
+  }
+
+  showPlaces(overview: JourneyChapterOverview[]): void {
+    const rows = overview.map((row) => {
+      const check = el(
+        'span',
+        {
+          class: row.complete
+            ? 'hud-checklist__check is-stamped'
+            : 'hud-checklist__check',
+          'aria-hidden': 'true',
+        },
+        [row.complete ? buildTickSvg() : null],
+      );
+
+      const title = el('span', { class: 'menu-places__title' }, [row.chapter.title]);
+      const place = el('span', { class: 'menu-places__place' }, [row.chapter.place]);
+      const here = row.isCurrent
+        ? el('span', { class: 'menu-places__here' }, ['You are here'])
+        : null;
+      const meta = el('div', { class: 'menu-places__meta' }, [title, place, here]);
+      const count = el('span', { class: 'menu-places__count' }, [
+        `${row.visitedCount} of ${row.totalCount}`,
+      ]);
+
+      return el(
+        'li',
+        {
+          class: row.isCurrent ? 'menu-places__row is-current' : 'menu-places__row',
+        },
+        [check, meta, count],
+      );
+    });
+
+    const list = el('ul', { class: 'menu-places' }, rows);
+    const backBtn = el(
+      'button',
+      { class: 'k-btn menu-btn menu-back-btn', type: 'button' },
+      ['Back'],
+    ) as HTMLButtonElement;
+    backBtn.addEventListener('click', () => this.showMainMenu('Places'));
+
+    this.showCustomView('Places', [list, backBtn], '.menu-back-btn');
   }
 
   showMainMenu(focusButtonText?: string): void {
@@ -218,4 +262,22 @@ export class GameMenu {
       first.focus();
     }
   }
+}
+
+function buildTickSvg(): SVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 14 14');
+  svg.setAttribute('width', '11');
+  svg.setAttribute('height', '11');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', 'M2.5 7.2 5.6 10.2 11.5 3.8');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', 'currentColor');
+  path.setAttribute('stroke-width', '2');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  svg.append(path);
+  return svg;
 }

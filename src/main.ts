@@ -21,6 +21,7 @@ import {
 } from './core/progress';
 import {
   buildAreaChecklist,
+  buildJourneyOverview,
   completeStopScene,
   leaveStopSceneEarly,
   stopEntryAction,
@@ -346,7 +347,8 @@ async function main(): Promise<void> {
         });
       },
       onPlaces: () => {
-        // Implemented in step 5.
+        const dest = areaManager.destination ?? state.destination;
+        menu.showPlaces(buildJourneyOverview(dest, visited));
       },
       onBackToDesk: () => {
         void returnToDesk();
