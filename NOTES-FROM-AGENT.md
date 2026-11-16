@@ -160,3 +160,37 @@ Per Handoff 6B rules (`src/ui/brochure/*` left unmodified except recaptured `def
 - `npm run typecheck`, `npm run lint`, `npm test` (11/11 passed), `npm run build`, `npm run preview:brochure`: all passed cleanly.
 - `scripts/review.py` desktop (`1280x800`): exit code 0, zero console/page errors, `fallback overflow=[]`, `finale overflow=[]`, route SVGs verified on panels 2 to 6, and `desk-brochure-print.pdf` verified as 2 A4 landscape pages.
 - `preview/brochure.html` (`1280x800`): `overflow=[]`, unvisited `paris-1889-godfather` displays `'Not visited'`.
+
+## Handoff 7 (Walk articulation, story visibility, and brochure recapture)
+
+- **Brochure update & overflow checks (`src/ui/brochure/renderBrochure.ts`, `src/ui/brochure/brochure.css`, `preview/preview.ts`, `scripts/review.py`, `src/ui/BrochureView.ts`, `src/styles.css`)**:
+  - Copied the updated brochure files into place and updated `scripts/review.py` to assert `overflowingPanels()` is empty for fallback, finale (all visited), and finale (none visited) on both desktop (`1280 x 800`) and mobile (`390 x 844`).
+  - Adjusted the small-screen brochure gutter (`max-width: 600px` in `src/styles.css` and `src/ui/BrochureView.ts`, without editing `src/ui/brochure/`) so subpixel Chromium zoom rounding at `390 x 844` keeps Panel 6 free of flow overflow (`mob fallback overflow=[]`).
+- **Quick fixes (`src/ui/credit.ts`, `src/ui/BrochureView.ts`, `src/ui/DeskScene.ts`, `src/world/areas/paris.ts`, `src/world/palette.ts`, `package.json`)**:
+  - Added shared `CREDIT` (`src/ui/credit.ts`) rendered on both the desk brochure cover (Fraunces display name above course and activity) and brochure panel 1.
+  - Removed the center skylight mullion (`mx = -0.7`) in `lunaStudio()` so no pole crosses the painting, and replaced `withParisianLife` with `withBloodCompact` showing figures around the table in warm dim light.
+  - Switched the desk lamp outer cone to `palette.bottleGreen` with a glowing inner cone and moved `lampLight` inside the shade so yellow light falls on the desk rather than the exterior green enamel.
+  - Restored `"preview": "vite preview"` and added `"preview:brochure": "vite build --config preview/vite.config.ts"`.
+- **Walking & animal articulation (`src/story/figures.ts`, `src/world/life/instancing.ts`, `src/world/life/animals.ts`, `src/world/life/vehicles.ts`, `src/world/life/BackgroundLife.ts`, `tests/life.test.ts`, `scripts/capture-walk-strips.py`)**:
+  - Tagged vertex `aLifePart` attributes directly from rig groups (`personPartId`, quadruped legs `1..4` and head `5`, wheels `8`, oars `6..7`) and baked scaled `aLifePivot` vectors in world-ready part coordinates.
+  - Unified stride cadence (`PERSON_LEG_LENGTH = 0.76`, `strideOmega`, `walkSwingAngle`) across `PersonActor`, instanced shaders, vehicles, and roaming animals; verified planted-foot ground slide stays under `5 cm` per stride in `tests/life.test.ts`.
+  - Raised `LIFE_ANIM_DIST` from `45 m` to `95 m` so visible walkers never glide across screen edges.
+  - Upgraded person geometry to 8-sided torso, skirts/coats, limbs, and shawls with distinct skin necks, articulated knee hinges (`kneeL`/`kneeR`), distinct shoes, thigh/shin animation, skirt sway, counter-rotating shoulders, and steady head orientation.
+  - Final person triangle counts per role (all under `600`, tested in `tests/life.test.ts`): `dockWorker=506`, `fisherman=550`, `marketWoman=566`, `gentleman=550`, `lady=594`, `child=582`, `nurse=510`, `coachman=538`, `gendarme=518`, `vendor=498`.
+  - Captured 8-frame walk strips (`0.08 s` steps over `0.25 m` ground ticks) in `review/handoff7/walk-{man,woman,child,dog,horse}.png`.
+- **Story places standing out (`src/world/palette.ts`, `src/world/storySigns.ts`, `src/world/stopWaiters.ts`, `src/world/StopMarker.ts`, `src/world/PathTrail.ts`, `src/ui/Hud.ts`, `src/main.ts`, `src/world/areas/*.ts`, `src/story/scenes/*.ts`)**:
+  - Muted background roofs, awnings, market canopies, beach huts, fishing boat hulls, and engine cab to slate, terracotta, sage, ochres, and cream so vermilion stays reserved for story landmarks and navigation.
+  - Added story set pieces across Marseille, Paris, and Biarritz (`SignAtlas` packing up to 12 Fraunces/Literata signs into 1 texture + 1 batched draw call per area): steamer portholes, 1891 funnel smoke, gangway lanterns, and `Djemnah`/`Melbourne` signs; west quay lookout bench, brass spyglass, and `Chateau d'If` sign; `Marseille`, `Paris`, and `Biarritz` vermilion station boards with canopies and glowing windows; `Hotel de Paris` / `37` striped awning and lanterns; `Laennec Hospital` arched gate; `Dr. Louis de Wecker` clinic canopy and brass plate; Juan Luna studio lit skylight and street signs; `World's Fair 1889` kiosk; `Wild West Show` flags and illuminated `Tickets` booth; `Garnier Hermanos` print shop window and stacked books; `Villa Eliada` gate lanterns, brass plate, and glowing writing room window; terrace table lamp and sign.
+  - Replaced `StopMarker` floating octohedra with 6 m high double-sided round paper postmarks (`fog: false`) and faint vertical light columns (`fog: false`) down to the ground rings; emphasized the active next stop and muted visited/locked stations into smaller grey stamps.
+  - Added pop-up paper title signboards (`d < 14 m`, matching the world pop-up curve) and merged-mesh waiting scene figures (`buildWaitingFigure`) that appear near unvisited stops and turn/wave within `10 m`.
+  - Replaced the corner compass with a screen-edge kit chip displaying a rotating vermilion arrow and `stop.story.title` when off screen, added a ~1.6 s area-open camera ease to the first unvisited stop (skippable by any input; cuts under reduced motion), enlarged and brightened `PathTrail` dots as they near the stop, and added batched warm ground lamp pools (`buildLampPools`) plus lit windows for evening and night scenes.
+- **Draw calls per area (baseline post-4.1 vs final, recorded via `window.__rizal.renderStats()`)**:
+  - `marseille-1882`: `141 -> 155` (`+14`, `staticCalls=6`, `triangles=90248`)
+  - `paris-1883`: `146 -> 151` (`+5`, `staticCalls=4`, `triangles=242916`)
+  - `paris-1885`: `136 -> 139` (`+3`, `staticCalls=4`, `triangles=213458`)
+  - `paris-1889`: `150 -> 159` (`+9`, `staticCalls=3`, `triangles=278168`)
+  - `biarritz-1891`: `136 -> 140` (`+4`, `staticCalls=4`, `triangles=67996`)
+  - `marseille-1891`: `136 -> 138` (`+2`, `staticCalls=4`, `triangles=88278`)
+- **Recaptured defaults & `review/handoff7/` proofs**:
+  - Recaptured all 13 default brochure snapshots in `src/ui/brochure/defaults/*.jpg`.
+  - Saved `1280 x 800` desktop (`desk-*`), `390 x 844` mobile (`mob-*`), 8-frame walk strips (`walk-{man,woman,child,dog,horse}.png`), arrival and 8 px Gaussian-blurred UI-free views (`arrive-<area>.png`, `arrive-<area>-blur.png` for all 6 areas), `stop-signboard-wave.png`, 16 close-up set-piece views (`setpiece-*.png`), print sheets (`desk-print-page1.png`, `desk-print-page2.png`), and 2-page A4 landscape PDF (`desk-brochure-print.pdf`) in `review/handoff7/`.

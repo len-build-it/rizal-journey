@@ -93,7 +93,8 @@ export function showBrochureView(parent: HTMLElement, opts: BrochureViewOpts): H
   parent.append(root);
 
   const fit = (): void => {
-    fitBrochure(brochure, Math.min(window.innerWidth - 48, 1240));
+    const gutter = window.innerWidth <= 600 ? 20 : 48;
+    fitBrochure(brochure, Math.min(window.innerWidth - gutter, 1240));
   };
   fit();
   void layoutBrochure(brochure).then(() => {

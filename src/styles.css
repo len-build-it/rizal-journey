@@ -768,6 +768,13 @@ button {
   }
 }
 
+@media (max-width: 600px) {
+  .brochure-view {
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+}
+
 @media print {
   html,
   body {
