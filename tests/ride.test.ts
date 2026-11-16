@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { STORIES } from '../src/content/stories';
 import {
+  clearProgress,
+  hasSavedProgress,
+  initialProgress,
+  loadProgress,
+  resolveChecklistCollapsed,
+  saveProgress,
+  type AreaDestination,
+} from '../src/core/progress';
+import {
+  buildAreaChecklist,
   completeStopScene,
   leaveStopSceneEarly,
   stopEntryAction,
@@ -84,5 +94,93 @@ describe('scene completion and leaving early', () => {
         isLockedStation: false,
       }),
     ).toEqual({ kind: 'prompt', label: `Replay: ${landing.title}` });
+  });
+});
+
+const ALL_DESTINATIONS: AreaDestination[] = [
+  { area: 'marseille-1882' },
+  { area: 'paris', era: '1883' },
+  { area: 'paris', era: '1885' },
+  { area: 'paris', era: '1889' },
+  { area: 'biarritz-1891' },
+  { area: 'marseille-1891' },
+];
+
+describe('places checklist', () => {
+  it('orders stops for every area with the station last and locked until the others are visited', () => {
+    for (const dest of ALL_DESTINATIONS) {
+      const era = dest.area === 'paris' ? dest.era : undefined;
+      const expectedStories = STORIES.filter((s) => s.area === dest.area && s.era === era);
+      const nonStationIds = expectedStories.filter((s) => !s.action).map((s) => s.id);
+      const stationId = expectedStories.find((s) => Boolean(s.action))!.id;
+
+      const empty = buildAreaChecklist(dest, new Set());
+      expect(empty.totalCount).toBe(expectedStories.length);
+      expect(empty.visitedCount).toBe(0);
+      expect(empty.items.at(-1)?.story.id).toBe(stationId);
+      expect(empty.items.at(-1)?.isStation).toBe(true);
+      expect(empty.items.at(-1)?.locked).toBe(true);
+      expect(empty.items.at(-1)?.selectable).toBe(false);
+      expect(empty.items.map((i) => i.story.id)).toEqual([...nonStationIds, stationId]);
+
+      // Partial non-station visits keep station locked.
+      if (nonStationIds.length > 1) {
+        const partial = buildAreaChecklist(dest, new Set([nonStationIds[0]!]));
+        expect(partial.visitedCount).toBe(1);
+        expect(partial.items.at(-1)?.locked).toBe(true);
+      }
+
+      // Visiting all non-station stops unlocks the station.
+      const unlocked = buildAreaChecklist(dest, new Set(nonStationIds), stationId);
+      expect(unlocked.visitedCount).toBe(nonStationIds.length);
+      expect(unlocked.allOtherVisited).toBe(true);
+      expect(unlocked.items.at(-1)?.locked).toBe(false);
+      expect(unlocked.items.at(-1)?.selectable).toBe(true);
+      expect(unlocked.items.at(-1)?.isNext).toBe(true);
+    }
+  });
+});
+
+describe('saved progress and checklist collapse persistence', () => {
+  it('persists checklistCollapsed across reload and clears all progress on Start over', () => {
+    const store = new Map<string, string>();
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+          store.set(k, v);
+        },
+        removeItem: (k: string) => {
+          store.delete(k);
+        },
+      },
+    });
+
+    const state = initialProgress();
+    state.visited.push('marseille-landing');
+    state.panels.push(2);
+    state.checklistCollapsed = true;
+    state.snapshots = { 'marseille-landing': 'data:image/jpeg;base64,xyz' };
+    saveProgress(state);
+
+    const reloaded = loadProgress();
+    expect(reloaded).not.toBeNull();
+    expect(hasSavedProgress(reloaded)).toBe(true);
+    expect(reloaded?.checklistCollapsed).toBe(true);
+    expect(resolveChecklistCollapsed(reloaded?.checklistCollapsed, 1280)).toBe(true);
+
+    // Explicit false (expanded on narrow screen) also survives reload.
+    state.checklistCollapsed = false;
+    saveProgress(state);
+    const reloadedExpanded = loadProgress();
+    expect(resolveChecklistCollapsed(reloadedExpanded?.checklistCollapsed, 390)).toBe(false);
+
+    // Start over clears saved progress and restores viewport defaults.
+    clearProgress();
+    expect(loadProgress()).toBeNull();
+    expect(resolveChecklistCollapsed(undefined, 1280)).toBe(false);
+    expect(resolveChecklistCollapsed(undefined, 640)).toBe(true);
+    expect(resolveChecklistCollapsed(undefined, 390)).toBe(true);
   });
 });

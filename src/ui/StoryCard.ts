@@ -13,6 +13,7 @@ export class StoryCard {
   private onAction: ((story: Story) => void) | null = null;
   private lastFocus: HTMLElement | null = null;
   open = false;
+  onOpenChange: ((open: boolean) => void) | null = null;
 
   constructor(parent: HTMLElement) {
     this.body = el('div', { class: 'card-body' });
@@ -63,12 +64,14 @@ export class StoryCard {
     // Next frame so the transition runs from the hidden state.
     requestAnimationFrame(() => this.root.classList.add('is-open'));
     this.open = true;
+    this.onOpenChange?.(true);
     this.root.focus({ preventScroll: true });
   }
 
   hide(): void {
     if (!this.open) return;
     this.open = false;
+    this.onOpenChange?.(false);
     this.root.classList.remove('is-open');
     setTimeout(() => {
       if (!this.open) this.root.hidden = true;

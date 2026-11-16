@@ -11,11 +11,24 @@ const RIDER_CLEAR_RADIUS = 2.0;
 
 /**
  * Finds the next unread stop in stories.ts order for an area,
- * keeping station stops (with travel actions) last.
+ * keeping station stops (with travel actions) last, unless a valid unvisited
+ * and unlocked preferred stop id is selected.
  */
-export function findTargetStop(area: Area, visited: Set<string>): StopMarker | null {
+export function findTargetStop(
+  area: Area,
+  visited: Set<string>,
+  preferredId?: string | null,
+): StopMarker | null {
   const nonStation = area.stops.filter((s) => !s.story.action);
   const station = area.stops.filter((s) => Boolean(s.story.action));
+  if (preferredId) {
+    const chosen = area.stops.find((s) => s.story.id === preferredId);
+    if (chosen && !visited.has(chosen.story.id)) {
+      const stationLocked =
+        Boolean(chosen.story.action) && !nonStation.every((s) => visited.has(s.story.id));
+      if (!stationLocked) return chosen;
+    }
+  }
   for (const s of [...nonStation, ...station]) {
     if (!visited.has(s.story.id)) return s;
   }
@@ -63,8 +76,9 @@ export class PathTrail {
     visited: Set<string>,
     hidden: boolean,
     time: number,
+    preferredId?: string | null,
   ): StopMarker | null {
-    const target = area ? findTargetStop(area, visited) : null;
+    const target = area ? findTargetStop(area, visited, preferredId) : null;
     if (!area || !target || hidden || !area.roadGraph) {
       this.mesh.visible = false;
       this.mesh.count = 0;

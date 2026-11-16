@@ -1,4 +1,5 @@
-import type { Story } from '../content/stories';
+import { storiesFor, type Story } from '../content/stories';
+import type { AreaDestination } from './progress';
 
 export interface RideProgress {
   visited: Set<string>;
@@ -63,4 +64,67 @@ export function stopEntryAction(
     return { kind: 'autoplay' };
   }
   return { kind: 'prompt', label: `Replay: ${story.title}` };
+}
+
+export interface ChecklistItem {
+  story: Story;
+  isStation: boolean;
+  visited: boolean;
+  locked: boolean;
+  selectable: boolean;
+  isNext: boolean;
+  accessibleName: string;
+}
+
+export interface AreaChecklist {
+  items: ChecklistItem[];
+  visitedCount: number;
+  totalCount: number;
+  allOtherVisited: boolean;
+}
+
+/**
+ * Builds the area's Places checklist in story order with the station last
+ * and locked until every other stop in the area is visited.
+ */
+export function buildAreaChecklist(
+  dest: AreaDestination,
+  visited: ReadonlySet<string>,
+  nextTargetId?: string | null,
+): AreaChecklist {
+  const era = dest.area === 'paris' ? dest.era : undefined;
+  const raw = storiesFor(dest.area, era);
+  const nonStation = raw.filter((s) => !s.action);
+  const station = raw.filter((s) => Boolean(s.action));
+  const ordered = [...nonStation, ...station];
+
+  const allOtherVisited = nonStation.every((s) => visited.has(s.id));
+  const items: ChecklistItem[] = ordered.map((story) => {
+    const isStation = Boolean(story.action);
+    const isVisited = visited.has(story.id);
+    const locked = isStation && !allOtherVisited;
+    const selectable = !isVisited && !locked;
+    const isNext = !isVisited && story.id === nextTargetId;
+    const accessibleName = locked
+      ? `${story.title}, locked, after the others`
+      : isVisited
+        ? `${story.title}, visited`
+        : `${story.title}, not visited`;
+    return {
+      story,
+      isStation,
+      visited: isVisited,
+      locked,
+      selectable,
+      isNext,
+      accessibleName,
+    };
+  });
+
+  return {
+    items,
+    visitedCount: items.filter((i) => i.visited).length,
+    totalCount: items.length,
+    allOtherVisited,
+  };
 }

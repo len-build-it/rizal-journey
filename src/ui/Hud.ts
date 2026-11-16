@@ -1,13 +1,24 @@
 import * as THREE from 'three';
+import type { AreaChecklist, ChecklistItem } from '../core/rideLogic';
 import { el } from './dom';
 
 const _view = new THREE.Vector3();
 const _ndc = new THREE.Vector3();
 const _targetLift = new THREE.Vector3(0, 1.0, 0);
 
+interface ChecklistRowNodes {
+  btn: HTMLButtonElement;
+  check: HTMLElement;
+  tickIcon: SVGElement;
+  lockIcon: SVGElement;
+  titleText: HTMLElement;
+  note: HTMLElement;
+  dot: HTMLElement;
+}
+
 /**
- * Heads-up display: where you are, the brochure you are filling in,
- * and the prompt that appears when you stand at a story stop.
+ * Heads-up display: where you are, the places checklist, the brochure you are filling in,
+ * the menu button, and the prompt that appears when you stand at a story stop.
  */
 export class Hud {
   readonly root: HTMLElement;
@@ -17,6 +28,12 @@ export class Hud {
   private readonly place: HTMLElement;
   private readonly year: HTMLElement;
   private readonly goalEl: HTMLElement;
+  private readonly checklistCard: HTMLElement;
+  private readonly checklistHeader: HTMLButtonElement;
+  private readonly checklistCount: HTMLElement;
+  private readonly checklistList: HTMLElement;
+  private readonly checklistRows = new Map<string, ChecklistRowNodes>();
+  private checklistAreaKey = '';
   private readonly panels: HTMLElement[] = [];
   private readonly foldLabel: HTMLElement;
   private readonly prompt: HTMLElement;
@@ -28,6 +45,8 @@ export class Hud {
   private toastTimer = 0;
   onPrompt: (() => void) | null = null;
   onMenu: (() => void) | null = null;
+  onToggleChecklist: (() => void) | null = null;
+  onSelectChecklistStop: ((storyId: string) => void) | null = null;
 
   constructor(parent: HTMLElement, touch: boolean) {
     this.place = el('span', { class: 'k-chip__place' });
@@ -35,7 +54,26 @@ export class Hud {
     this.goalEl = el('span', { class: 'k-chip__goal', hidden: '' });
     const whereTop = el('span', { class: 'hud-where-top' }, [this.year, this.place]);
     const where = el('div', { class: 'hud-where k-chip' }, [whereTop, this.goalEl]);
-    this.leftStack = el('div', { class: 'hud-left' }, [where]);
+
+    this.checklistCount = el('span', { class: 'hud-checklist__count' }, ['0 of 0']);
+    this.checklistHeader = el(
+      'button',
+      {
+        class: 'hud-checklist__header',
+        type: 'button',
+        'aria-expanded': 'true',
+      },
+      [el('span', { class: 'hud-checklist__title' }, ['Places']), this.checklistCount],
+    ) as HTMLButtonElement;
+    this.checklistHeader.addEventListener('click', () => this.onToggleChecklist?.());
+    this.checklistList = el('ul', { class: 'hud-checklist__list' });
+    this.checklistCard = el(
+      'section',
+      { class: 'hud-checklist k-card', 'aria-label': 'Places in this area' },
+      [this.checklistHeader, this.checklistList],
+    );
+
+    this.leftStack = el('div', { class: 'hud-left' }, [where, this.checklistCard]);
 
     const stampsWrap = el('div', { class: 'hud-stamps k-stamps', role: 'img' });
     for (let i = 1; i <= 6; i++) {
@@ -143,10 +181,20 @@ export class Hud {
     let py = h * 0.5 + dy / scale;
     const leftRect = this.leftStack.getBoundingClientRect();
     const rightRect = this.topRight.getBoundingClientRect();
+    const promptWrap = this.prompt.parentElement;
+    const promptRect = promptWrap && !promptWrap.hidden ? promptWrap.getBoundingClientRect() : null;
     if (leftRect.width > 0 && px < leftRect.right + 100 && py < leftRect.bottom + 26) {
       py = leftRect.bottom + 26;
     } else if (rightRect.width > 0 && px > rightRect.left - 100 && py < rightRect.bottom + 26) {
       py = rightRect.bottom + 26;
+    }
+    if (
+      promptRect &&
+      promptRect.width > 0 &&
+      Math.abs(px - w * 0.5) < promptRect.width * 0.5 + 90 &&
+      py > promptRect.top - 28
+    ) {
+      py = promptRect.top - 28;
     }
     const angle = Math.atan2(dy, dx);
 
@@ -197,6 +245,87 @@ export class Hud {
     }
   }
 
+  setChecklist(areaKey: string, checklist: AreaChecklist, collapsed: boolean): void {
+    if (this.checklistAreaKey !== areaKey) {
+      this.checklistAreaKey = areaKey;
+      this.checklistRows.clear();
+      const liNodes = checklist.items.map((item) => {
+        const tickIcon = buildTickIcon();
+        const lockIcon = buildLockIcon();
+        const check = el('span', { class: 'hud-checklist__check', 'aria-hidden': 'true' }, [
+          tickIcon,
+          lockIcon,
+        ]);
+        const titleText = el('span', { class: 'hud-checklist__title-text' }, [item.story.title]);
+        const note = el('span', { class: 'hud-checklist__note', hidden: '' }, ['After the others']);
+        const textWrap = el('span', { class: 'hud-checklist__text' }, [titleText, note]);
+        const dot = el('span', {
+          class: 'hud-checklist__dot',
+          'aria-hidden': 'true',
+          hidden: '',
+        });
+        const btn = el('button', { class: 'hud-checklist__row', type: 'button' }, [
+          check,
+          textWrap,
+          dot,
+        ]) as HTMLButtonElement;
+        btn.addEventListener('click', () => {
+          if (btn.getAttribute('aria-disabled') === 'true') return;
+          this.onSelectChecklistStop?.(item.story.id);
+        });
+        this.checklistRows.set(item.story.id, {
+          btn,
+          check,
+          tickIcon,
+          lockIcon,
+          titleText,
+          note,
+          dot,
+        });
+        return el('li', { class: 'hud-checklist__item' }, [btn]);
+      });
+      this.checklistList.replaceChildren(...liNodes);
+    }
+
+    this.checklistCount.textContent = `${checklist.visitedCount} of ${checklist.totalCount}`;
+    for (const item of checklist.items) {
+      const nodes = this.checklistRows.get(item.story.id);
+      if (!nodes) continue;
+      this.applyChecklistItemState(nodes, item);
+    }
+    this.setChecklistCollapsed(collapsed);
+  }
+
+  setChecklistCollapsed(collapsed: boolean): void {
+    this.checklistList.hidden = collapsed;
+    this.checklistHeader.setAttribute('aria-expanded', String(!collapsed));
+    this.checklistCard.classList.toggle('is-collapsed', collapsed);
+  }
+
+  setChecklistHidden(hidden: boolean): void {
+    this.checklistCard.hidden = hidden;
+  }
+
+  private applyChecklistItemState(nodes: ChecklistRowNodes, item: ChecklistItem): void {
+    nodes.btn.classList.toggle('is-visited', item.visited);
+    nodes.btn.classList.toggle('is-locked', item.locked);
+    nodes.btn.classList.toggle('is-next', item.isNext);
+    nodes.btn.setAttribute('aria-label', item.accessibleName);
+    nodes.btn.setAttribute('aria-disabled', String(!item.selectable));
+    if (item.isNext) {
+      nodes.btn.setAttribute('aria-current', 'location');
+    } else {
+      nodes.btn.removeAttribute('aria-current');
+    }
+
+    nodes.check.classList.toggle('is-stamped', item.visited);
+    nodes.check.classList.toggle('is-locked', item.locked);
+    nodes.tickIcon.style.display = item.visited ? 'block' : 'none';
+    nodes.lockIcon.style.display = item.locked ? 'block' : 'none';
+    nodes.note.hidden = !item.locked;
+    nodes.dot.hidden = !item.isNext;
+  }
+
   toast(text: string): void {
     this.toastEl.textContent = text;
     this.toastEl.classList.add('is-on');
@@ -223,5 +352,47 @@ function buildMenuIcon(): SVGSVGElement {
     line.setAttribute('stroke-linecap', 'round');
     svg.append(line);
   }
+  return svg;
+}
+
+function buildTickIcon(): SVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 14 14');
+  svg.setAttribute('width', '11');
+  svg.setAttribute('height', '11');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', 'M2.5 7.2 5.6 10.2 11.5 3.8');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', 'currentColor');
+  path.setAttribute('stroke-width', '2');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  svg.append(path);
+  return svg;
+}
+
+function buildLockIcon(): SVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 14 14');
+  svg.setAttribute('width', '12');
+  svg.setAttribute('height', '12');
+  svg.setAttribute('aria-hidden', 'true');
+  const shackle = document.createElementNS(ns, 'path');
+  shackle.setAttribute('d', 'M4.5 6V4.5a2.5 2.5 0 0 1 5 0V6');
+  shackle.setAttribute('fill', 'none');
+  shackle.setAttribute('stroke', 'currentColor');
+  shackle.setAttribute('stroke-width', '1.4');
+  shackle.setAttribute('stroke-linecap', 'round');
+  const body = document.createElementNS(ns, 'rect');
+  body.setAttribute('x', '3');
+  body.setAttribute('y', '6');
+  body.setAttribute('width', '8');
+  body.setAttribute('height', '6');
+  body.setAttribute('rx', '1.5');
+  body.setAttribute('fill', 'currentColor');
+  svg.append(shackle, body);
   return svg;
 }

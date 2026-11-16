@@ -14,11 +14,13 @@ import {
   hasSavedProgress,
   initialProgress,
   loadProgress,
+  resolveChecklistCollapsed,
   saveProgress,
   type AreaDestination,
   type ProgressState,
 } from './core/progress';
 import {
+  buildAreaChecklist,
   completeStopScene,
   leaveStopSceneEarly,
   stopEntryAction,
@@ -26,7 +28,7 @@ import {
 } from './core/rideLogic';
 import { Player } from './player/Player';
 import { AreaManager } from './world/AreaManager';
-import { PathTrail } from './world/PathTrail';
+import { findTargetStop, PathTrail } from './world/PathTrail';
 import {
   outsidePlayDistance,
   setEdgeShadingEnabled,
@@ -104,6 +106,7 @@ async function main(): Promise<void> {
   const cam = new FollowCamera(engine.camera);
   const hud = new Hud(uiRoot, touch);
   const card = new StoryCard(uiRoot);
+  card.onOpenChange = (open) => hud.setChecklistHidden(open);
   const chapterCard = new ChapterCard(uiRoot);
   const menu = new GameMenu(uiRoot, touch, () => hud.focusMenuButton());
   if (touch) new Joystick(uiRoot, input);
@@ -149,8 +152,30 @@ async function main(): Promise<void> {
     }
   };
 
+  let preferredTargetId: string | null = null;
+  let lastTrailTargetId: string | null = null;
+
+  const areaKeyFor = (dest: AreaDestination): string =>
+    dest.area === 'paris' ? `paris:${dest.era}` : dest.area;
+
+  const syncChecklist = (targetId?: string | null): void => {
+    const dest = areaManager.destination;
+    const area = areaManager.current;
+    if (!dest || !area) return;
+    if (preferredTargetId && visited.has(preferredTargetId)) preferredTargetId = null;
+    const nextId =
+      targetId !== undefined
+        ? targetId
+        : (findTargetStop(area, visited, preferredTargetId)?.story.id ?? null);
+    lastTrailTargetId = nextId;
+    const checklist = buildAreaChecklist(dest, visited, nextId);
+    const collapsed = resolveChecklistCollapsed(state.checklistCollapsed, window.innerWidth);
+    hud.setChecklist(areaKeyFor(dest), checklist, collapsed);
+  };
+
   await areaManager.load(state.destination, visited);
   syncHudGoal();
+  syncChecklist();
 
   let introOpen = true;
   let brochureOpen = false;
@@ -348,9 +373,47 @@ async function main(): Promise<void> {
       panels: [...filled],
       completed: state.completed,
       snapshots,
+      checklistCollapsed: state.checklistCollapsed,
     };
     saveProgress(state);
   };
+
+  const toggleChecklistCollapsed = (): void => {
+    const currentlyCollapsed = resolveChecklistCollapsed(state.checklistCollapsed, window.innerWidth);
+    state.checklistCollapsed = !currentlyCollapsed;
+    hud.setChecklistCollapsed(state.checklistCollapsed);
+    persist();
+  };
+
+  hud.onToggleChecklist = () => toggleChecklistCollapsed();
+  hud.onSelectChecklistStop = (storyId) => {
+    preferredTargetId = storyId;
+    syncChecklist();
+  };
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyC' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (
+      introOpen ||
+      brochureOpen ||
+      menu.open ||
+      card.open ||
+      chapterCard.open ||
+      director.isPlaying ||
+      traveling
+    ) {
+      return;
+    }
+    e.preventDefault();
+    toggleChecklistCollapsed();
+  });
+
+  window.addEventListener('resize', () => {
+    if (state.checklistCollapsed === undefined) {
+      hud.setChecklistCollapsed(resolveChecklistCollapsed(undefined, window.innerWidth));
+    }
+  });
 
   const openStoryCard = (stop: StopMarker): void => {
     const area = areaManager.current;
@@ -370,6 +433,7 @@ async function main(): Promise<void> {
       const { newlyFilledPanel } = completeStopScene(rideProgress, stop.story);
       if (newlyFilledPanel) hud.setPanels(filled);
       syncHudGoal();
+      syncChecklist();
       persist();
     }
 
@@ -410,6 +474,7 @@ async function main(): Promise<void> {
         const { newlyFilledPanel } = completeStopScene(rideProgress, completedStop.story);
         if (newlyFilledPanel) hud.setPanels(filled);
         syncHudGoal();
+        syncChecklist();
         persist();
       },
       onCaptureSnapshot: (_storyId) => {
@@ -527,7 +592,9 @@ async function main(): Promise<void> {
       await areaManager.load(dest, visited);
     }
 
+    preferredTargetId = null;
     syncHudGoal();
+    syncChecklist();
     persist();
     traveling = false;
     if (introOpen) return;
@@ -661,7 +728,18 @@ async function main(): Promise<void> {
       for (const s of area.stops) s.update(dt, time, player.position);
     }
 
-    const nextTarget = pathTrail.update(area, player.position, visited, hideGuides, time);
+    const nextTarget = pathTrail.update(
+      area,
+      player.position,
+      visited,
+      hideGuides,
+      time,
+      preferredTargetId,
+    );
+    const nextId = nextTarget?.story.id ?? null;
+    if (nextId !== lastTrailTargetId) {
+      syncChecklist(nextId);
+    }
     for (const s of area.stops) s.setNextTarget(s === nextTarget);
     engine.camera.updateMatrixWorld();
     hud.updateArrow(nextTarget?.position ?? null, nextTarget?.story.title ?? null, engine.camera, hideGuides);
@@ -730,8 +808,10 @@ async function main(): Promise<void> {
           cinematic = false;
           card.hide();
           current = null;
+          preferredTargetId = null;
           await areaManager.load(dest, visited);
           syncHudGoal();
+          syncChecklist();
         },
         showChapterCard: () => {
           const ch = currentChapter();
@@ -1063,6 +1143,7 @@ async function main(): Promise<void> {
         leftEarly.clear();
         filled.clear();
         filled.add(1);
+        preferredTargetId = null;
         for (const k of Object.keys(snapshots)) delete snapshots[k];
         state = initialProgress();
         clearProgress();
@@ -1074,6 +1155,7 @@ async function main(): Promise<void> {
           player.teleport(areaManager.current!.spawn, areaManager.current!.spawnHeading);
           cam.snap(player.position);
         }
+        syncChecklist();
         await beginPlaying();
       },
       onBrochure: () => {

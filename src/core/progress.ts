@@ -9,6 +9,7 @@ export interface ProgressState {
   panels: number[];
   completed: boolean;
   snapshots?: Record<string, string>;
+  checklistCollapsed?: boolean;
 }
 
 const STORAGE_KEY = 'rizal-france-progress-v1';
@@ -61,6 +62,8 @@ export function loadProgress(): ProgressState | null {
       panels,
       completed: Boolean(parsed.completed),
       snapshots: { ...storedSnapshots, ...memorySnapshots },
+      checklistCollapsed:
+        typeof parsed.checklistCollapsed === 'boolean' ? parsed.checklistCollapsed : undefined,
     };
   } catch {
     return null;
@@ -81,6 +84,7 @@ export function saveProgress(state: ProgressState): void {
         visited: state.visited,
         panels: state.panels,
         completed: state.completed,
+        checklistCollapsed: state.checklistCollapsed,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(compact));
     } catch {
@@ -117,6 +121,13 @@ export function allOtherStopsVisited(
   visited: Set<string>,
 ): boolean {
   return area.stops.every((s) => s.story.id === currentStoryId || visited.has(s.story.id));
+}
+
+export function resolveChecklistCollapsed(
+  savedChoice: boolean | undefined,
+  viewportWidth: number,
+): boolean {
+  return savedChoice !== undefined ? savedChoice : viewportWidth <= 640;
 }
 
 function isValidAreaDest(d: unknown): d is AreaDestination {
